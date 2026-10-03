@@ -7,9 +7,11 @@ Sunny Meadow, Frosty Pines, Canyon Dunes, Spooky Hollow and Blossom Garden.
 
 ## Modes
 
-- **Solo:** defend the nut stash at the centre of the map from waves of garden gnomes, diving crows and the Gnome King.
-- **Versus (couch):** split screen on one computer or TV, with each player's phone used as a controller via QR code. Phones connect straight to the TV over your Wi-Fi.
+- **Solo:** defend the nut stash at the centre of the map from waves of garden gnomes, diving crows and the Gnome King. After each wave, pick one of three upgrades for the rest of the run (more health, speed, damage, faster reloads, stash walls, longer power-ups, healing on kills, an extra air jump, bonus points).
+- **Versus (couch):** 2 to 4 players split screen on one computer or TV, with each player's phone used as a controller via QR code. Phones connect straight to the TV over your Wi-Fi. Three or four players is a free-for-all: first to 7 bonks.
 - **Versus (online):** two computers, joined with a link or QR code, through the game server.
+- **Co-op (couch):** 2 to 4 players on one TV, each with a phone controller, defend the stash together. Waves grow with the team; a downed player stays where they fell: stand next to them for a couple of seconds to revive them, or they are back at the stash after 12 seconds. With three players the spare quarter of the screen shows a map.
+- **Co-op (online):** two computers defend one stash; the host runs the waves.
 
 ## Weapons and power-ups
 
@@ -28,6 +30,12 @@ Power-ups: Rapid Fire, Double Damage, Shield and Turbo Paws.
 | Switch weapon | 1–4, Q or scroll wheel |
 | Change camera | Right click or V |
 | Pause | Esc |
+
+Game controllers (Xbox, PlayStation, Switch Pro and others the browser supports) work too:
+left stick moves, right stick aims, RT fires, A jumps, X reloads, LB/RB switch weapons,
+Y changes the camera, B or L3 sprints, Start pauses; on menus the d-pad moves and A presses.
+On the couch a controller takes a player spot of its own instead of a phone: press A in the
+lobby or at fighter select (B leaves the spot, Y changes the map).
 
 ## Running it
 
@@ -49,6 +57,8 @@ multiplayer rooms (Node, Express and socket.io).
 - **Online versus:** Versus > Online gives a link (and QR code) for the other
   player. Online matches run through the server, so for play over the internet
   host it somewhere public, such as Render.
+- **Co-op:** Co-op > Couch shows four codes; the match starts once at least two
+  phones are in and everyone in is Ready. Co-op > Online works like online versus.
 - **Solo** needs no server; opening `index.html` directly still works.
 
 The game still runs as a Claude Artifact too: there, Versus uses the Artifact's

@@ -159,6 +159,9 @@ body.touch .desk-only{display:none}
 .pw .bar i{background:var(--pc)}
 .pw.ending{animation:blink .3s steps(2) infinite}
 @keyframes blink{50%{opacity:.45}}
+#gpNote{position:fixed;left:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:60;font-family:var(--display);font-size:16px;color:var(--cream);background:var(--panel);padding:8px 16px;border-radius:999px;opacity:0;pointer-events:none;transition:opacity .3s}
+#gpNote.show{animation:gpNote 3.2s ease forwards}
+@keyframes gpNote{0%{opacity:0;transform:translateY(8px)}8%,80%{opacity:1;transform:none}100%{opacity:0}}
 .toast{position:absolute;left:50%;bottom:calc(24% + env(safe-area-inset-bottom,0px));transform:translateX(-50%);font-family:var(--display);font-size:18px;letter-spacing:.03em;color:var(--cream);background:var(--panel);padding:8px 18px;border-radius:999px;opacity:0;white-space:nowrap;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
 .toast.show{animation:toastIn 1.8s ease forwards}
 @keyframes toastIn{0%{opacity:0;transform:translate(-50%,10px)}10%{opacity:1;transform:translate(-50%,0)}80%{opacity:1}100%{opacity:0}}
@@ -172,6 +175,14 @@ body.touch .desk-only{display:none}
 .choice button:hover{border-color:var(--acorn)}
 .choice button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 .placard.wide{max-width:780px}
+.perk-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.perk{display:grid;align-content:start;gap:8px;text-align:left;padding:16px 14px;border-radius:14px;background:rgba(0,0,0,.25);border:3px solid transparent;color:var(--cream);font-family:var(--body);font-size:14px;line-height:1.35;cursor:pointer}
+.perk:hover,.perk:focus-visible{border-color:var(--gold);background:rgba(255,243,220,.1);outline:none}
+.perk b{font-family:var(--display);font-size:20px;font-weight:400;color:var(--gold)}
+.perk kbd{justify-self:start;font-family:var(--display);font-size:13px;padding:2px 8px;border-radius:6px;background:rgba(255,243,220,.14)}
+.perk .lv{display:flex;gap:4px}.perk .lv i{width:10px;height:10px;border-radius:50%;background:rgba(255,243,220,.18)}.perk .lv i.on{background:var(--gold)}
+.perks-held{font-size:13px;color:var(--cream-dim)}
+@media (max-width:640px){.perk-row{grid-template-columns:minmax(0,1fr)}.perk{padding:10px 12px}}
 .qrs{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
 .qrs:empty{display:none}
 .qr{background:rgba(0,0,0,.24);border-radius:14px;padding:14px;display:grid;justify-items:center;gap:8px;border-top:4px solid var(--pc);min-width:0}
@@ -192,6 +203,19 @@ body.touch .desk-only{display:none}
 #pvpHud.couch #pv1{left:50%}
 #pvpHud.online #pv1{display:none}
 #pvpHud.couch::after{content:"";position:absolute;left:50%;top:0;bottom:0;width:4px;margin-left:-2px;background:var(--ink)}
+/* co-op: 3 or 4 players get a quarter each (3 players: the spare quarter is a map of the meadow) */
+#pv2,#pv3,#pvMap{display:none}
+#pvpHud.couch.n3 .pv,#pvpHud.couch.n4 .pv{width:50%;bottom:auto;height:50%}
+#pvpHud.couch.n3 #pv1,#pvpHud.couch.n4 #pv1{left:50%;top:0}
+#pvpHud.couch.n3 #pv2,#pvpHud.couch.n4 #pv2{display:block;left:0;top:50%}
+#pvpHud.couch.n4 #pv3{display:block;left:50%;top:50%}
+#pvpHud.couch.n3::before,#pvpHud.couch.n4::before{content:"";position:absolute;top:50%;left:0;right:0;height:4px;margin-top:-2px;background:var(--ink);z-index:1}
+#pvpHud.couch.n3 #pvMap{display:block;position:absolute;left:50%;top:50%;right:0;bottom:0;background:#2c3d1f}
+#pvMapCv{position:absolute;inset:0;width:100%;height:100%}
+#pvMap span{position:absolute;left:16px;top:16px;background:var(--panel);padding:6px 12px;border-radius:999px;font-family:var(--display);font-size:14px;color:var(--cream-dim)}
+#pvpHud.couch.n3 .pv-score,#pvpHud.couch.n4 .pv-score{top:50%;transform:translate(-50%,-50%);font-size:20px}
+#pvpHud.coop .pv-score{gap:10px}
+#pvpHud.couch.n3 .pv-msg,#pvpHud.couch.n4 .pv-msg{top:62%;right:150px;font-size:clamp(14px,1.7vw,22px)}
 .pv-fx{position:absolute;inset:0}
 .pv-top{position:absolute;top:calc(14px + env(safe-area-inset-top,0px));left:16px;display:grid;grid-template-columns:auto 1fr 32px;align-items:center;gap:8px;width:min(270px,58%);background:var(--panel);padding:7px 10px;border-radius:10px;border-left:4px solid var(--pc);box-sizing:border-box}
 .pv-name{font-family:var(--display);font-size:14px;color:var(--pc);white-space:nowrap}
@@ -208,7 +232,7 @@ body.touch .desk-only{display:none}
 .pv-score{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);display:flex;gap:12px;align-items:baseline;background:var(--panel);padding:6px 18px;border-radius:999px;font-family:var(--display);font-size:24px;white-space:nowrap;z-index:2}
 .pv-score small{font-family:var(--body);font-size:12px;color:var(--cream-dim)}
 #pvpHud.online .pv-score{top:calc(60px + env(safe-area-inset-top,0px))}
-@media (max-width:700px){#pvpHud.couch .pv-top{width:calc(100% - 32px)}.pv-score{font-size:18px;top:auto;bottom:calc(14px + env(safe-area-inset-bottom,0px))}}
+@media (max-width:700px){#pvpHud.couch .pv-top{width:calc(100% - 32px)}.pv-score,#pvpHud.online .pv-score{font-size:18px;top:auto;bottom:calc(14px + env(safe-area-inset-bottom,0px))}#pvpHud.couch.n3 .pv-score,#pvpHud.couch.n4 .pv-score{top:50%;bottom:auto}}
 
 /* solo setup + map pickers */
 #soloScr .placard{max-width:620px}
@@ -236,6 +260,20 @@ body.touch .desk-only{display:none}
 .sel-title .h2{font-size:clamp(28px,5vw,40px)}
 .sel-title p{margin:0;font-size:14px;line-height:1.4;color:var(--cream-dim)}
 .sel-panels{grid-row:3;display:grid;grid-template-columns:repeat(2,minmax(0,360px));justify-content:space-between;gap:16px}
+#selScr.quad .sel-panels{grid-template-columns:repeat(4,minmax(0,1fr));justify-content:stretch}
+#selScr.quad .sel-panel{padding:10px;align-content:start;gap:8px}
+#selScr.quad .sel-panels{align-items:end}
+#selScr.quad .sel-list{grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
+#selScr.quad .sel-ch{padding:5px 1px;font-size:10px}
+#selScr.quad .sel-ch i{width:24px;height:24px}
+#selScr.quad .sel-name{font-size:22px}
+#selScr.quad .sel-head b{font-size:18px}
+@media (max-height:620px){#selScr.quad .sel-ch{font-size:0;gap:0}#selScr.quad .sel-title p{display:none}#selScr.quad .sel-title{padding:8px 16px}#selScr.quad .sel-title .h2{font-size:26px}#selScr.quad .sel-join .qr-code,#selScr.quad .sel-join .qr-code img,#selScr.quad .sel-join .qr-code canvas{width:84px !important;height:84px !important;min-width:84px;min-height:84px}}
+@media (max-width:760px){#selScr.quad .sel-panels{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.sel-join{display:grid;justify-items:center;gap:6px;font-size:13px;color:var(--cream-dim);text-align:center}
+.sel-join .qr-code{min-height:120px;min-width:120px}
+.sel-join .qr-code img,.sel-join .qr-code canvas{width:120px;height:120px}
+.sel-panel.away .sel-list,.sel-panel.away .sel-name{opacity:.35}
 .sel-panel{pointer-events:auto;background:linear-gradient(180deg,var(--bark-hi),var(--bark));border:3px solid #6e4628;border-top:6px solid var(--pc);border-radius:16px;padding:14px;display:grid;gap:10px;box-shadow:0 6px 0 #22140a;min-width:0}
 .sel-head{display:flex;gap:8px;align-items:baseline;font-family:var(--display);color:var(--pc)}
 .sel-head b{font-size:22px;font-weight:400}
@@ -380,15 +418,24 @@ body.pad-mode{background:#1b120b}
       </dl>
       <div class="row">
         <button class="btn" id="playBtn">Solo</button>
+        <button class="btn ghost" id="coopBtn">Co-op</button>
         <button class="btn ghost" id="versusBtn">Versus</button>
         <span class="best" id="bestMenu"></span>
       </div>
     </div>
   </div>
 
+  <div class="screen" id="perkScr" hidden>
+    <div class="placard wide">
+      <h2 class="h2" id="perkTitle">Wave cleared! Pick an upgrade</h2>
+      <p class="lede">Pick an upgrade. It lasts for the rest of this run. Click a card, press 1, 2 or 3, or use a controller.</p>
+      <div class="perk-row" id="perkRow"></div>
+    </div>
+  </div>
   <div class="screen" id="pauseScr" hidden>
     <div class="placard">
       <h2 class="h2">Paused</h2>
+      <p class="perks-held" id="perksHeld" hidden></p>
       <div class="row">
         <button class="btn" id="resumeBtn">Resume</button>
         <button class="btn ghost" id="restartBtn">Restart</button>
@@ -434,6 +481,18 @@ body.pad-mode{background:#1b120b}
     </div>
   </div>
 
+  <div class="screen" id="coScr" hidden>
+    <div class="placard">
+      <h2 class="h2">Co-op</h2>
+      <p class="lede">Team up to defend the stash. The waves of gnomes and crows grow with every player, and the Gnome King still shows up every fifth wave.</p>
+      <div class="choice">
+        <button id="coCouchBtn"><b>Couch · 2 to 4</b><span>Play on this screen (hook it up to the TV). Everyone scans a code with their phone and uses it as a controller.</span></button>
+        <button id="coOnlineBtn"><b>Online · 2</b><span>Team up with someone on another computer. Send them a link or let them scan a code.</span></button>
+      </div>
+      <div class="row"><button class="btn ghost" id="coBack">Back</button></div>
+    </div>
+  </div>
+
   <div class="screen" id="lobbyScr" hidden>
     <div class="placard wide">
       <h2 class="h2" id="lobbyTitle">Versus</h2>
@@ -444,6 +503,7 @@ body.pad-mode{background:#1b120b}
     </div>
   </div>
 
+  <div id="gpNote" role="status" aria-live="polite"></div>
   <div id="selScr" hidden>
     <div class="sel-title">
       <h2 class="h2">Pick your fighter</h2>
@@ -454,12 +514,17 @@ body.pad-mode{background:#1b120b}
     <div class="sel-panels">
       <div class="sel-panel" id="sel0"></div>
       <div class="sel-panel" id="sel1"></div>
+      <div class="sel-panel" id="sel2" hidden></div>
+      <div class="sel-panel" id="sel3" hidden></div>
     </div>
   </div>
 
   <div id="pvpHud" hidden>
     <div class="pv" id="pv0"></div>
     <div class="pv" id="pv1"></div>
+    <div class="pv" id="pv2"></div>
+    <div class="pv" id="pv3"></div>
+    <div class="pv-map" id="pvMap"><canvas id="pvMapCv"></canvas><span>Meadow map</span></div>
     <div class="pv-score" id="pvScore"></div>
     <div class="banner" id="pvBanner"><div class="main" id="pvBannerMain"></div><div class="sub" id="pvBannerSub"></div></div>
   </div>
@@ -479,7 +544,7 @@ body.pad-mode{background:#1b120b}
     <div class="placard">
       <h2 class="h2" id="pvpOverTitle">Red wins</h2>
       <p class="lede" id="pvpOverLede"></p>
-      <dl class="stats">
+      <dl class="stats" id="pvpStats">
         <div><dt id="pvpS0l">Red</dt><dd id="pvpS0">0</dd></div>
         <div><dt id="pvpS1l">Gray</dt><dd id="pvpS1">0</dd></div>
       </dl>
@@ -506,10 +571,12 @@ const $ = (id) => document.getElementById(id);
 // ---------------------------------------------------------------- versus: shared bits + phone controller
 const ART_URL = 'https://claude.ai/artifact/EGiCRX7DBnTHi5LrhiRFy1';
 const HASH = (location.hash || '').replace(/^#/, '');
-const VS_LINK = /^vs-([a-z0-9]{4,10})-(p1|p2|join)$/.exec(HASH);
+const VS_LINK = /^vs-([a-z0-9]{4,10})-(p[1-4]|join)$/.exec(HASH);
 const PALS = [
   { name: 'Red', fur: 0xc8692a, light: 0xe09a55, dark: 0x8a4318, cream: 0xf6e2bf, band: 0xd8342c, css: '#f08a24' },
-  { name: 'Gray', fur: 0x8d9099, light: 0xc9ccd3, dark: 0x555861, cream: 0xeef0f2, band: 0x2f6fd0, css: '#6fb7ff' }
+  { name: 'Gray', fur: 0x8d9099, light: 0xc9ccd3, dark: 0x555861, cream: 0xeef0f2, band: 0x2f6fd0, css: '#6fb7ff' },
+  { name: 'Gold', fur: 0xc99a2e, light: 0xe8c56a, dark: 0x8a6614, cream: 0xfbf0cf, band: 0xe0a81c, css: '#ffd23f' },
+  { name: 'Green', fur: 0x6f9a4a, light: 0xa6cf7e, dark: 0x3f5f2a, cream: 0xeaf3d8, band: 0x2f9e44, css: '#8fd14f' }
 ];
 const CHARS = [
   { id: 'squirrel', name: 'Squirrel', sw: 'linear-gradient(135deg,#c8692a 55%,#f6e2bf 55%)' },
@@ -702,7 +769,7 @@ function leaveRoom(r){
 }
 function peersFor(r, code){ try { return r.peers().filter(p => !p.sameTab && p.presence && p.presence.code === code); } catch (e) { return []; } }
 
-if (VS_LINK && VS_LINK[2] !== 'join') { runController(VS_LINK[1], VS_LINK[2] === 'p1' ? 1 : 2); return; }
+if (VS_LINK && VS_LINK[2] !== 'join') { runController(VS_LINK[1], +VS_LINK[2].slice(1)); return; }
 
 function runController(code, slot){
   const pal = PALS[slot - 1];
@@ -786,19 +853,24 @@ function runController(code, slot){
     // How this phone reaches the TV: straight over the Wi-Fi, or through the server
     const lk = tv.direct === undefined ? '' : tv.direct ? '⚡ Direct to the TV' : '☁ Via the server';
     if ($('padLink').textContent !== lk) { $('padLink').textContent = lk; $('padLink').classList.toggle('on', !!tv.direct); }
-    const ph = tv.presence.phase, hud = Array.isArray(tv.presence.hud) ? tv.presence.hud[slot - 1] : null;
+    const ph = tv.presence.phase, coop = !!tv.presence.coop, hudArr = Array.isArray(tv.presence.hud) ? tv.presence.hud : null;
+    // this phone's line of the TV's report (co-op games only have the players who joined)
+    const hud = hudArr ? (hudArr.find(h => h && h.slot === slot) || (hudArr[slot - 1] && hudArr[slot - 1].slot === undefined ? hudArr[slot - 1] : null)) : null;
     if (ph === 'select' && lastPhase !== 'select') { I.rdy = 0; paintSel(); send(); }
     lastPhase = ph;
     ps.hidden = ph !== 'select';
     if (ph === 'select') {
-      const o = 2 - slot, picks = tv.presence.picks, rd = tv.presence.ready;
-      const on = Array.isArray(picks) && CHARS[picks[o]] ? CHARS[picks[o]].name : '…';
+      const picks = tv.presence.picks, rd = tv.presence.ready, inn = tv.presence.in;
+      const others = Array.isArray(inn) ? inn.map((ok, k) => ok && k !== slot - 1 ? k : -1).filter(k => k >= 0) : [2 - slot];
       ps.querySelector('.pad-map span').textContent = 'Map: ' + String(tv.presence.mapName || '…');
-      ps.querySelector('.pad-other').textContent = 'P' + (o + 1) + ' is ' + (Array.isArray(rd) && rd[o] ? 'ready as the ' + on : 'picking (' + on + ')');
+      ps.querySelector('.pad-other').textContent = others.map(o => {
+        const on = Array.isArray(picks) && CHARS[picks[o]] ? CHARS[picks[o]].name : '…';
+        return 'P' + (o + 1) + (Array.isArray(rd) && rd[o] ? ' ready as the ' + on : ' picking (' + on + ')');
+      }).join(' · ') || 'Waiting for teammates to scan in.';
     }
     if (me.length) stat('Another phone is also using P' + slot + '. Close it, or scan the other code.');
     else if (ph === 'select') stat('Pick your fighter.');
-    else if (ph === 'lobby') stat('You are in. Waiting for the other player to join.');
+    else if (ph === 'lobby') stat(coop ? 'You are in. Waiting for a teammate to scan in.' : 'You are in. Waiting for another player to join.');
     else if (ph === 'countdown') stat('Get ready…');
     else if (ph === 'over') stat('Match over. Check the TV.');
     else stat('Playing. Watch the TV.');
@@ -807,7 +879,8 @@ function runController(code, slot){
       const hp = cl(+hud.hp || 0, 0, 100);
       $('padHp').style.transform = 'scaleX(' + (hp / 100) + ')'; $('padHpN').textContent = hud.dead ? 'KO' : String(Math.ceil(hp));
       $('padAmmo').textContent = String(hud.wn || '') + ' ' + (hud.am === undefined ? '' : hud.am + '/' + (hud.rs === -1 ? '∞' : hud.rs));
-      $('padScore').textContent = (+hud.k || 0) + ' – ' + (+hud.o || 0);
+      const co = tv.presence.co;
+      $('padScore').textContent = coop && co ? 'Wave ' + (+co.w || 1) + ' · ' + (+hud.k || 0) + ((+hud.k || 0) === 1 ? ' bonk' : ' bonks') : hudArr.length > 2 ? 'You ' + (+hud.k || 0) + ' · leader ' + Math.max(+hud.k || 0, +hud.o || 0) : (+hud.k || 0) + ' – ' + (+hud.o || 0);
       if (hp < lastHp) { try { navigator.vibrate && navigator.vibrate(50); } catch (_) {} }
       lastHp = hp;
     }
@@ -1788,21 +1861,119 @@ function buildCrow(){
     state: 'enter', t: 0, ang: rand(0, TAU), rad: rand(7, 10), dir: Math.random() < 0.5 ? 1 : -1, wait: rand(2, 4), flap: rand(0, TAU)
   };
 }
+// ---------- the Mole: tunnels under the meadow straight to the stash, pops up beside it and
+// starts carrying nuts away. It can only be shot once it is up (an explosion reaches it underground).
+const MOG = {
+  body: new THREE.SphereGeometry(0.5, 14, 10), nose: new THREE.SphereGeometry(0.09, 8, 6), eye: new THREE.SphereGeometry(0.035, 6, 4),
+  claw: new THREE.BoxGeometry(0.24, 0.06, 0.2), hat: new THREE.SphereGeometry(0.3, 12, 6, 0, TAU, 0, Math.PI / 2),
+  lamp: new THREE.CylinderGeometry(0.07, 0.07, 0.06, 10), mound: new THREE.SphereGeometry(0.75, 12, 6, 0, TAU, 0, Math.PI / 2)
+};
+function buildMole(){
+  const root = new THREE.Group(), inner = new THREE.Group(); root.add(inner);
+  const mats = { fur: MU(0x4a3a35), nose: MU(0xf29aa8), claw: MU(0xf2c4c0), hat: MU(0xf2c230, { metalness: 0.3, roughness: 0.5 }),
+    lamp: MU(0xfff3b0, { emissive: lin(0xfff0a0), emissiveIntensity: 1 }), dirt: MU(0x6b4a2c) };
+  mk(MOG.body, mats.fur, 0, 0.45, 0, inner).scale.set(1, 0.95, 1.15);
+  mk(MOG.nose, mats.nose, 0, 0.5, -0.6, inner);
+  const eyeMat = M(0x111111);
+  for (const k of [-1, 1]) mk(MOG.eye, eyeMat, 0.14 * k, 0.66, -0.47, inner, false);
+  const claws = [-1, 1].map(k => mk(MOG.claw, mats.claw, 0.36 * k, 0.32, -0.42, inner));
+  mk(MOG.hat, mats.hat, 0, 0.82, -0.05, inner);
+  mk(MOG.lamp, mats.lamp, 0, 0.98, -0.28, inner).rotation.x = Math.PI / 2;
+  const mound = mk(MOG.mound, mats.dirt, 0, 0, 0, root); mound.scale.set(1, 0.45, 1.2);
+  const hb = makeBar(1.5); root.add(hb.bar);
+  const hp = 40 + wave * 2;
+  inner.position.y = -1.1;
+  return {
+    type: 'mole', boss: false, mesh: root, inner, claws, mound, bar: hb.bar, barFg: hb.fg, mats: Object.values(mats), colors: [0x4a3a35, 0xf29aa8, 0x6b4a2c],
+    s: 1, hp, maxHp: hp, pos: root.position, vel: new V3(), kb: new V3(), flash: 0, barT: 0,
+    state: 'dig', up: 0, t: 0, dig: 0, goal: new V3(), speed: 3.2 + Math.min(wave, 12) * 0.08, spawnT: 1
+  };
+}
+// the body an enemy is hit on (gnomes also have a head), and whether it can be hit at all
+function enemyBody(e){
+  if (e.type === 'gnome') return { y: e.pos.y + e.inner.position.y + 0.65 * e.s, r: 0.6 * e.s };
+  if (e.type === 'mole') return { y: e.pos.y + e.inner.position.y + 0.45, r: 0.62 };
+  return { y: e.pos.y, r: 0.9 };
+}
+const enemyUp = (e) => e.type === 'gnome' ? e.spawnT >= 0.6 : e.type === 'mole' ? e.up >= 0.5 : true;
+// how a mole looks, from its state (the online guest calls this for the host's moles too)
+function moleLook(e, dt){
+  e.inner.position.y = (e.up - 1) * 1.1;
+  e.mound.visible = e.up < 0.98;
+  e.mound.scale.set(1 + Math.sin(time * 9) * 0.06, 0.45 * (1 - e.up * 0.6), 1.2);
+  if (e.up < 0.98 && Math.random() < 0.55) emit(e.pos, new V3(rand(-1.5, 1.5), rand(1.5, 3.5), rand(-1.5, 1.5)), pick([0x6b4a2c, 0x8a6a42, 0x5a3b22]), rand(0.06, 0.11), 0.5, -14);
+  e.dig += dt * (e.state === 'steal' ? 10 : 4);
+  e.claws.forEach((c, i) => { c.rotation.x = Math.sin(e.dig + i * Math.PI) * 0.6; });
+}
+function updateMole(e, dt){
+  if (e.state === 'dig') {
+    const dx = e.goal.x - e.pos.x, dz = e.goal.z - e.pos.z, d = Math.hypot(dx, dz);
+    if (d > 0.25) { const st = Math.min(d, e.speed * dt); e.pos.x += dx / d * st; e.pos.z += dz / d * st; e.mesh.rotation.y = Math.atan2(-dx, -dz); }
+    else { e.state = 'rise'; sfx.dig(); }
+  } else if (e.state === 'rise') {
+    e.up = Math.min(1, e.up + dt * 1.4);
+    e.mesh.rotation.y = angLerp(e.mesh.rotation.y, Math.atan2(e.pos.x, e.pos.z), 1 - Math.exp(-8 * dt));
+    if (e.up >= 1) {
+      e.state = 'steal'; e.t = 0.8;
+      if (isCoop()) showPvBanner('A mole is at the stash!', 'Shoot it before it carries the nuts off');
+      else toast('A mole is raiding the stash!');
+    }
+  } else {
+    e.t -= dt;
+    if (e.t <= 0) {
+      e.t = 1.3; damageStash(2, e.pos);
+      // a nut goes flying over its shoulder
+      pvA.set(e.pos.x, 0.7, e.pos.z); emit(pvA, new V3(e.pos.x * 0.5 + rand(-1, 1), rand(4, 6), e.pos.z * 0.5 + rand(-1, 1)), 0xb8732f, 0.12, 0.9, -14);
+    }
+  }
+  moleLook(e, dt);
+}
+
+// ---------- who the gnomes and crows go after
+// Solo: the squirrel. Co-op: every fighter still standing (the stash when nobody is).
+const isCoop = () => !!(pvp && pvp.coop);
+const STASH_FOE = { pos: new V3(0, 0, 0), vel: new V3(), dead: false, stash: true };
+function foeTargets(){ return isCoop() ? pvp.fighters.filter(f => !f.dead) : [player]; }
+function nearestFoe(p){
+  let best = null, bd = Infinity;
+  for (const t of foeTargets()) { const d = Math.hypot(t.pos.x - p.x, t.pos.z - p.z); if (d < bd) { bd = d; best = t; } }
+  return best;
+}
+function hurtFoe(t, d, src){
+  if (!t) return;
+  if (t.stash) damageStash(Math.ceil(d / 4), src);
+  else if (isCoop()) coopHurt(t, d, src);
+  else hurtPlayer(d, src);
+}
+let enemySeq = 0;
 function spawnEnemy(kind){
   let e;
-  if (kind === 'crow') {
+  const nearAny = (x, z) => foeTargets().some(t => Math.hypot(t.pos.x - x, t.pos.z - z) < 14);
+  if (kind === 'mole') {
+    e = buildMole();
+    const a = rand(0, TAU), r = ARENA - 4;
+    e.pos.set(Math.cos(a) * r, 0, Math.sin(a) * r);
+    e.goal.set(Math.cos(a) * 3.1, 0, Math.sin(a) * 3.1);
+    e.mesh.rotation.y = Math.atan2(e.pos.x, e.pos.z);
+  } else if (kind === 'crow') {
     e = buildCrow();
     const a = rand(0, TAU); e.pos.set(Math.cos(a) * (ARENA + 6), rand(14, 18), Math.sin(a) * (ARENA + 6));
-    e.ang = Math.atan2(e.pos.z - player.pos.z, e.pos.x - player.pos.x);
+    e.tgt = nearestFoe(e.pos) || STASH_FOE;
+    e.ang = Math.atan2(e.pos.z - e.tgt.pos.z, e.pos.x - e.tgt.pos.x);
   } else {
     e = buildGnome(kind === 'boss');
     let a = rand(0, TAU); const r = ARENA - 3;
     e.pos.set(Math.cos(a) * r, 0, Math.sin(a) * r);
-    if (e.pos.distanceTo(player.pos) < 14) { a += Math.PI; e.pos.set(Math.cos(a) * r, 0, Math.sin(a) * r); }
+    if (nearAny(e.pos.x, e.pos.z)) { a += Math.PI; e.pos.set(Math.cos(a) * r, 0, Math.sin(a) * r); }
     e.mesh.rotation.y = Math.atan2(e.pos.x, e.pos.z);
     e.inner.position.y = -2;
-    if (e.boss) { showBanner('The Gnome King', 'Jump to dodge his ground slam. Aim for the crown.'); bossBox.hidden = false; sfx.boss(); }
+    if (e.boss) {
+      if (isCoop()) showPvBanner('The Gnome King', 'Jump to dodge his ground slam. Aim for the crown.');
+      else { showBanner('The Gnome King', 'Jump to dodge his ground slam. Aim for the crown.'); bossBox.hidden = false; }
+      sfx.boss();
+    }
   }
+  e.id = ++enemySeq;
   scene.add(e.mesh); enemies.push(e);
 }
 function removeEnemy(e){
@@ -1876,7 +2047,7 @@ function explode(pt, dmg, r){
   burst(pt, 36, [0xffd23f, 0xff8a1e, 0xff5a1e, 0x7a4a24], 10, 0.13, 0.7, -10, 0.6);
   for (let i = 0; i < 12; i++) { tv.set(rand(-2, 2), rand(1, 3), rand(-2, 2)); emit(pt, tv, pick([0x6b6560, 0x8a847c, 0x4d4843]), rand(0.25, 0.45), rand(0.7, 1.1), 1, 2); }
   for (const e of enemies.slice()) {
-    const cy = e.type === 'gnome' ? e.pos.y + 0.6 * e.s : e.pos.y;
+    const cy = e.type === 'gnome' ? e.pos.y + 0.6 * e.s : e.type === 'mole' ? Math.max(0.3, enemyBody(e).y) : e.pos.y;
     tv.set(e.pos.x - pt.x, cy - pt.y, e.pos.z - pt.z);
     const dist = tv.length(); if (dist > r + 0.4 * e.s) continue;
     if (e.type === 'gnome' && e.spawnT < 0.6) continue;
@@ -1893,9 +2064,9 @@ function updateProjs(dt){
     let hit = m.position.y <= 0.12 || p.life <= 0 || Math.hypot(m.position.x, m.position.z) > ARENA + 8;
     if (!hit) for (const c of colliders) { if (m.position.y < c.h && Math.hypot(m.position.x - c.x, m.position.z - c.z) < c.r + 0.1) { hit = true; break; } }
     if (!hit) for (const e of enemies) {
-      const cy = e.type === 'gnome' ? e.pos.y + e.inner.position.y + 0.65 * e.s : e.pos.y;
-      const rr2 = e.type === 'gnome' ? 0.6 * e.s : 0.9;
-      if (Math.hypot(m.position.x - e.pos.x, m.position.y - cy, m.position.z - e.pos.z) < rr2) { hit = true; break; }
+      if (!enemyUp(e)) continue;
+      const b = enemyBody(e);
+      if (Math.hypot(m.position.x - e.pos.x, m.position.y - b.y, m.position.z - e.pos.z) < b.r) { hit = true; break; }
     }
     if (hit) { if (m.position.y < 0.12) m.position.y = 0.12; explode(m.position.clone(), p.dmg, p.r); scene.remove(m); projs.splice(i, 1); }
   }
@@ -1952,6 +2123,7 @@ const sfx = {
   wave(){ [523, 659, 784, 1046].forEach((f, i) => tone(f, 0.26, { type: 'triangle', vol: 0.1, delay: i * 0.11 })); },
   clear(){ [784, 988, 1175, 1568].forEach((f, i) => tone(f, 0.3, { type: 'triangle', vol: 0.1, delay: i * 0.09 })); },
   stash(){ const n = performance.now(); if (n - lastStashSfx < 280) return; lastStashSfx = n; tone(240, 0.14, { type: 'square', vol: 0.06, slide: 130 }); },
+  dig(){ noise(0.35, { vol: 0.35, freq: 500, type: 'lowpass' }); tone(140, 0.25, { type: 'triangle', vol: 0.12, slide: 260 }); },
   slam(){ noise(0.5, { vol: 0.6, freq: 160, type: 'lowpass' }); tone(90, 0.45, { type: 'sine', vol: 0.4, slide: 40 }); },
   caw(){ tone(760, 0.16, { type: 'sawtooth', vol: 0.06, slide: 480 }); tone(700, 0.14, { type: 'sawtooth', vol: 0.05, slide: 430, delay: 0.17 }); },
   boss(){ [196, 185, 175, 131].forEach((f, i) => tone(f, 0.35, { type: 'sawtooth', vol: 0.08, delay: i * 0.18 })); },
@@ -2009,12 +2181,12 @@ function updateFloats(dt){
   for (let i = floats.length - 1; i >= 0; i--) {
     const f = floats[i]; f.life -= dt; f.pos.y += dt * 1.3; f.pos.x += f.vx * dt;
     if (f.life <= 0) { f.el.remove(); floats.splice(i, 1); continue; }
-    const v = f.view, w = v ? W * v.rw : W;
+    const v = f.view, w = v ? W * v.rw : W, hh = v ? h * (v.rh || 1) : h;
     proj.copy(f.pos).project(v ? v.cam : camera);
     if (proj.z > 1) { f.el.style.opacity = 0; continue; }
     const k = f.life / f.max, sc = k > 0.8 ? 1 + (k - 0.8) * 3 : 1;
     f.el.style.opacity = Math.min(1, k * 2.5);
-    f.el.style.transform = 'translate(' + ((proj.x * 0.5 + 0.5) * w).toFixed(1) + 'px,' + ((-proj.y * 0.5 + 0.5) * h).toFixed(1) + 'px) translate(-50%,-50%) scale(' + sc.toFixed(2) + ')';
+    f.el.style.transform = 'translate(' + ((proj.x * 0.5 + 0.5) * w).toFixed(1) + 'px,' + ((-proj.y * 0.5 + 0.5) * hh).toFixed(1) + 'px) translate(-50%,-50%) scale(' + sc.toFixed(2) + ')';
   }
 }
 
@@ -2023,34 +2195,101 @@ function updateStashPile(){
   stashAcorns.forEach((a, i) => { a.visible = i < n; });
 }
 
+// ---------------------------------------------------------------- upgrades (solo)
+// After each cleared wave the player picks one of three; they last for the run.
+const PERKS = [
+  { id: 'fur', name: 'Thick Fur', max: 3, text: (l) => '+25 max health (' + (100 + 25 * (l + 1)) + ' total), and you heal up.' },
+  { id: 'paws', name: 'Quick Paws', max: 3, text: () => 'Run 12% faster.' },
+  { id: 'acorn', name: 'Hard Acorns', max: 4, text: () => 'Every weapon does 15% more damage.' },
+  { id: 'hands', name: 'Fast Hands', max: 2, text: () => 'Reload 25% faster.' },
+  { id: 'walls', name: 'Stash Walls', max: 2, text: () => 'Repair the stash by 40, and raiders steal 25% less.' },
+  { id: 'lucky', name: 'Lucky Charm', max: 2, text: () => 'Power-ups last 50% longer.' },
+  { id: 'snack', name: 'Nut Snack', max: 2, text: () => 'Heal 4 health for every enemy you bonk.' },
+  { id: 'spring', name: 'Spring Tail', max: 1, text: () => 'One more jump in the air.' },
+  { id: 'show', name: 'Show-off', max: 2, text: () => '25% more points for everything.' }
+];
+const perk = {};
+const perkLv = (id) => perk[id] | 0;
+const maxHp = () => 100 + 25 * perkLv('fur');
+let perkChoices = [];
+function openPerks(){
+  const open = PERKS.filter(P => perkLv(P.id) < P.max);
+  if (!open.length) return false;
+  perkChoices = open.slice().sort(() => Math.random() - 0.5).slice(0, 3);
+  state = 'perk'; firing = false; for (const k in keys) delete keys[k];
+  document.body.classList.remove('playing'); showTouch(false);
+  if (document.pointerLockElement) document.exitPointerLock();
+  $('perkTitle').textContent = 'Wave ' + wave + ' cleared!';
+  const row = $('perkRow'); row.innerHTML = '';
+  perkChoices.forEach((P, i) => {
+    const b = document.createElement('button'); b.className = 'perk';
+    const l = perkLv(P.id);
+    b.innerHTML = '<kbd></kbd><b></b><span></span><span class="lv"></span>';
+    b.querySelector('kbd').textContent = String(i + 1); b.querySelector('b').textContent = P.name; b.querySelector('span').textContent = P.text(l);
+    b.querySelector('.lv').innerHTML = Array.from({ length: P.max }, (_, k) => '<i class="' + (k < l ? 'on' : '') + '"></i>').join('');
+    b.addEventListener('click', () => takePerk(i));
+    row.appendChild(b);
+  });
+  $('perkScr').hidden = false; sfx.clear();
+  row.firstChild.focus({ preventScroll: true });
+  return true;
+}
+function takePerk(i){
+  const P = perkChoices[i]; if (state !== 'perk' || !P) return;
+  perk[P.id] = perkLv(P.id) + 1;
+  if (P.id === 'fur') player.hp = maxHp();
+  if (P.id === 'walls') { stash = Math.min(100, stash + 40); updateStashPile(); }
+  $('perkScr').hidden = true;
+  initAudio(); sfx.pickup(true);
+  state = 'playing'; document.body.classList.add('playing'); showTouch(true); lockPointer(); clock.getDelta();
+  toast(P.name + (P.max > 1 ? ' ' + perk[P.id] : '') + '!');
+}
+function perkSummary(){ return PERKS.filter(P => perkLv(P.id)).map(P => P.name + (P.max > 1 ? ' ' + perkLv(P.id) : '')).join(', '); }
+
 // ---------------------------------------------------------------- waves
 function startWave(n){
   wave = n; waveState = 'intro'; waveTimer = 2.6; queue = [];
-  const g = 3 + n * 2, c = n >= 2 ? Math.floor(n / 2) + (n >= 6 ? 1 : 0) : 0;
+  const co = isCoop(), crew = co ? pvp.fighters.length : 1, more = 1 + 0.5 * (crew - 1);
+  const g = Math.round((3 + n * 2) * more), c = n >= 2 ? Math.round((Math.floor(n / 2) + (n >= 6 ? 1 : 0)) * more) : 0;
   for (let i = 0; i < g; i++) queue.push('gnome');
   for (let i = 0; i < c; i++) queue.splice(Math.floor(rand(2, queue.length + 1)), 0, 'crow');
+  // moles from wave 3: one, then another every other wave
+  const ml = n >= 3 ? Math.round(Math.min(4, Math.floor((n - 1) / 2)) * more) : 0;
+  for (let i = 0; i < ml; i++) queue.splice(Math.floor(rand(1, queue.length + 1)), 0, 'mole');
   const isBoss = n % 5 === 0;
   if (isBoss) queue.push('boss');
-  showBanner('Wave ' + n, isBoss ? 'Something big is coming' : c ? g + ' gnomes and ' + c + ' crows' : g + ' gnomes incoming');
+  (co ? showPvBanner : showBanner)('Wave ' + n, isBoss ? 'Something big is coming' : (c ? g + ' gnomes and ' + c + ' crows' : g + ' gnomes incoming') + (ml ? (ml === 1 ? ', and a mole' : ', and ' + ml + ' moles') : ''));
   sfx.wave();
+  if (co) {
+    // a crate per player from wave 2, so everyone can find a new weapon
+    if (n >= 2) for (let i = 0; i < Math.ceil(crew / 2); i++) pvpSpawnRandom('crate');
+    if (n >= 3 && n % 2 === 1) pvpSpawnRandom('power');
+    return;
+  }
   if (n >= 2) { dropFromSky('crate'); setTimeout(() => { if (state === 'playing') toast('Supply crate dropped. Follow the gold beam'); }, 1400); }
   if (n >= 3 && n % 2 === 1) dropFromSky('power');
 }
+let perkOffered = 0;
 function updateWave(dt){
   if (waveState === 'intro') { waveTimer -= dt; if (waveTimer <= 0) { waveState = 'fight'; spawnT = 0; } }
   else if (waveState === 'fight') {
     spawnT -= dt;
-    if (queue.length && spawnT <= 0 && enemies.length < 14 + wave) {
+    if (queue.length && spawnT <= 0 && enemies.length < 14 + wave + (isCoop() ? 5 * (pvp.fighters.length - 1) : 0)) {
       const k = queue[0];
       if (k !== 'boss' || enemies.length < 4) { queue.shift(); spawnEnemy(k); spawnT = Math.max(0.35, 1.15 - wave * 0.06); }
     }
     if (!queue.length && !enemies.length) {
       waveState = 'clear'; waveTimer = 3.2;
       const bonus = 250 * wave; score += bonus; stash = Math.min(100, stash + 10); updateStashPile();
-      showBanner('Wave cleared', '+' + fmt(bonus) + ' points, stash restocked'); sfx.clear();
+      (isCoop() ? showPvBanner : showBanner)('Wave cleared', '+' + fmt(bonus) + ' points, stash restocked'); sfx.clear();
       bossBox.hidden = true;
     }
-  } else if (waveState === 'clear') { waveTimer -= dt; if (waveTimer <= 0) startWave(wave + 1); }
+  } else if (waveState === 'clear') {
+    waveTimer -= dt;
+    // solo: the upgrade pick, once the "wave cleared" banner has had a moment
+    if (!isCoop() && waveTimer <= 1.4 && perkOffered !== wave) { perkOffered = wave; if (openPerks()) return; }
+    if (waveTimer <= 0) startWave(wave + 1);
+  }
 }
 
 // ---------------------------------------------------------------- combat
@@ -2069,7 +2308,7 @@ const aim = new V3(), camRight = new V3(), camUp = new V3(), shotDir = new V3(),
 function startReload(){
   const w = WEAPONS[cur], s = inv[cur];
   if (gun.reload > 0 || gun.switchT > 0 || s.ammo >= w.mag || s.reserve <= 0) return;
-  gun.reloadTotal = w.reload * (pw.rapid > 0 ? 0.5 : 1); gun.reload = gun.reloadTotal; sfx.reload();
+  gun.reloadTotal = w.reload * (pw.rapid > 0 ? 0.5 : 1) * Math.pow(0.75, perkLv('hands')); gun.reload = gun.reloadTotal; sfx.reload();
 }
 function finishReload(){
   const w = WEAPONS[cur], s = inv[cur], take = Math.min(w.mag - s.ammo, s.reserve);
@@ -2101,6 +2340,13 @@ function castRay(dir){
       if (t < r.t) { r.t = t; r.kind = 'enemy'; r.e = e; r.head = true; }
       t = raySphere(o, dir, e.pos.x, y0 + 0.58 * s, e.pos.z, 0.5 * s);
       if (t < r.t) { r.t = t; r.kind = 'enemy'; r.e = e; r.head = false; }
+    } else if (e.type === 'mole') {
+      if (e.up < 0.5) continue;
+      const y0 = e.pos.y + e.inner.position.y;
+      let t = raySphere(o, dir, e.pos.x, y0 + 0.86, e.pos.z, 0.28);
+      if (t < r.t) { r.t = t; r.kind = 'enemy'; r.e = e; r.head = true; }
+      t = raySphere(o, dir, e.pos.x, y0 + 0.45, e.pos.z, 0.55);
+      if (t < r.t) { r.t = t; r.kind = 'enemy'; r.e = e; r.head = false; }
     } else {
       const t = raySphere(o, dir, e.pos.x, e.pos.y, e.pos.z, 0.75);
       if (t < r.t) { r.t = t; r.kind = 'enemy'; r.e = e; r.head = false; }
@@ -2128,7 +2374,7 @@ function tryShoot(){
   }
   if (w.spin && gun.spin < 1) return;
   s.ammo--; gun.cd = w.rate * (pw.rapid > 0 ? 0.5 : 1); gun.recoil = w.kick;
-  const mul = pw.dmg > 0 ? 2 : 1;
+  const mul = (pw.dmg > 0 ? 2 : 1) * (1 + 0.15 * perkLv('acorn'));
   const moving = Math.hypot(player.vel.x, player.vel.z) > 1.2;
   const spread = w.spread + gun.bloom + (w.pellets > 1 ? 0 : (moving ? 0.01 : 0) + (player.onGround ? 0 : 0.018));
   gun.bloom = Math.min(gun.bloom + w.bloom, w.maxBloom);
@@ -2161,17 +2407,18 @@ function tryShoot(){
   if (w.id === 'shotgun' || w.id === 'launcher') { pitch = clamp(pitch + (w.id === 'shotgun' ? 0.035 : 0.02), PMIN, PMAX); }
   if (s.ammo === 0 && s.reserve > 0) startReload();
 }
-function hurtEnemy(e, dmg, head, point, dir, kbMul){
+// shooter: the co-op fighter who fired (their view gets the numbers and hit marker)
+function hurtEnemy(e, dmg, head, point, dir, kbMul, shooter){
   e.hp -= dmg; e.flash = 1; e.barT = 2.5;
-  if (!e.boss) e.kb.set(dir.x, 0, dir.z).normalize().multiplyScalar((e.type === 'crow' ? 2 : 3.2) * (kbMul || 1));
-  floatText(point, String(dmg), head ? 'crit' : '');
+  if (!e.boss && e.type !== 'mole') e.kb.set(dir.x, 0, dir.z).normalize().multiplyScalar((e.type === 'crow' ? 2 : 3.2) * (kbMul || 1));
   burst(point, head ? 10 : 6, e.colors, 4, 0.06, 0.55, -14, 0.5);
   sfx.hit(head);
-  cross.classList.remove('hit', 'kill'); void cross.offsetWidth; cross.classList.add('hit'); hitT = 0.12;
-  if (e.hp <= 0) killEnemy(e, head, dir);
+  if (isCoop()) { const v = shooter && viewOf(shooter); if (v) floatText(point, String(Math.round(dmg)), head ? 'crit' : '', v); if (shooter) shooter.hitT = 0.12; }
+  else { floatText(point, String(dmg), head ? 'crit' : ''); cross.classList.remove('hit', 'kill'); void cross.offsetWidth; cross.classList.add('hit'); hitT = 0.12; }
+  if (e.hp <= 0) killEnemy(e, head, dir, shooter);
 }
-function killEnemy(e, head, dir){
-  const p = e.pos.clone(); p.y += e.type === 'crow' ? 0 : 0.8 * e.s;
+function killEnemy(e, head, dir, shooter){
+  const p = e.pos.clone(); p.y += e.type === 'crow' ? 0 : e.type === 'mole' ? 0.5 : 0.8 * e.s;
   const n = e.boss ? 90 : 26;
   burst(p, n, e.colors, e.boss ? 9 : 6, e.boss ? 0.14 : 0.08, e.boss ? 1.4 : 0.9, -14, 0.8);
   for (let i = 0; i < (e.boss ? 20 : 7); i++) { tv.set(rand(-1, 1), rand(0.5, 1.6), rand(-1, 1)); emit(p, tv, 0xfff6e6, rand(0.2, 0.38) * (e.boss ? 2 : 1), rand(0.4, 0.7), 1.5, 3); }
@@ -2179,27 +2426,38 @@ function killEnemy(e, head, dir){
     scene.attach(e.hat);
     props.push({ obj: e.hat, mat: e.hatMat, vel: new V3(dir.x * 4 + rand(-1, 1), rand(6, 8), dir.z * 4 + rand(-1, 1)), spin: new V3(rand(-9, 9), rand(-9, 9), rand(-9, 9)), life: 2.4, ground: e.boss ? 0.4 : 0.25 });
   }
-  let base = e.boss ? 2000 : e.type === 'crow' ? 150 : 100; if (head) base += 50;
+  let base = e.boss ? 2000 : e.type === 'crow' ? 150 : e.type === 'mole' ? 200 : 100; if (head) base += 50;
   combo = comboT > 0 ? combo + 1 : 1; comboT = 3;
-  const mult = Math.min(1 + Math.floor(combo / 3), 5), pts = base * mult;
+  const co = isCoop();
+  const mult = Math.min(1 + Math.floor(combo / 3), 5), pts = Math.round(base * mult * (co ? 1 : 1 + 0.25 * perkLv('show')));
   score += pts; kills++;
-  floatText(p.clone().add(new V3(0, 0.6, 0)), '+' + fmt(pts), 'pts');
-  if (head) floatText(p.clone().add(new V3(0, 1.1, 0)), 'HEADSHOT', 'tag');
-  if (combo >= 3) { els.combo.classList.remove('pop'); void els.combo.offsetWidth; els.combo.classList.add('pop'); }
+  if (!co && perkLv('snack') && player.hp < maxHp()) { const h = Math.min(maxHp() - player.hp, 4 * perkLv('snack')); player.hp += h; }
+  const v = co && shooter ? viewOf(shooter) : null;
+  if (!co || v) {
+    floatText(p.clone().add(new V3(0, 0.6, 0)), '+' + fmt(pts), 'pts', v || undefined);
+    if (head) floatText(p.clone().add(new V3(0, 1.1, 0)), 'HEADSHOT', 'tag', v || undefined);
+  }
+  if (co) {
+    if (shooter) { shooter.kills = (shooter.kills || 0) + 1; shooter.killT = 0.25; }
+    if (pvp.mode === 'online') pushEv({ k: 'ekill', id: e.id, h: head ? 1 : 0, by: shooter ? shooter.idx : -1, p: pts });
+  } else if (combo >= 3) { els.combo.classList.remove('pop'); void els.combo.offsetWidth; els.combo.classList.add('pop'); }
+  // drops: solo pickups, or the shared co-op pickups everyone can grab
+  const drop = (kind) => co ? coopDrop(p, kind) : dropPickup(p, kind);
   if (e.boss) {
-    for (let i = 0; i < 8; i++) dropPickup(p, i < 3 ? 'golden' : 'acorn');
-    dropPickup(p, 'crate'); dropPickup(p, 'power'); dropPickup(p, 'power');
-    bossBox.hidden = true; addShake(0.9); showBanner('King bonked!', '+' + fmt(pts) + ' points');
+    for (let i = 0; i < 8; i++) drop(i < 3 ? 'golden' : 'acorn');
+    drop('crate'); drop('power'); drop('power');
+    if (co) showPvBanner('King bonked!', '+' + fmt(pts) + ' points' + (shooter ? ' for ' + shooter.tag : ''));
+    else { bossBox.hidden = true; addShake(0.9); showBanner('King bonked!', '+' + fmt(pts) + ' points'); }
   } else {
-    const r = Math.random(), crate = e.type === 'crow' ? 0.08 : 0.04;
-    if (r < crate) dropPickup(p, 'crate');
-    else if (r < crate + 0.07) dropPickup(p, 'power');
-    else if (r < crate + 0.17) dropPickup(p, 'golden');
-    else if (r < crate + 0.62) dropPickup(p, 'acorn');
-    addShake(0.12);
+    const r = Math.random(), crate = e.type === 'crow' ? 0.08 : e.type === 'mole' ? 0.1 : 0.04;
+    if (r < crate) drop('crate');
+    else if (r < crate + 0.07) drop('power');
+    else if (r < crate + 0.17) drop('golden');
+    else if (r < crate + 0.62) drop('acorn');
+    if (!co) addShake(0.12);
   }
   sfx.kill();
-  cross.classList.remove('hit'); cross.classList.add('kill'); killT = 0.25;
+  if (!co) { cross.classList.remove('hit'); cross.classList.add('kill'); killT = 0.25; }
   removeEnemy(e);
 }
 function hurtPlayer(d, src){
@@ -2215,17 +2473,21 @@ function hurtPlayer(d, src){
   if (player.hp <= 0) { player.hp = 0; gameOver('knocked'); }
 }
 function damageStash(d, from){
+  if (!isCoop()) d *= 1 - 0.25 * perkLv('walls');
   stash -= d; sfx.stash(); flashMeter(els.stashMeter);
   if (from) { tv.set(from.x, 0.6, from.z).multiplyScalar(0.8); for (let i = 0; i < 3; i++) emit(tv, new V3(from.x * 0.5 + rand(-2, 2), rand(3, 5), from.z * 0.5 + rand(-2, 2)), 0xb8732f, 0.1, 0.8, -14); }
   updateStashPile();
-  if (stash <= 0) { stash = 0; gameOver('stash'); }
+  if (stash <= 0) { stash = 0; if (isCoop()) coopOver('stash'); else gameOver('stash'); }
 }
 function addShake(v){ if (!reduceMotion) shake = Math.min(1.2, shake + v); }
 function slam(e){
-  sfx.slam(); addShake(0.7);
+  sfx.slam();
   for (let i = 0; i < 46; i++) { const a = i / 46 * TAU; tv.set(Math.cos(a) * 9, rand(1, 3), Math.sin(a) * 9); emit(new V3(e.pos.x, 0.2, e.pos.z), tv, pick([0x9b7148, 0x6aa83b, 0x7a5a36]), rand(0.08, 0.16), 0.6, -10, 2); }
-  const d = Math.hypot(e.pos.x - player.pos.x, e.pos.z - player.pos.z);
-  if (d < 5.2 && player.pos.y < 0.6) { hurtPlayer(18, e.pos); player.vel.y = 6; player.onGround = false; }
+  for (const t of foeTargets()) {
+    const d = Math.hypot(e.pos.x - t.pos.x, e.pos.z - t.pos.z);
+    if (isCoop()) t.shake = Math.min(1.2, (t.shake || 0) + clamp(0.9 - d * 0.04, 0.15, 0.7)); else addShake(0.7);
+    if (d < 5.2 && t.pos.y < 0.6) { hurtFoe(t, 18, e.pos); t.vel.y = 6; t.onGround = false; }
+  }
 }
 
 // ---------------------------------------------------------------- collisions
@@ -2247,10 +2509,11 @@ function updatePlayer(dt){
   if (keys.KeyA || keys.ArrowLeft) ix -= 1;
   if (keys.KeyD || keys.ArrowRight) ix += 1;
   if (joy.active) { ix += joy.x; iz -= joy.y; }
+  ix += GP.solo.x; iz += GP.solo.y;
   const il = Math.hypot(ix, iz); if (il > 1) { ix /= il; iz /= il; }
-  const sprint = ((keys.ShiftLeft || keys.ShiftRight) || (joy.active && il > 0.95)) && iz > 0.3;
+  const sprint = ((keys.ShiftLeft || keys.ShiftRight) || GP.solo.sprint || (joy.active && il > 0.95)) && iz > 0.3;
   const sy = Math.sin(yaw), cy = Math.cos(yaw);
-  const spd = (sprint ? 10.5 : 7) * (pw.speed > 0 ? 1.45 : 1) * (WEAPONS[cur].spin && firing ? 0.7 : 1);
+  const spd = (sprint ? 10.5 : 7) * (pw.speed > 0 ? 1.45 : 1) * (1 + 0.12 * perkLv('paws')) * (WEAPONS[cur].spin && firing ? 0.7 : 1);
   const wx = (-sy * iz + cy * ix) * spd, wz = (-cy * iz - sy * ix) * spd;
   const acc = player.onGround ? 14 : 5;
   player.vel.x = damp(player.vel.x, wx, acc, dt); player.vel.z = damp(player.vel.z, wz, acc, dt);
@@ -2258,7 +2521,7 @@ function updatePlayer(dt){
   if (jumpQueued) {
     jumpQueued = false;
     if (player.onGround) { player.vel.y = 9.2; player.onGround = false; player.jumps = 1; sfx.jump(); burst(player.pos, 6, [0x9b7148, 0xc8b08a], 2, 0.07, 0.4, -6, 0.2); }
-    else if (player.jumps < (pw.speed > 0 ? 3 : 2)) { player.vel.y = 8.4; player.jumps++; sfx.jump(); tv.copy(player.pos); tv.y += 0.3; burst(tv, 8, 0xfff6e6, 2.5, 0.08, 0.35, 0, 0); }
+    else if (player.jumps < (pw.speed > 0 ? 3 : 2) + perkLv('spring')) { player.vel.y = 8.4; player.jumps++; sfx.jump(); tv.copy(player.pos); tv.y += 0.3; burst(tv, 8, 0xfff6e6, 2.5, 0.08, 0.35, 0, 0); }
   }
   player.pos.addScaledVector(player.vel, dt);
   if (player.pos.y <= 0) {
@@ -2337,10 +2600,10 @@ function updateCamera(dt, sprint){
 }
 
 // ---------------------------------------------------------------- update: enemies
-function billboardBar(e){
+function billboardBar(e, cam = camera){
   if (e.barT > 0 && !e.boss) {
     e.bar.visible = true;
-    e.bar.quaternion.copy(e.mesh.quaternion).invert().multiply(camera.quaternion);
+    e.bar.quaternion.copy(e.mesh.quaternion).invert().multiply(cam.quaternion);
     const k = clamp(e.hp / e.maxHp, 0, 1); e.barFg.scale.x = Math.max(0.001, k);
     e.barFg.material.color.setHex(k > 0.5 ? 0x8fd14f : k > 0.25 ? 0xffd23f : 0xff5a4e);
   } else e.bar.visible = false;
@@ -2359,9 +2622,10 @@ function updateGnome(e, dt){
     if (Math.random() < 0.6) emit(e.pos, new V3(rand(-2, 2), rand(2, 5), rand(-2, 2)), pick([0x7a5a36, 0x9b7148]), rand(0.06, 0.12) * e.s, 0.6, -14);
     return;
   }
-  const toP = Math.hypot(player.pos.x - e.pos.x, player.pos.z - e.pos.z);
+  const T = nearestFoe(e.pos);
+  const toP = T ? Math.hypot(T.pos.x - e.pos.x, T.pos.z - e.pos.z) : Infinity;
   let tx, tz, reach, onPlayer;
-  if (e.boss || toP < 7.5) { tx = player.pos.x; tz = player.pos.z; reach = 0.95 + 0.42 * e.s; onPlayer = true; }
+  if (T && (e.boss || toP < 7.5)) { tx = T.pos.x; tz = T.pos.z; reach = 0.95 + 0.42 * e.s; onPlayer = true; }
   else { tx = 0; tz = 0; reach = 2.25 + 0.42 * e.s + 0.35; onPlayer = false; }
   const dx = tx - e.pos.x, dz = tz - e.pos.z, d = Math.hypot(dx, dz) || 1;
   let mx = 0, mz = 0;
@@ -2386,7 +2650,7 @@ function updateGnome(e, dt){
   if (e.hitPending > 0) {
     e.hitPending -= dt;
     if (e.hitPending <= 0) {
-      if (onPlayer) { if (Math.hypot(player.pos.x - e.pos.x, player.pos.z - e.pos.z) < reach + 0.7 && player.pos.y < 1.4 * e.s) hurtPlayer(e.boss ? 22 : 9, e.pos); }
+      if (onPlayer) { if (T && !T.dead && Math.hypot(T.pos.x - e.pos.x, T.pos.z - e.pos.z) < reach + 0.7 && T.pos.y < 1.4 * e.s) hurtFoe(T, e.boss ? 22 : 9, e.pos); }
       else damageStash(e.boss ? 10 : 3, e.pos);
     }
   }
@@ -2404,10 +2668,12 @@ function updateGnome(e, dt){
 const pc = new V3();
 function updateCrow(e, dt){
   e.t += dt; e.flap += dt * (e.state === 'dive' ? 5 : 15);
-  pc.set(player.pos.x, player.pos.y + 0.9, player.pos.z);
+  if (!e.tgt || e.tgt.dead || (isCoop() && e.tgt !== STASH_FOE && !pvp.fighters.includes(e.tgt))) e.tgt = nearestFoe(e.pos) || STASH_FOE;
+  const T = e.tgt;
+  pc.set(T.pos.x, T.pos.y + (T.stash ? 1.2 : 0.9), T.pos.z);
   if (e.state === 'enter' || e.state === 'circle') {
     e.ang += dt * 0.9 * e.dir;
-    const tx = player.pos.x + Math.cos(e.ang) * e.rad, tz = player.pos.z + Math.sin(e.ang) * e.rad, ty = 6.5 + Math.sin(e.t * 1.7) * 0.8;
+    const tx = T.pos.x + Math.cos(e.ang) * e.rad, tz = T.pos.z + Math.sin(e.ang) * e.rad, ty = 6.5 + Math.sin(e.t * 1.7) * 0.8;
     tv.set(tx - e.pos.x, ty - e.pos.y, tz - e.pos.z);
     const d = tv.length(), spd = e.state === 'enter' ? 13 : 10;
     if (d > 0.01) tv.multiplyScalar(Math.min(spd, d * 2.5) / d);
@@ -2419,11 +2685,11 @@ function updateCrow(e, dt){
   } else if (e.state === 'dive') {
     tv.copy(pc).sub(e.pos).normalize().multiplyScalar(e.vel.length());
     e.vel.lerp(tv, 1 - Math.exp(-0.9 * dt));
-    if (e.pos.distanceTo(pc) < 1.1) { hurtPlayer(12, e.pos); e.state = 'climb'; e.t = 0; }
+    if (e.pos.distanceTo(pc) < (T.stash ? 1.8 : 1.1)) { hurtFoe(T, 12, e.pos); e.state = 'climb'; e.t = 0; }
     else if (e.pos.y < 0.6 || e.t > 2.2) { e.state = 'climb'; e.t = 0; }
   } else {
     e.vel.y = damp(e.vel.y, 9, 4, dt); e.vel.x = damp(e.vel.x, 0, 1.5, dt); e.vel.z = damp(e.vel.z, 0, 1.5, dt);
-    if (e.t > 1.3) { e.state = 'circle'; e.t = 0; e.wait = rand(2.2, 4.5); e.ang = Math.atan2(e.pos.z - player.pos.z, e.pos.x - player.pos.x); }
+    if (e.t > 1.3) { e.tgt = nearestFoe(e.pos) || STASH_FOE; e.state = 'circle'; e.t = 0; e.wait = rand(2.2, 4.5); e.ang = Math.atan2(e.pos.z - e.tgt.pos.z, e.pos.x - e.tgt.pos.x); }
   }
   e.kb.multiplyScalar(Math.exp(-5 * dt));
   e.pos.addScaledVector(e.vel, dt).addScaledVector(e.kb, dt);
@@ -2467,10 +2733,10 @@ function updatePickups(dt){
 }
 function collect(k){
   const p = k.obj.position.clone();
-  if (k.kind === 'golden') { player.hp = Math.min(100, player.hp + 25); floatText(p, '+25 HP', 'heal'); sfx.pickup(true); }
+  if (k.kind === 'golden') { player.hp = Math.min(maxHp(), player.hp + 25); floatText(p, '+25 HP', 'heal'); sfx.pickup(true); }
   else if (k.kind === 'acorn') { stash = Math.min(100, stash + 2); score += 25; updateStashPile(); floatText(p, '+2 stash', 'pts'); sfx.pickup(false); }
   else if (k.kind === 'power') {
-    const P = POWERS[k.power]; pw[k.power] = P.dur;
+    const P = POWERS[k.power]; pw[k.power] = P.dur * (1 + 0.5 * perkLv('lucky'));
     toast(P.name + '!'); floatText(p, P.name.toUpperCase(), 'tag'); sfx.power();
     burst(p, 24, [P.color, 0xffffff], 5, 0.07, 0.6, -2, 0.3);
     return;
@@ -2533,7 +2799,7 @@ function updateAmbient(dt){
 
 // ---------------------------------------------------------------- HUD
 function updateHUD(dt){
-  setScaleX('hpFill', clamp(player.hp / 100, 0, 1)); setText('hpNum', String(Math.ceil(player.hp)));
+  setScaleX('hpFill', clamp(player.hp / maxHp(), 0, 1)); setText('hpNum', String(Math.ceil(player.hp)));
   setClass(els.hpMeter, 'low', player.hp <= 30);
   setScaleX('stashFill', clamp(stash / 100, 0, 1)); setText('stashNum', String(Math.ceil(stash)));
   setClass(els.stashMeter, 'low', stash <= 30);
@@ -2554,7 +2820,7 @@ function updateHUD(dt){
   for (const k in pw) {
     const pe = powerEls[k], on = pw[k] > 0;
     if (pe.box.hidden === on) pe.box.hidden = !on;
-    if (on) { pe.time.textContent = Math.ceil(pw[k]) + 's'; pe.fill.style.transform = 'scaleX(' + (pw[k] / POWERS[k].dur).toFixed(3) + ')'; setClass(pe.box, 'ending', pw[k] < 2); }
+    if (on) { pe.time.textContent = Math.ceil(pw[k]) + 's'; pe.fill.style.transform = 'scaleX(' + Math.min(1, pw[k] / POWERS[k].dur).toFixed(3) + ')'; setClass(pe.box, 'ending', pw[k] < 2); }
   }
   $('shieldTint').style.opacity = pw.shield > 0 ? (fpsOn ? 1 : 0.55) : 0;
   const moving = Math.hypot(player.vel.x, player.vel.z) > 1.2;
@@ -2585,6 +2851,7 @@ function resetGame(){
   cur = 1; switchWeapon(0); gun.switchT = 0; gun.cd = 0;
   gun.reload = 0; gun.bloom = 0; gun.spin = 0; gun.recoil = 0;
   for (const k in pw) pw[k] = 0;
+  for (const k in perk) delete perk[k]; perkOffered = 0;
   score = 0; combo = 0; comboT = 0; kills = 0; stash = 100; shake = 0; dmgFlash = 0;
   bossBox.hidden = true; updateStashPile();
 }
@@ -2605,6 +2872,7 @@ function pause(){
   state = 'paused'; firing = false; for (const k in keys) delete keys[k];
   document.body.classList.remove('playing');
   $('pauseScr').hidden = false; showTouch(false);
+  const ph = perkSummary(); $('perksHeld').hidden = !ph; $('perksHeld').textContent = 'Upgrades: ' + ph;
   if (document.pointerLockElement) document.exitPointerLock();
   $('resumeBtn').focus({ preventScroll: true });
 }
@@ -2662,6 +2930,7 @@ window.addEventListener('keydown', (e) => {
     keys[e.code] = true;
     return;
   }
+  if (state === 'perk') { const n = /^(?:Digit|Numpad)([1-3])$/.exec(e.code); if (n) takePerk(+n[1] - 1); return; }
   if (state === 'playing') {
     if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
     if (e.code === 'Space' && !e.repeat) jumpQueued = true;
@@ -2807,7 +3076,7 @@ function makeFighter(idx, ch){
     w: null, cur: 0, gun: null, pw: null, camMode: 0, camDist: 4.6, camSide: 1.4, camH: 2.05, shake: 0, sprinting: false,
     aim: new V3(0, 0, -1), right: new V3(1, 0, 0), up: new V3(0, 1, 0),
     in: { x: 0, y: 0, fire: false, sprint: false, jumpQ: false }, last: null, yawOff: 0, shots: 0, shotsSeen: undefined, lastPr: null,
-    tailOp: 1, view: null, ui: null, padOk: false
+    tailOp: 1, view: null, ui: null, padOk: false, kills: 0, vi: idx
   };
   resetLoadout(f);
   return f;
@@ -2827,9 +3096,14 @@ function spawnAt(f, s){
   resetLoadout(f);
   f.model.group.visible = true; f.model.group.position.copy(f.pos); f.model.group.rotation.y = yw;
 }
+// everyone else in the match (versus: up to three opponents on the couch)
+const foesOf = (f) => pvp.fighters.filter(o => o !== f);
+// a fighter's score in versus. Online, each page keeps its own fighter, so a score is the other's deaths.
+const bonksOf = (f) => pvp.mode === 'online' ? foesOf(f).reduce((a, o) => a + o.deaths, 0) : f.bonks | 0;
 function respawn(f){
-  const o = pvp.fighters[1 - f.idx];
-  const ranked = SPAWNS.map(s => ({ s, d: o && !o.dead ? Math.hypot(s[0] - o.pos.x, s[1] - o.pos.z) : Math.random() * 50 })).sort((a, b) => b.d - a.d);
+  if (pvp.coop) { const a = rand(0, TAU); spawnAt(f, [Math.cos(a) * 5.5, Math.sin(a) * 5.5]); f.inv = 2.5; if (f === pvp.local || pvp.mode === 'couch') pvpToast(f, 'Back on your feet'); return; }
+  const foes = foesOf(f).filter(o => !o.dead);
+  const ranked = SPAWNS.map(s => ({ s, d: foes.length ? Math.min(...foes.map(o => Math.hypot(s[0] - o.pos.x, s[1] - o.pos.z))) : Math.random() * 50 })).sort((a, b) => b.d - a.d);
   spawnAt(f, ranked[Math.floor(Math.random() * 3)].s);
   if (f === pvp.local || pvp.mode === 'couch') pvpToast(f, 'Back in the fight');
 }
@@ -2850,8 +3124,8 @@ function fMove(f, dt){
   f.pos.addScaledVector(f.vel, dt);
   if (f.pos.y <= 0) { f.pos.y = 0; f.vel.y = 0; f.onGround = true; f.jumps = 0; } else f.onGround = false;
   collide(f.pos, 0.45);
-  const o = pvp.fighters[1 - f.idx];
-  if (o && !o.dead) {
+  for (const o of pvp.fighters) {
+    if (o === f || o.dead) continue;
     const dx = f.pos.x - o.pos.x, dz = f.pos.z - o.pos.z, d = Math.hypot(dx, dz);
     if (d < 0.9 && d > 1e-4 && Math.abs(f.pos.y - o.pos.y) < 1.2) { f.pos.x = o.pos.x + dx / d * 0.9; f.pos.z = o.pos.z + dz / d * 0.9; }
   }
@@ -2908,6 +3182,10 @@ function fAnimate(f, dt){
   f.sb.visible = f.pw.shield > 0 && !f.dead;
   if (f.sb.visible) f.sb.scale.setScalar(1 + Math.sin(time * 6) * 0.04);
   if (!f.dead) m.group.visible = !(f.inv > 0 && f.pw.shield <= 0 && Math.floor(f.inv * 16) % 2 === 0);
+  // downed in co-op: on its side
+  m.group.rotation.z = damp(m.group.rotation.z, f.dead && pvp && pvp.coop ? 1.45 : 0, 10, dt);
+  if (f.dead && pvp && pvp.coop) m.group.position.y = f.pos.y + 0.12;
+  reviveRing(f);
 }
 function setTail(f, op){ f.model.tailMats.forEach(m => { m.opacity = op; m.depthWrite = op > 0.97; }); }
 function fCamera(f, dt){
@@ -2960,8 +3238,9 @@ function fShoot(f){
   g.bloom = Math.min(g.bloom + w.bloom, w.maxBloom);
   f.model.group.updateMatrixWorld(true); f.cam.updateMatrixWorld(true);
   f.model.muzzles[f.cur].getWorldPosition(pvC);
-  const targets = [pvp.fighters[1 - f.idx]], assist = pvp.mode === 'couch' ? 1.35 : 1.12, minT = f.camDist - 0.4;
-  if (w.projectile) {
+  const targets = foesOf(f), assist = pvp.mode === 'couch' ? 1.35 : 1.12, minT = f.camDist - 0.4;
+  if (pvp.coop) coopFire(f, w, spread, mul, minT);
+  else if (w.projectile) {
     fSpread(f, pvD, spread);
     const r = pvpCast(f.cam.position, pvD, minT, targets, assist);
     pvA.copy(f.cam.position).addScaledVector(pvD, Math.min(r.t, 60)).sub(pvC).normalize();
@@ -3020,15 +3299,44 @@ function deathFx(v){
   pvA.copy(v.pos); pvA.y += 0.8;
   burst(pvA, 40, v.colors, 7, 0.1, 1, -14, 0.8);
   for (let i = 0; i < 8; i++) emit(pvA, new V3(rand(-1, 1), rand(0.5, 1.6), rand(-1, 1)), 0xfff6e6, rand(0.25, 0.4), rand(0.4, 0.7), 1.5, 3);
-  sfx.kill(); v.model.group.visible = false; v.sb.visible = false;
+  sfx.kill(); v.sb.visible = false;
+  // co-op: the downed player stays on the ground where they fell, waiting for a teammate
+  if (!(pvp && pvp.coop)) v.model.group.visible = false;
+}
+// co-op: a downed player is back at the stash after this long, or sooner if a teammate stands by them
+const COOP_RESPAWN = 12, REVIVE_T = 2.5, REVIVE_R = 2.4;
+function revive(f){
+  f.dead = false; f.hp = 50; f.inv = 1.5; f.revT = 0; f.respawnT = 0; f.hurtT = 0;
+  f.model.group.visible = true;
+  pvA.copy(f.pos); pvA.y += 1; burst(pvA, 24, [0x8fe07a, 0xfff6e6], 4, 0.08, 0.7, -6, 0.4); sfx.pickup(true);
+  if (pvp.mode === 'couch' || f === pvp.local) { pvpToast(f, 'Revived!'); showPvBanner(f.tag + ' is back up!', ''); }
+}
+// the revive ring on the ground under a downed player
+const REV_GEO = new THREE.RingGeometry(0.95, 1.2, 48, 1), REV_MAT = new THREE.MeshBasicMaterial({ color: 0x8fe07a, transparent: true, opacity: 0.85, side: THREE.DoubleSide, depthWrite: false });
+const REV_BG = new THREE.MeshBasicMaterial({ color: 0x1b120b, transparent: true, opacity: 0.45, side: THREE.DoubleSide, depthWrite: false });
+function reviveRing(f){
+  if (!f.rev) {
+    const g = new THREE.Group(), bg = new THREE.Mesh(REV_GEO, REV_BG), fg = new THREE.Mesh(REV_GEO.clone(), REV_MAT);
+    bg.rotation.x = fg.rotation.x = -Math.PI / 2; fg.position.y = 0.01; g.add(bg, fg); scene.add(g);
+    f.rev = { g, fg };
+  }
+  const on = !!(pvp && pvp.coop && f.dead);
+  f.rev.g.visible = on;
+  if (!on) return;
+  f.rev.g.position.set(f.pos.x, Math.max(0, f.pos.y) + 0.06, f.pos.z);
+  f.rev.fg.geometry.setDrawRange(0, Math.floor(clamp((f.revT || 0) / REVIVE_T, 0, 1) * 48) * 6);
 }
 function fDie(v, killer){
-  v.dead = true; v.deaths++; v.respawnT = 3; deathFx(v);
-  killFeed(1 - v.idx);
+  v.dead = true; v.deaths++; v.respawnT = pvp.coop ? COOP_RESPAWN : 3; v.revT = 0; deathFx(v);
+  if (pvp.coop) { if (pvp.mode === 'couch' || v === pvp.local) showPvBanner(v.tag + ' is down!', 'Stand next to them to revive, or they are back at the stash in ' + COOP_RESPAWN + ' seconds'); return; }
+  const k = killer && killer !== v && pvp.fighters.includes(killer) ? killer : null;
+  if (k) k.bonks = (k.bonks | 0) + 1;
+  else if (pvp.fighters.length === 2) { const o = foesOf(v)[0]; o.bonks = (o.bonks | 0) + 1; }
+  killFeed(k || (pvp.fighters.length === 2 ? foesOf(v)[0] : null), v);
 }
-function killFeed(killerIdx){
-  const k = pvp.fighters[killerIdx], v = pvp.fighters[1 - killerIdx];
-  const score = v.deaths;
+function killFeed(k, v){
+  if (!k) { showPvBanner(v.tag + ' got bonked', 'Respawning in 3'); return; }
+  const score = bonksOf(k);
   if (pvp.mode === 'online') {
     if (k === pvp.local) { showPvBanner('You bonked the ' + v.name + '!', score + ' of ' + MATCH_KILLS); k.killT = 0.3; }
     else showPvBanner('Bonked by the ' + k.name, 'Respawning in 3');
@@ -3057,15 +3365,23 @@ function pvpUpdateProjs(dt){
     if (Math.random() < 0.7) emit(m.position, new V3(rand(-0.3, 0.3), rand(0.2, 0.6), rand(-0.3, 0.3)), 0xd8d2c4, rand(0.08, 0.14), 0.45, 0.5, 2);
     let hit = m.position.y <= 0.12 || p.life <= 0 || Math.hypot(m.position.x, m.position.z) > ARENA + 8;
     if (!hit) for (const c of colliders) { if (m.position.y < c.h && Math.hypot(m.position.x - c.x, m.position.z - c.z) < c.r + 0.1) { hit = true; break; } }
-    if (!hit) { const o = pvp.fighters[1 - p.owner.idx]; if (!o.dead && Math.hypot(m.position.x - o.pos.x, m.position.y - (o.pos.y + 0.65), m.position.z - o.pos.z) < 0.7) hit = true; }
+    if (!hit && pvp.coop) hit = enemies.some(e => { if (!enemyUp(e) || e.goneT !== undefined) return false; const b = enemyBody(e); return Math.hypot(m.position.x - e.pos.x, m.position.y - b.y, m.position.z - e.pos.z) < b.r; });
+    else if (!hit) hit = foesOf(p.owner).some(o => !o.dead && Math.hypot(m.position.x - o.pos.x, m.position.y - (o.pos.y + 0.65), m.position.z - o.pos.z) < 0.7);
     if (!hit) continue;
     if (m.position.y < 0.12) m.position.y = 0.12;
     const pt = m.position.clone();
     explodeFx(pt, p.r);
     for (const f of pvp.fighters) { if (f === pvp.local || pvp.mode === 'couch') { const d = pt.distanceTo(f.pos); f.shake = Math.min(1.2, f.shake + clamp(0.9 - d * 0.03, 0.1, 0.9)); } }
-    if (p.real) {
-      const o = pvp.fighters[1 - p.owner.idx];
-      if (!o.dead) {
+    if (p.real && pvp.coop) {
+      for (const e of enemies.slice()) {
+        const cy = e.type === 'gnome' ? e.pos.y + 0.6 * e.s : e.type === 'mole' ? Math.max(0.3, enemyBody(e).y) : e.pos.y;
+        pvB.set(e.pos.x - pt.x, cy - pt.y, e.pos.z - pt.z);
+        const dist = pvB.length(); if (dist > p.r + 0.4 * e.s || (e.type === 'gnome' && e.spawnT < 0.6)) continue;
+        coopHitEnemy(p.owner, e, Math.round(p.dmg * clamp(1 - dist / (p.r * 1.3), 0.35, 1)), false, new V3(e.pos.x, cy + 0.4, e.pos.z), pvB.normalize().clone(), 2.5);
+      }
+    } else if (p.real) {
+      for (const o of foesOf(p.owner)) {
+        if (o.dead) continue;
         const d = Math.hypot(o.pos.x - pt.x, o.pos.y + 0.6 - pt.y, o.pos.z - pt.z);
         if (d < p.r + 0.4) dealHit(p.owner, o, Math.round(p.dmg * clamp(1 - d / (p.r * 1.3), 0.35, 1)), false, pvB.set(o.pos.x, o.pos.y + 1, o.pos.z).clone());
       }
@@ -3096,6 +3412,7 @@ function pvpSpawnRandom(kind){
 function pvpRemovePickup(k){ scene.remove(k.obj); const i = pvp.pk.indexOf(k); if (i >= 0) pvp.pk.splice(i, 1); }
 function pvpTake(k, f){
   pvpRemovePickup(k);
+  if (pvp.coop && k.kind === 'acorn') { stash = Math.min(100, stash + 2); score += 25; updateStashPile(); }
   let wi = -1;
   if (k.kind === 'crate') { const un = [1, 2, 3].filter(i => !f.w[i].owned); wi = un.length && (pvp.mode === 'couch' || f === pvp.local) ? pick(un) : pick([1, 2, 3]); }
   if (pvp.mode === 'couch' || f === pvp.local) fCollect(f, k.kind, k.power, wi, k.obj.position);
@@ -3104,6 +3421,7 @@ function pvpTake(k, f){
 function fCollect(f, kind, power, wi, at){
   const p = (at || f.pos).clone();
   if (kind === 'golden') { f.hp = Math.min(100, f.hp + 40); pvpToast(f, '+40 HP'); sfx.pickup(true); }
+  else if (kind === 'acorn' && pvp.coop) { pvpToast(f, '+2 stash'); sfx.pickup(false); }
   else if (kind === 'acorn') { f.hp = Math.min(100, f.hp + 10); pvpToast(f, '+10 HP'); sfx.pickup(false); }
   else if (kind === 'power' && POWERS[power]) { f.pw[power] = POWERS[power].dur; pvpToast(f, POWERS[power].name + '!'); sfx.power(); burst(p, 24, [POWERS[power].color, 0xffffff], 5, 0.07, 0.6, -2, 0.3); }
   else if (kind === 'crate') {
@@ -3116,7 +3434,7 @@ function fCollect(f, kind, power, wi, at){
 }
 function pvpUpdatePickups(dt){
   const auth = pvp.mode === 'couch' || pvp.role === 'host';
-  if (auth && pvp.phase === 'play') { pvp.pkTimer -= dt; if (pvp.pkTimer <= 0) { pvp.pkTimer = 8; if (pvp.pk.length < 6) pvpSpawnRandom(); } }
+  if (auth && pvp.phase === 'play') { pvp.pkTimer -= dt; if (pvp.pkTimer <= 0) { pvp.pkTimer = pvp.coop ? 20 : 8; if (pvp.pk.length < (pvp.coop ? 14 : 2 + 2 * pvp.fighters.length)) pvpSpawnRandom(pvp.coop ? (Math.random() < 0.5 ? 'golden' : 'power') : undefined); } }
   for (let i = pvp.pk.length - 1; i >= 0; i--) {
     const k = pvp.pk[i], o = k.obj;
     if (o.position.y > k.rest + 0.001) {
@@ -3141,11 +3459,15 @@ function pvpUpdatePickups(dt){
 
 // ---------- network (online) and pads (couch)
 function pushEv(e){ pvp.seq++; e.s = pvp.seq; pvp.ev.push(e); if (pvp.ev.length > 16) pvp.ev.shift(); }
-function netSend(){
+function netSend(dt){
+  // co-op carries the enemies too: send 30 times a second, not every frame
+  if (pvp.coop) { pvp.netT = (pvp.netT || 0) - (dt || 0); if (pvp.netT > 0) return; pvp.netT = 1 / 30; }
   const f = pvp.local;
   const st = { x: r2(f.pos.x), y: r2(f.pos.y), z: r2(f.pos.z), vx: r2(f.vel.x), vz: r2(f.vel.z), yw: Math.round(f.yaw * 1000) / 1000, pt: Math.round(f.pitch * 1000) / 1000,
     w: f.cur, f: f.shots, hp: Math.ceil(f.hp), dd: f.dead ? 1 : 0, d: f.deaths, sh: f.pw.shield > 0 ? 1 : 0, iv: f.inv > 0 ? 1 : 0, g: f.onGround ? 1 : 0 };
+  if (pvp.coop) { st.k = f.kills | 0; if (f.dead) st.rv = Math.round(clamp((f.revT || 0) / REVIVE_T, 0, 1) * 100); }
   const p = { role: pvp.role, code: pvp.code, m: pvp.m, phase: pvp.phase, st, ev: pvp.ev };
+  if (pvp.coop) { p.coop = 1; if (pvp.role === 'host') { p.co = coopPack(); p.why = pvp.why; } }
   if (pvp.role === 'host') { p.chars = pvp.fighters.map(f => f.ch); p.map = mapIdx; p.pk = pvp.pk.map(k => [k.id, PKINDS.indexOf(k.kind), r2(k.x), r2(k.z), k.power ? PKEYS.indexOf(k.power) : -1]); p.win = pvp.winner; }
   pvp.r.presence(p).catch(() => {});
 }
@@ -3157,7 +3479,8 @@ function applyRemoteState(f, st){
   const wi = num(st.w) | 0; if (wi !== f.cur && WEAPONS[wi]) showGun(f, wi);
   f.hp = clamp(num(st.hp), 0, 100); f.pw.shield = st.sh ? 1 : 0; f.inv = st.iv ? 0.3 : 0; f.onGround = !!st.g;
   const d = num(st.d) | 0;
-  if (d > f.deaths) { f.deaths = d; if (pvp.phase === 'play') killFeed(pvp.local.idx); } else if (d < f.deaths) f.deaths = d;
+  if (d > f.deaths) { f.deaths = d; if (pvp.phase === 'play' && !pvp.coop) killFeed(pvp.local, f); } else if (d < f.deaths) f.deaths = d;
+  if (pvp.coop) { f.kills = num(st.k) | 0; f.revT = num(st.rv) / 100 * REVIVE_T; }
   const shots = num(st.f) | 0;
   if (f.shotsSeen === undefined || shots < f.shotsSeen) f.shotsSeen = shots;
   else if (shots > f.shotsSeen) { const n = Math.min(4, shots - f.shotsSeen); f.shotsSeen = shots; if (!f.dead) for (let i = 0; i < n; i++) remoteShotFx(f); }
@@ -3165,6 +3488,25 @@ function applyRemoteState(f, st){
 function handleEv(e, from){
   if (!e || typeof e !== 'object') return;
   const local = pvp.local;
+  if (pvp.coop) {
+    if (e.k === 'ehit' && pvp.role === 'host') {
+      const en = enemies.find(q => q.id === +e.id);
+      if (en) hurtEnemy(en, clamp(+e.d || 0, 0, 500), !!e.h, new V3(+e.x || 0, +e.y || 0, +e.z || 0), new V3(+e.dx || 0, 0, +e.dz || 1), clamp(+e.kb || 1, 0, 3), from);
+      return;
+    }
+    if (e.k === 'ouch' && pvp.role === 'guest') {
+      applyDamage(local, clamp(+e.d || 0, 0, 100), { pos: new V3(+e.x || 0, 0, +e.z || 0) });
+      if (e.up && !local.dead) { local.vel.y = 6; local.onGround = false; }
+      return;
+    }
+    if (e.k === 'ekill' && pvp.role === 'guest') {
+      const en = enemies.find(q => q.id === +e.id);
+      const p = en ? coopKillFx(en, !!e.h) : null;
+      // The enemy may already be gone (the host's enemy list can land first): the kill still counts
+      if (+e.by === local.idx) { if (p) floatText(p.add(new V3(0, 0.6, 0)), '+' + fmt(+e.p || 0), 'pts', local.view); local.kills++; local.killT = 0.25; }
+      return;
+    }
+  }
   if (e.k === 'hit') applyDamage(local, clamp(+e.d || 0, 0, 300), from);
   else if (e.k === 'pine') { pvA.set(+e.x || 0, +e.y || 0, +e.z || 0); pvB.set(+e.vx || 0, +e.vy || 0, +e.vz || 0); pvpLaunch(from, pvA, pvB, 0, 4.2, false); }
   else if (e.k === 'claim' && pvp.role === 'host') { const k = pvp.pk.find(q => q.id === e.id); if (k && !from.dead) pvpTake(k, from); }
@@ -3179,7 +3521,7 @@ function netRead(dt){
   const p = peersFor(pvp.r, pvp.code).find(q => q.presence.role === want);
   if (!p) {
     pvp.missing += dt;
-    if (pvp.missing > 6 && pvp.phase !== 'over') pvpOver(pvp.local.idx, 'left');
+    if (pvp.missing > 6 && pvp.phase !== 'over') { if (pvp.coop) coopOver('left'); else pvpOver(pvp.local.idx, 'left'); }
     return;
   }
   pvp.missing = 0;
@@ -3188,18 +3530,19 @@ function netRead(dt){
     const hm = +pr.m || 0;
     if (hm > pvp.m && (pr.phase === 'countdown' || pr.phase === 'play')) { pvpBegin(hm); return; }
     if (pr.phase === 'select') { backToSelect(); return; }
-    if (hm === pvp.m && pr.phase === 'over' && pvp.phase !== 'over') pvpOver(+pr.win === 1 ? 1 : 0);
+    if (hm === pvp.m && pr.phase === 'over' && pvp.phase !== 'over') { if (pvp.coop) { coopUnpack(pr.co); coopOver(pr.why || 'stash'); } else pvpOver(+pr.win === 1 ? 1 : 0); }
     if (hm === pvp.m && pr.phase === 'play' && pvp.phase === 'countdown' && pvp.count < 0.6) pvp.phase = 'play';
   }
   if ((+pr.m || 0) !== pvp.m || pr === pvp.lastPr) return;
   pvp.lastPr = pr;
   if (pr.st && typeof pr.st === 'object') applyRemoteState(remote, pr.st);
+  if (pvp.coop && pvp.role === 'guest') coopUnpack(pr.co);
   const evs = Array.isArray(pr.ev) ? pr.ev : [];
   if (!pvp.seqInit) { pvp.seqInit = true; pvp.lastSeq = evs.reduce((a, e) => Math.max(a, +(e && e.s) || 0), 0); }
   else for (const e of evs) { const s = +(e && e.s) || 0; if (s > pvp.lastSeq) { pvp.lastSeq = s; handleEv(e, remote); } }
   if (pvp.role === 'guest' && Array.isArray(pr.pk)) {
     const ids = new Set();
-    for (const a of pr.pk.slice(0, 12)) {
+    for (const a of pr.pk.slice(0, 16)) {
       if (!Array.isArray(a)) continue;
       const id = +a[0]; ids.add(id);
       if (!pvp.pk.find(k => k.id === id) && !pvp.gone.has(id)) pvpAddPickup(id, PKINDS[a[1]] || 'acorn', PKEYS[a[4]] || PKEYS[0], +a[2] || 0, +a[3] || 0, false);
@@ -3211,6 +3554,7 @@ function padRead(){
   const peers = peersFor(pvp.r, pvp.code);
   for (const f of pvp.fighters) {
     const slot = f.idx + 1;
+    if (gpHas(slot, pvp.code)) { f.padOk = true; gpFighter(f, GP.now[GP.slots[slot]]); continue; }
     const ps = peers.filter(q => q.presence.role === 'pad' && q.presence.slot === slot);
     const p = ps[ps.length - 1];
     f.padOk = !!p;
@@ -3230,9 +3574,12 @@ function tvSend(dt){
   pvp.tvT -= dt; if (pvp.tvT > 0) return; pvp.tvT = 0.12;
   const hud = pvp.fighters.map(f => {
     const s = f.w[f.cur];
-    return { hp: Math.ceil(f.hp), dead: f.dead ? 1 : 0, wn: WEAPONS[f.cur].name, am: s.ammo, rs: s.reserve === Infinity ? -1 : s.reserve, k: pvp.fighters[1 - f.idx].deaths, o: f.deaths };
+    const k = pvp.coop ? f.kills | 0 : bonksOf(f), o = pvp.coop ? 0 : Math.max(0, ...foesOf(f).map(bonksOf));
+    return { hp: Math.ceil(f.hp), dead: f.dead ? 1 : 0, wn: WEAPONS[f.cur].name, am: s.ammo, rs: s.reserve === Infinity ? -1 : s.reserve, k, o, slot: f.idx + 1 };
   });
-  pvp.r.presence({ role: 'tv', code: pvp.code, phase: pvp.phase, m: pvp.m, hud, mapName: curMap.name }).catch(() => {});
+  const msg = { role: 'tv', code: pvp.code, phase: pvp.phase, m: pvp.m, hud, mapName: curMap.name };
+  if (pvp.coop) { msg.coop = 1; msg.co = { w: wave, sd: Math.ceil(stash) }; }
+  pvp.r.presence(msg).catch(() => {});
 }
 
 // ---------- HUD
@@ -3268,8 +3615,15 @@ function pvpHudUpdate(dt){
     uiSet(f, 'pw', u.pw, 'html', pwHtml);
     let msg = '';
     if (pvp.phase === 'countdown') msg = pvp.count > 0.6 ? String(Math.ceil(pvp.count - 0.6)) : 'Go!';
+    else if (f.dead && pvp.coop) msg = (f.revT > 0.05 ? 'Being revived…' : 'Down! Wait for a teammate, or back at the stash in ' + Math.max(1, Math.ceil(f.respawnT)));
     else if (f.dead) msg = 'Respawning in ' + Math.max(1, Math.ceil(f.respawnT));
     else if (pvp.mode === 'couch' && !f.padOk) msg = 'P' + (f.idx + 1) + ' controller disconnected. Reopen the link on the phone.';
+    else if (pvp.coop && pvp.phase === 'play') {
+      const down = pvp.fighters.filter(o => o !== f && o.dead);
+      const close = down.find(o => Math.hypot(o.pos.x - f.pos.x, o.pos.z - f.pos.z) < REVIVE_R);
+      if (close) msg = 'Reviving ' + close.tag + '… ' + Math.round(clamp((close.revT || 0) / REVIVE_T, 0, 1) * 100) + '%';
+      else if (down.length) msg = down[0].tag + ' is down: stand next to them to revive';
+    }
     uiSet(f, 'msg', u.msg, 'text', msg);
     uiSet(f, 'dmg', u.dmg, 'op', Math.max(f.hurtT * 0.9, f.hp <= 30 && !f.dead ? 0.25 + Math.sin(time * 5) * 0.12 : 0).toFixed(2));
     uiSet(f, 'sh', u.shield, 'op', f.pw.shield > 0 ? '0.6' : '0');
@@ -3280,29 +3634,238 @@ function pvpHudUpdate(dt){
     f.hitT = Math.max(0, f.hitT - dt); f.killT = Math.max(0, f.killT - dt);
     setClass(u.cross, 'hit', f.hitT > 0); setClass(u.cross, 'kill', f.killT > 0);
   }
-  const a = pvp.fighters[1].deaths, b = pvp.fighters[0].deaths;
-  const t0 = pvp.fighters[0].tag, t1 = pvp.fighters[1].tag;
-  const sc = '<span style="color:' + PALS[0].css + '">' + t0 + ' ' + a + '</span><small>first to ' + MATCH_KILLS + '</small><span style="color:' + PALS[1].css + '">' + b + ' ' + t1 + '</span>';
+  let sc;
+  if (pvp.coop) {
+    // the team's shared state: wave, stash, score, and the King when he's out
+    const king = enemies.find(e => e.boss);
+    sc = '<span>Wave ' + wave + '</span><small>stash</small><span style="color:' + (stash <= 30 ? '#ff5a4e' : 'var(--leaf)') + '">' + Math.ceil(stash) + '%</span><small>score</small><span>' + fmt(score) + '</span>'
+      + (king ? '<small>King</small><span style="color:#ffd23f">' + Math.ceil(clamp(king.hp / king.maxHp, 0, 1) * 100) + '%</span>' : '');
+  } else {
+    const F = pvp.fighters;
+    if (F.length === 2) sc = '<span style="color:' + F[0].pal.css + '">' + F[0].tag + ' ' + bonksOf(F[0]) + '</span><small>first to ' + MATCH_KILLS + '</small><span style="color:' + F[1].pal.css + '">' + bonksOf(F[1]) + ' ' + F[1].tag + '</span>';
+    else sc = F.map(f => '<span style="color:' + f.pal.css + '">P' + (f.idx + 1) + ' ' + bonksOf(f) + '</span>').join('') + '<small>first to ' + MATCH_KILLS + '</small>';
+  }
   if (pvp.scoreHtml !== sc) { pvp.scoreHtml = sc; $('pvScore').innerHTML = sc; }
 }
 
+// ---------- co-op: everyone against the gnomes
+// The couch TV or the online host runs the waves and the enemies. An online guest
+// sees the host's enemies (smoothed between updates) and reports its own hits.
+let bestCoop = 0;
+try { bestCoop = parseInt(localStorage.getItem('squirrel-commando-coop-best') || '0', 10) || 0; } catch (e) {}
+function coopCast(o, dir, minT){
+  const r = { t: 90, kind: 'air', e: null, head: false };
+  if (dir.y < -1e-4) { const t = -o.y / dir.y; if (t < r.t) { r.t = t; r.kind = 'ground'; } }
+  for (const c of colliders) { const t = rayCyl(o, dir, c); if (t > minT && t < r.t) { r.t = t; r.kind = c.kind; } }
+  const big = pvp.mode === 'couch' ? 1.25 : 1.1; // a little aim help, more on a split screen
+  for (const e of enemies) { if (e.goneT !== undefined) continue;
+    if (e.type === 'gnome') {
+      if (e.spawnT < 0.6) continue;
+      const sc = e.s, y0 = e.pos.y + e.inner.position.y;
+      let t = raySphere(o, dir, e.pos.x, y0 + 1.25 * sc, e.pos.z, 0.36 * sc * big);
+      if (t < r.t) { r.t = t; r.kind = 'enemy'; r.e = e; r.head = true; }
+      t = raySphere(o, dir, e.pos.x, y0 + 0.58 * sc, e.pos.z, 0.5 * sc * big);
+      if (t < r.t) { r.t = t; r.kind = 'enemy'; r.e = e; r.head = false; }
+    } else if (e.type === 'mole') {
+      if (e.up < 0.5) continue;
+      const y0 = e.pos.y + e.inner.position.y;
+      let t = raySphere(o, dir, e.pos.x, y0 + 0.86, e.pos.z, 0.28 * big);
+      if (t < r.t) { r.t = t; r.kind = 'enemy'; r.e = e; r.head = true; }
+      t = raySphere(o, dir, e.pos.x, y0 + 0.45, e.pos.z, 0.55 * big);
+      if (t < r.t) { r.t = t; r.kind = 'enemy'; r.e = e; r.head = false; }
+    } else {
+      const t = raySphere(o, dir, e.pos.x, e.pos.y, e.pos.z, 0.75 * big);
+      if (t < r.t) { r.t = t; r.kind = 'enemy'; r.e = e; r.head = false; }
+    }
+  }
+  return r;
+}
+function coopFire(f, w, spread, mul, minT){
+  if (w.projectile) {
+    fSpread(f, pvD, spread);
+    const r = coopCast(f.cam.position, pvD, minT);
+    pvA.copy(f.cam.position).addScaledVector(pvD, Math.min(r.t, 60)).sub(pvC).normalize();
+    pvpLaunch(f, pvC, pvA.multiplyScalar(32).add(pvB.set(0, 2.5, 0)), w.dmg * mul, w.splash, true);
+    return;
+  }
+  const agg = new Map();
+  for (let p = 0; p < w.pellets; p++) {
+    fSpread(f, pvD, spread);
+    const r = coopCast(f.cam.position, pvD, minT);
+    pvA.copy(f.cam.position).addScaledVector(pvD, r.t);
+    tracer(pvC, pvA);
+    if (r.e) { const a = agg.get(r.e) || { d: 0, h: false, pt: pvA.clone(), dir: pvD.clone() }; a.d += (r.head ? w.head : w.dmg) * mul; a.h = a.h || r.head; agg.set(r.e, a); }
+    else impact(r.kind, pvA, w.pellets > 1 ? 2 : 5);
+  }
+  agg.forEach((a, e) => { if (enemies.includes(e)) coopHitEnemy(f, e, a.d, a.h, a.pt, a.dir, w.pellets > 1 ? 2.2 : 1); });
+}
+function coopHitEnemy(shooter, e, dmg, head, pt, dir, kb){
+  if (pvp.mode === 'couch' || pvp.role === 'host') { hurtEnemy(e, dmg, head, pt, dir, kb, shooter); return; }
+  // online guest: show it now, the host applies it
+  e.flash = 1; e.barT = 2.5;
+  burst(pt, head ? 10 : 6, e.colors, 4, 0.06, 0.55, -14, 0.5); sfx.hit(head);
+  const v = viewOf(shooter); if (v) floatText(pt, String(Math.round(dmg)), head ? 'crit' : '', v);
+  shooter.hitT = 0.12;
+  pushEv({ k: 'ehit', id: e.id, d: Math.round(dmg), h: head ? 1 : 0, x: r2(pt.x), y: r2(pt.y), z: r2(pt.z), dx: r2(dir.x), dz: r2(dir.z), kb: r2(kb || 1) });
+}
+// An enemy hit a fighter. The online guest owns its own health, so it is told instead.
+function coopHurt(f, d, src){
+  if (pvp.phase !== 'play') return;
+  if (pvp.mode === 'online' && f === pvp.remote) { pushEv({ k: 'ouch', d: Math.round(d), x: r2(src ? src.x : f.pos.x), z: r2(src ? src.z : f.pos.z), up: d >= 18 ? 1 : 0 }); return; }
+  applyDamage(f, d, src ? { pos: src } : null);
+}
+// Kill drops become shared pickups; the TV or the host decides who grabs them
+function coopDrop(p, kind){
+  if (pvp.mode === 'online' && pvp.role !== 'host') return;
+  const a = rand(0, TAU), r = rand(0.4, 1.6);
+  const lim = ARENA - 2, x = clamp(p.x + Math.cos(a) * r, -lim, lim), z = clamp(p.z + Math.sin(a) * r, -lim, lim);
+  pvpAddPickup(pvp.pkId++, kind, kind === 'power' ? pick(PKEYS) : null, x, z, false);
+}
+// the couch TV / online host: waves and enemies
+function coopTick(dt){
+  if (pvp.phase === 'play' && !pvp.waveOn) { pvp.waveOn = true; startWave(1); }
+  if (pvp.phase === 'play') {
+    for (let i = enemies.length - 1; i >= 0; i--) {
+      const e = enemies[i];
+      if (e.type === 'gnome') updateGnome(e, dt); else if (e.type === 'mole') updateMole(e, dt); else updateCrow(e, dt);
+      if (!pvp || pvp.phase !== 'play') return;
+      flashMats(e, dt); e.barT = Math.max(0, e.barT - dt);
+    }
+    if (comboT > 0) { comboT -= dt; if (comboT <= 0) combo = 0; }
+    updateWave(dt);
+    // everyone down at the same moment: the gnomes win
+    if (pvp.phase === 'play' && pvp.fighters.every(f => f.dead)) coopOver('down');
+  } else for (const e of enemies) { flashMats(e, dt); e.barT = Math.max(0, e.barT - dt); }
+  updateProps(dt);
+}
+// what an online guest needs to draw the host's side
+function coopPack(){
+  return {
+    w: wave, ws: waveState, sd: Math.ceil(stash), sc: score,
+    en: enemies.slice(0, 40).map(e => [e.id, e.type === 'crow' ? 1 : e.boss ? 2 : e.type === 'mole' ? 3 : 0, r2(e.pos.x), r2(e.pos.y), r2(e.pos.z), r2(e.mesh.rotation.y),
+      Math.max(0, Math.round(e.hp / e.maxHp * 100)), Math.round((e.swing || 0) * 10), e.type === 'gnome' ? Math.round(e.spawnT * 10) : e.type === 'mole' ? Math.round(e.up * 10) : 10, e.type === 'mole' ? (e.state === 'steal' ? 2 : e.state === 'rise' ? 1 : 0) : 0])
+  };
+}
+function coopUnpack(co){
+  if (!co || typeof co !== 'object') return;
+  const w = +co.w || 1;
+  if (w !== pvp.seenWave) { pvp.seenWave = w; showPvBanner('Wave ' + w, w % 5 === 0 ? 'Something big is coming' : 'Gnomes incoming'); sfx.wave(); }
+  if (co.ws === 'clear' && pvp.seenWs !== 'clear') { showPvBanner('Wave cleared', 'Stash restocked'); sfx.clear(); }
+  pvp.seenWs = co.ws;
+  wave = w; waveState = String(co.ws || 'fight'); score = +co.sc || 0;
+  const sd = clamp(+co.sd || 0, 0, 100); if (sd !== stash) { stash = sd; updateStashPile(); }
+  if (!Array.isArray(co.en)) return;
+  const seen = new Set();
+  for (const a of co.en) {
+    if (!Array.isArray(a)) continue;
+    const id = +a[0]; seen.add(id);
+    let e = enemies.find(q => q.id === id);
+    if (!e) {
+      e = a[1] === 1 ? buildCrow() : a[1] === 3 ? buildMole() : buildGnome(a[1] === 2);
+      e.id = id; e.pos.set(+a[2] || 0, +a[3] || 0, +a[4] || 0); e.net = e.pos.clone(); e.netYaw = +a[5] || 0;
+      scene.add(e.mesh); enemies.push(e);
+      if (e.boss) { showPvBanner('The Gnome King', 'Jump to dodge his ground slam. Aim for the crown.'); sfx.boss(); }
+    }
+    e.net.set(+a[2] || 0, +a[3] || 0, +a[4] || 0); e.netYaw = +a[5] || 0;
+    const hp = clamp(+a[6] || 0, 0, 100) / 100 * e.maxHp;
+    if (hp < e.hp - 0.5) { e.flash = 1; e.barT = 2.5; }
+    e.hp = hp; e.netSwing = (+a[7] || 0) / 10; if (e.type === 'gnome') e.spawnT = clamp((+a[8] || 0) / 10, 0, 1);
+    if (e.type === 'mole') { e.up = clamp((+a[8] || 0) / 10, 0, 1); e.state = ['dig', 'rise', 'steal'][+a[9] | 0] || 'dig'; }
+  }
+  // Gone from the host's list: its kill event may still be on the way with the burst and the points,
+  // so hold it a moment before clearing it quietly
+  for (const e of enemies.slice()) if (!seen.has(e.id)) { if (e.goneT === undefined) e.goneT = 0.6; } else e.goneT = undefined;
+}
+// the online guest: move and animate the host's enemies between updates
+function coopReplicaTick(dt){
+  for (const e of enemies) {
+    if (!e.net) continue;
+    pvC.copy(e.pos);
+    e.pos.lerp(e.net, 1 - Math.exp(-12 * dt));
+    if (e.pos.distanceTo(e.net) > 8) e.pos.copy(e.net);
+    const sp = Math.hypot(e.pos.x - pvC.x, e.pos.z - pvC.z) / Math.max(dt, 1e-3);
+    if (e.type === 'mole') {
+      e.mesh.rotation.y = angLerp(e.mesh.rotation.y, e.netYaw, 1 - Math.exp(-10 * dt));
+      moleLook(e, dt);
+    } else if (e.type === 'gnome') {
+      e.mesh.rotation.y = angLerp(e.mesh.rotation.y, e.netYaw, 1 - Math.exp(-10 * dt));
+      if (e.spawnT < 1) e.inner.position.y = (e.spawnT - 1) * 2.2;
+      else {
+        const w = Math.min(1, sp); e.phase += dt * sp * (e.boss ? 2 : 3.4);
+        e.inner.rotation.z = Math.sin(e.phase) * 0.13 * w; e.inner.position.y = Math.abs(Math.sin(e.phase)) * 0.07 * w;
+        e.feet[0].position.z = -0.04 + Math.sin(e.phase) * 0.14 * w; e.feet[1].position.z = -0.04 - Math.sin(e.phase) * 0.14 * w;
+      }
+      e.swing = e.netSwing || 0;
+      e.arm.rotation.x = -0.3 - Math.sin(e.swing * Math.PI) * 1.5 + (e.swing > 0.6 ? (e.swing - 0.6) * 2.5 : 0);
+    } else {
+      e.flap += dt * 15;
+      e.mesh.rotation.y = angLerp(e.mesh.rotation.y, e.netYaw, 1 - Math.exp(-8 * dt));
+      const fl = Math.sin(e.flap) * 0.75; e.wings[1].rotation.z = fl; e.wings[0].rotation.z = -fl;
+    }
+    flashMats(e, dt); e.barT = Math.max(0, e.barT - dt);
+  }
+  for (const e of enemies.slice()) if (e.goneT !== undefined && (e.goneT -= dt) <= 0) removeEnemy(e);
+  updateProps(dt);
+}
+// the host's kill, as the guest sees it
+function coopKillFx(e, head){
+  const p = e.pos.clone(); p.y += e.type === 'crow' ? 0 : e.type === 'mole' ? 0.5 : 0.8 * e.s;
+  burst(p, e.boss ? 90 : 26, e.colors, e.boss ? 9 : 6, e.boss ? 0.14 : 0.08, e.boss ? 1.4 : 0.9, -14, 0.8);
+  if (e.type === 'gnome' && e.hat) {
+    scene.attach(e.hat);
+    props.push({ obj: e.hat, mat: e.hatMat, vel: new V3(rand(-3, 3), rand(6, 8), rand(-3, 3)), spin: new V3(rand(-9, 9), rand(-9, 9), rand(-9, 9)), life: 2.4, ground: e.boss ? 0.4 : 0.25 });
+  }
+  sfx.kill();
+  removeEnemy(e);
+  return p;
+}
+function coopOver(why){
+  if (!pvp || pvp.phase === 'over') return;
+  pvp.phase = 'over'; pvp.why = why; firing = false;
+  if (document.pointerLockElement) document.exitPointerLock();
+  document.body.classList.remove('playing');
+  $('pvpPauseScr').hidden = true;
+  const rec = score > bestCoop && score > 0;
+  if (rec) { bestCoop = score; try { localStorage.setItem('squirrel-commando-coop-best', String(bestCoop)); } catch (e) {} }
+  $('pvpOverTitle').textContent = why === 'stash' ? 'The stash fell' : why === 'left' ? 'Your teammate left' : 'Everyone got bonked';
+  $('pvpOverLede').textContent = why === 'left' ? 'The other player disconnected. Head back to the menu to start a new room.'
+    : 'You held out to wave ' + wave + ' with ' + fmt(score) + ' points.' + (rec ? ' New team best!' : bestCoop ? ' Team best: ' + fmt(bestCoop) + '.' : '');
+  const rows = pvp.fighters.map(f => '<div><dt style="color:' + f.pal.css + '"></dt><dd>' + (f.kills | 0) + '</dd></div>').join('') + '<div><dt>Wave</dt><dd>' + wave + '</dd></div>';
+  const dl = $('pvpStats'); dl.innerHTML = rows;
+  dl.querySelectorAll('dt').forEach((el, i) => { if (pvp.fighters[i]) el.textContent = pvp.fighters[i].tag + ' bonks'; });
+  const canRematch = why !== 'left' && (pvp.mode === 'couch' || pvp.role === 'host');
+  $('pvpRematch').hidden = !canRematch; $('pvpReselect').hidden = !canRematch;
+  if (!canRematch && why !== 'left') $('pvpOverLede').textContent += ' Waiting for the host to start again.';
+  sfx.over();
+  setTimeout(() => { if (pvp && pvp.phase === 'over') $('pvpOverScr').hidden = false; }, 900);
+}
+// split-screen rectangles (x, y from the bottom, w, h) for 2 to 4 couch players
+function viewRects(n, W, H){
+  if (n <= 2) return [[0, 0, W / 2, H], [W / 2, 0, W / 2, H]];
+  return [[0, H / 2, W / 2, H / 2], [W / 2, H / 2, W / 2, H / 2], [0, 0, W / 2, H / 2], [W / 2, 0, W / 2, H / 2]];
+}
+
 // ---------- match flow
-function startPvp(mode, role, r, code, m, chars, map){
+// coop: true for co-op; slots: each fighter's phone slot (1-4) in a couch co-op game
+function startPvp(mode, role, r, code, m, chars, map, coop, slots){
   if (map !== undefined) buildMap(mapOf(map));
   lobby = null;
-  ['menu', 'vsScr', 'lobbyScr', 'pvpOverScr', 'pvpPauseScr', 'overScr', 'pauseScr'].forEach(id => { $(id).hidden = true; });
+  ['menu', 'vsScr', 'coScr', 'lobbyScr', 'pvpOverScr', 'pvpPauseScr', 'overScr', 'pauseScr'].forEach(id => { $(id).hidden = true; });
   hud.hidden = true; showTouch(false);
   clearWorld(); sq.group.visible = false; setFps(false);
   chars = Array.isArray(chars) ? chars : [0, 0];
-  const fighters = [makeFighter(0, chars[0] | 0), makeFighter(1, chars[1] | 0)];
+  if (!coop && mode !== 'couch') chars = chars.slice(0, 2);
+  slots = Array.isArray(slots) && slots.length === chars.length ? slots : chars.map((_, i) => i + 1);
+  const fighters = chars.map((c, i) => { const f = makeFighter(slots[i] - 1, c | 0); f.vi = i; return f; });
   fighters.forEach(f => { f.tag = mode === 'couch' ? 'P' + (f.idx + 1) + ' ' + f.name : (f.idx === (role === 'host' ? 0 : 1) ? 'You' : f.name); });
   pvp = { mode, role, r, code, m: 0, fighters, local: null, remote: null, ev: [], seq: 0, lastSeq: 0, seqInit: false, pk: [], pkId: 1, pkTimer: 8,
-    projs: [], phase: 'countdown', count: 3.6, winner: -1, missing: 0, tvT: 0, lastPr: null, gone: new Set(), scoreHtml: '' };
+    projs: [], phase: 'countdown', count: 3.6, winner: -1, missing: 0, tvT: 0, lastPr: null, gone: new Set(), scoreHtml: '', coop: !!coop };
   if (mode === 'online') { pvp.local = fighters[role === 'host' ? 0 : 1]; pvp.remote = fighters[role === 'host' ? 1 : 0]; }
-  const H = $('pvpHud'); H.hidden = false; H.className = mode;
+  const H = $('pvpHud'); H.hidden = false; H.className = mode + (coop ? ' coop' : '') + ' n' + fighters.length;
+  const quad = mode === 'couch' && fighters.length > 2;
   fighters.forEach((f, i) => {
     const el = $('pv' + i); buildPv(el, f);
-    f.view = { cam: f.cam, rw: mode === 'couch' ? 0.5 : 1, layer: f.ui.fx };
+    f.view = { cam: f.cam, rw: mode === 'couch' ? 0.5 : 1, rh: quad ? 0.5 : 1, layer: f.ui.fx };
   });
   if (mode === 'online') { const el = $('pv0'); buildPv(el, pvp.local); pvp.local.view = { cam: pvp.local.cam, rw: 1, layer: pvp.local.ui.fx }; pvp.remote.ui = null; pvp.remote.view = null; }
   state = 'pvp'; firing = false; for (const k in keys) delete keys[k];
@@ -3318,13 +3881,25 @@ function pvpBegin(m){
   pvp.m = m; pvp.phase = 'countdown'; pvp.count = 3.6; pvp.winner = -1; pvp.seqInit = false; pvp.lastPr = null; pvp.missing = 0;
   pvp.pk.slice().forEach(k => pvpRemovePickup(k)); pvp.gone.clear();
   pvp.projs.forEach(p => scene.remove(p.m)); pvp.projs.length = 0;
-  pvp.fighters.forEach((f, i) => { f.deaths = 0; f.shotsSeen = undefined; spawnAt(f, SPAWNS[i]); f.inv = 0; });
-  if (pvp.mode === 'couch' || pvp.role === 'host') {
-    pvp.pkTimer = 8;
-    ['crate', 'crate', 'power', 'golden', 'golden'].forEach(k => pvpSpawnRandom(k));
+  if (pvp.coop) {
+    // fresh waves, a full stash, and everyone around the Great Oak
+    while (enemies.length) removeEnemy(enemies[0]);
+    wave = 1; waveState = 'intro'; queue = []; score = 0; combo = 0; comboT = 0; kills = 0; stash = 100; updateStashPile();
+    pvp.waveOn = false; pvp.why = null; pvp.seenWave = 0; pvp.seenWs = null;
+    const n = pvp.fighters.length;
+    pvp.fighters.forEach((f, i) => { f.deaths = 0; f.kills = 0; f.shotsSeen = undefined; const a = i / n * TAU + 0.4; spawnAt(f, [Math.cos(a) * 6.5, Math.sin(a) * 6.5]); f.inv = 0; });
+    if (pvp.mode === 'couch' || pvp.role === 'host') { pvp.pkTimer = 20; ['crate', 'golden'].forEach(k => pvpSpawnRandom(k)); }
+  } else {
+    pvp.fighters.forEach((f, i) => { f.deaths = 0; f.bonks = 0; f.shotsSeen = undefined; spawnAt(f, SPAWNS[i]); f.inv = 0; });
+    if (pvp.mode === 'couch' || pvp.role === 'host') {
+      pvp.pkTimer = 8;
+      ['crate', 'crate', 'power', 'golden', 'golden'].forEach(k => pvpSpawnRandom(k));
+    }
   }
   $('pvpOverScr').hidden = true;
-  showPvBanner(pvp.fighters[0].name + ' vs ' + pvp.fighters[1].name, 'First to ' + MATCH_KILLS + ' bonks wins');
+  if (pvp.coop) showPvBanner('Defend the stash!', 'Gnomes are coming for the nuts. Stick together.');
+  else if (pvp.fighters.length > 2) showPvBanner('Free-for-all!', 'Everyone against everyone. First to ' + MATCH_KILLS + ' bonks wins');
+  else showPvBanner(pvp.fighters[0].name + ' vs ' + pvp.fighters[1].name, 'First to ' + MATCH_KILLS + ' bonks wins');
   sfx.wave();
 }
 function pvpOver(w, reason){
@@ -3333,13 +3908,13 @@ function pvpOver(w, reason){
   if (document.pointerLockElement) document.exitPointerLock();
   document.body.classList.remove('playing');
   $('pvpPauseScr').hidden = true;
-  const f0 = pvp.fighters[0], f1 = pvp.fighters[1];
-  $('pvpS0l').textContent = f0.tag; $('pvpS1l').textContent = f1.tag;
-  $('pvpS0').textContent = String(f1.deaths); $('pvpS1').textContent = String(f0.deaths);
+  const dl = $('pvpStats');
+  dl.innerHTML = pvp.fighters.map(f => '<div><dt style="color:' + f.pal.css + '"></dt><dd>' + bonksOf(f) + '</dd></div>').join('');
+  dl.querySelectorAll('dt').forEach((el, i) => { el.textContent = pvp.fighters[i].tag; });
   let title, lede;
   if (reason === 'left') { title = 'Opponent left'; lede = 'The other player disconnected. Head back to the menu to start a new room.'; }
   else if (pvp.mode === 'online') { const won = w === pvp.local.idx; title = won ? 'You win!' : 'You lose'; lede = (won ? 'You' : 'The ' + pvp.fighters[w].name) + ' got to ' + MATCH_KILLS + ' bonks first.'; }
-  else { title = pvp.fighters[w].tag + ' wins!'; lede = 'First to ' + MATCH_KILLS + ' bonks. Rematch keeps both phones connected.'; }
+  else { title = pvp.fighters[w].tag + ' wins!'; lede = 'First to ' + MATCH_KILLS + ' bonks. Rematch keeps every phone connected.'; }
   $('pvpOverTitle').textContent = title; $('pvpOverLede').textContent = lede;
   const canRematch = reason !== 'left' && (pvp.mode === 'couch' || pvp.role === 'host');
   $('pvpRematch').hidden = !canRematch; $('pvpReselect').hidden = !canRematch;
@@ -3348,7 +3923,8 @@ function pvpOver(w, reason){
   setTimeout(() => { if (pvp && pvp.phase === 'over') $('pvpOverScr').hidden = false; }, 900);
 }
 function teardownPvp(){
-  pvp.fighters.forEach(f => { scene.remove(f.model.group); scene.remove(f.cam); });
+  if (pvp.coop) { while (enemies.length) removeEnemy(enemies[0]); stash = 100; updateStashPile(); }
+  pvp.fighters.forEach(f => { scene.remove(f.model.group); scene.remove(f.cam); if (f.rev) { scene.remove(f.rev.g); f.rev.fg.geometry.dispose(); } });
   pvp.pk.forEach(k => scene.remove(k.obj)); pvp.projs.forEach(p => scene.remove(p.m));
   floats.forEach(f => f.el.remove()); floats.length = 0;
   pvp = null;
@@ -3359,9 +3935,10 @@ function teardownPvp(){
 }
 function backToSelect(){
   if (!pvp) return;
-  const { mode, role, r, code, m } = pvp, picks = pvp.fighters.map(f => f.ch);
+  const { mode, role, r, code, m, coop } = pvp, picks = [0, 0, 0, 0];
+  pvp.fighters.forEach(f => { picks[pvp.mode === 'couch' ? f.idx : f.vi] = f.ch; });
   teardownPvp();
-  enterSelect(mode, role, r, code, picks, m, mapIdx);
+  enterSelect(mode, role, r, code, picks, m, mapIdx, coop);
 }
 function leavePvp(){
   if (!pvp) return;
@@ -3379,13 +3956,19 @@ function pvpUpdate(dt){
     let ix = 0, iz = 0;
     if (keys.KeyW || keys.ArrowUp) iz += 1; if (keys.KeyS || keys.ArrowDown) iz -= 1;
     if (keys.KeyA || keys.ArrowLeft) ix -= 1; if (keys.KeyD || keys.ArrowRight) ix += 1;
-    I.x = ix; I.y = iz; I.sprint = !!(keys.ShiftLeft || keys.ShiftRight); I.fire = firing;
+    ix += GP.solo.x; iz += GP.solo.y;
+    I.x = clamp(ix, -1, 1); I.y = clamp(iz, -1, 1); I.sprint = !!(keys.ShiftLeft || keys.ShiftRight || GP.solo.sprint); I.fire = firing;
     if (jumpQueued) { jumpQueued = false; I.jumpQ = true; }
   }
   for (const f of pvp.fighters) {
     const simulated = pvp.mode === 'couch' || f === pvp.local;
     if (simulated) {
       fTimers(f, dt);
+      if (f.dead && pvp.coop && pvp.phase === 'play') {
+        const near = pvp.fighters.some(o => o !== f && !o.dead && Math.hypot(o.pos.x - f.pos.x, o.pos.z - f.pos.z) < REVIVE_R);
+        f.revT = near ? (f.revT || 0) + dt : Math.max(0, (f.revT || 0) - dt * 0.5);
+        if (f.revT >= REVIVE_T) revive(f);
+      }
       if (f.dead) { f.respawnT -= dt; f.vel.set(0, 0, 0); if (f.respawnT <= 0 && pvp.phase === 'play') respawn(f); }
       else if (pvp.phase === 'play') { fMove(f, dt); if (f.in.fire && f.gun.cd <= 0) fShoot(f); }
       else { f.in.jumpQ = false; f.vel.set(0, 0, 0); }
@@ -3401,71 +3984,122 @@ function pvpUpdate(dt){
   }
   pvpUpdateProjs(dt);
   pvpUpdatePickups(dt);
-  if (pvp.phase === 'play' && (pvp.mode === 'couch' || pvp.role === 'host')) {
-    const k0 = pvp.fighters[1].deaths, k1 = pvp.fighters[0].deaths;
-    if (k0 >= MATCH_KILLS || k1 >= MATCH_KILLS) pvpOver(k0 >= MATCH_KILLS ? 0 : 1);
+  if (pvp.coop) { if (pvp.mode === 'couch' || pvp.role === 'host') coopTick(dt); else coopReplicaTick(dt); }
+  if (pvp.phase === 'play' && !pvp.coop && (pvp.mode === 'couch' || pvp.role === 'host')) {
+    const w = pvp.fighters.findIndex(f => bonksOf(f) >= MATCH_KILLS);
+    if (w >= 0) pvpOver(w);
   }
   pvpHudUpdate(dt);
-  if (pvp.mode === 'online') netSend(); else tvSend(dt);
+  if (pvp.mode === 'online') netSend(dt); else tvSend(dt);
   // keep the sun's shadow box and the falling leaves around the action
-  const c = pvp.mode === 'couch' ? pvA.copy(pvp.fighters[0].pos).add(pvp.fighters[1].pos).multiplyScalar(0.5) : pvp.local.pos;
+  let c = pvp.local && pvp.local.pos;
+  if (pvp.mode === 'couch') { c = pvA.set(0, 0, 0); pvp.fighters.forEach(f => c.add(f.pos)); c.multiplyScalar(1 / pvp.fighters.length); }
   player.pos.copy(c); camera.position.copy(c); camera.position.y += 3;
 }
 function pvpRender(){
   const W = stage.clientWidth || window.innerWidth, H = stage.clientHeight || window.innerHeight;
   if (pvp.mode === 'couch') {
     renderer.setScissorTest(true);
+    const rects = viewRects(pvp.fighters.length, W, H);
     pvp.fighters.forEach((f, i) => {
-      const x = i * W / 2;
-      f.cam.aspect = (W / 2) / H; f.cam.updateProjectionMatrix();
+      const [x, y, w, h] = rects[i];
+      f.cam.aspect = w / h; f.cam.updateProjectionMatrix();
       pvp.fighters.forEach(g => setTail(g, g === f ? CAMS[g.camMode].tail : 1));
+      for (const e of enemies) billboardBar(e, f.cam);
       sky.position.copy(f.cam.position);
-      renderer.setViewport(x, 0, W / 2, H); renderer.setScissor(x, 0, W / 2, H);
+      renderer.setViewport(x, y, w, h); renderer.setScissor(x, y, w, h);
       renderer.render(scene, f.cam);
     });
     renderer.setScissorTest(false); renderer.setViewport(0, 0, W, H);
+    // the spare quarter with three players: a map of the meadow (drawn flat, so it costs nothing)
+    if (pvp.fighters.length === 3) drawMap();
   } else {
     const f = pvp.local;
     f.cam.aspect = W / H; f.cam.updateProjectionMatrix();
     setTail(f, CAMS[f.camMode].tail); setTail(pvp.remote, 1);
+    for (const e of enemies) billboardBar(e, f.cam);
     sky.position.copy(f.cam.position);
     renderer.render(scene, f.cam);
   }
 }
 
+let mapFont = '';
+// Who is where: the stash in the middle, each player as an arrow in their colour, enemies in red
+function drawMap(){
+  const cv = $('pvMapCv'); if (!cv) return;
+  const dpr = Math.min(2, window.devicePixelRatio || 1), cw = cv.clientWidth, ch = cv.clientHeight;
+  if (!cw || !ch) return;
+  if (cv.width !== Math.round(cw * dpr) || cv.height !== Math.round(ch * dpr)) { cv.width = Math.round(cw * dpr); cv.height = Math.round(ch * dpr); }
+  const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, cw, ch);
+  const R = Math.min(cw, ch) * 0.43, cx = cw / 2, cy = ch / 2 + 8, k = R / ARENA;
+  const X = (x) => cx + x * k, Y = (z) => cy + z * k;
+  g.fillStyle = '#5c8a35'; g.beginPath(); g.arc(cx, cy, R, 0, TAU); g.fill();
+  g.strokeStyle = 'rgba(255,243,220,.35)'; g.lineWidth = 2; g.stroke();
+  g.fillStyle = '#9a6a3a'; g.beginPath(); g.arc(cx, cy, R * 0.22, 0, TAU); g.fill();
+  // the stash: an acorn pile that shrinks as it is raided
+  if (pvp.coop) {
+  const sr = 5 + 7 * clamp(stash / 100, 0, 1);
+  g.fillStyle = stash < 30 ? '#ff5a3c' : '#e3a33c'; g.beginPath(); g.arc(cx, cy, sr, 0, TAU); g.fill();
+  g.strokeStyle = '#3b2414'; g.lineWidth = 2; g.stroke();
+  }
+  for (const q of pvp.pk) { g.fillStyle = q.kind === 'golden' ? '#ffd23f' : q.kind === 'power' ? '#7fd8ff' : '#c8955a'; g.fillRect(X(q.obj.position.x) - 3, Y(q.obj.position.z) - 3, 6, 6); }
+  for (const e of enemies) {
+    const r = e.boss ? 9 : e.type === 'crow' ? 4 : 5;
+    g.fillStyle = e.type === 'crow' ? '#b45cff' : e.type === 'mole' ? (e.up < 0.5 ? 'rgba(176,122,74,.6)' : '#c98a4a') : '#ff4a3a'; g.beginPath(); g.arc(X(e.pos.x), Y(e.pos.z), r, 0, TAU); g.fill();
+    if (e.boss) { g.strokeStyle = '#ffd23f'; g.lineWidth = 3; g.stroke(); }
+  }
+  for (const f of pvp.fighters) {
+    const x = X(f.pos.x), y = Y(f.pos.z), dx = -Math.sin(f.yaw), dz = -Math.cos(f.yaw);
+    g.globalAlpha = f.dead ? 0.35 : 1;
+    g.fillStyle = f.pal.css; g.strokeStyle = '#1b120b'; g.lineWidth = 2;
+    g.beginPath(); g.moveTo(x + dx * 11, y + dz * 11); g.lineTo(x - dz * 7 - dx * 6, y + dx * 7 - dz * 6); g.lineTo(x + dz * 7 - dx * 6, y - dx * 7 - dz * 6); g.closePath(); g.fill(); g.stroke();
+    g.font = mapFont || (mapFont = '700 12px ' + (getComputedStyle(document.body).getPropertyValue('--display').trim() || 'sans-serif')); g.textAlign = 'center';
+    g.fillStyle = '#fff3dc'; g.fillText('P' + (f.idx + 1) + (f.dead ? ' ' + Math.ceil(f.respawnT) : ''), x, y - 13);
+    g.globalAlpha = 1;
+  }
+}
+
 // ---------- character select
 let sel = null;
-const selSide = (i) => (i ? 1 : -1) * 1.45; // P1 on the left of the camera, P2 on the right
+// P1 on the left of the camera, P2 on the right; four across for couch co-op
+const selSide = (i) => sel && sel.n === 4 ? [-2.55, -0.85, 0.85, 2.55][i] : (i ? 1 : -1) * 1.45;
 const selPos = (i, out) => out.set(SEL.sx + SEL.uz * selSide(i), 0, SEL.sz - SEL.ux * selSide(i));
 const chIdx = (v) => { const n = Math.round(+v); return CHARS[n] ? n : 0; };
 function hostChars(pr){ return Array.isArray(pr.chars) ? [chIdx(pr.chars[0]), chIdx(pr.chars[1])] : [chIdx(pr.ch), 0]; }
 const mapOf = (v) => { const n = Math.round(+v); return MAPS[n] ? n : 0; };
-function enterSelect(mode, role, r, code, picks, prevM, map){
+// coop: a co-op match; base: the join address, for the QR codes of players who are still to join
+function enterSelect(mode, role, r, code, picks, prevM, map, coop, base){
   lobby = null;
-  ['menu', 'vsScr', 'lobbyScr', 'pvpOverScr', 'pvpPauseScr'].forEach(id => { $(id).hidden = true; });
+  ['menu', 'vsScr', 'coScr', 'lobbyScr', 'pvpOverScr', 'pvpPauseScr'].forEach(id => { $(id).hidden = true; });
   hud.hidden = true; sq.group.visible = false; firing = false;
   if (sel) clearPreviews();
   const local = mode === 'couch' ? -1 : (role === 'host' ? 0 : 1);
-  sel = { mode, role, r, code, local, picks: picks ? picks.slice() : [0, 0], ready: [false, false], padOk: [false, false],
-    previews: [null, null], shown: [-1, -1], missing: 0, go: 0, t: 0, prevM: prevM || 0, sendT: 0, ui: [] };
+  const n = mode === 'couch' ? 4 : 2;
+  const p0 = picks ? picks.slice(0, n) : []; while (p0.length < n) p0.push(0);
+  for (const k in GP.sel) { GP.sel[k].rdy = 0; if (picks && picks[k - 1] !== undefined) GP.sel[k].ch = picks[k - 1]; }
+  sel = { mode, role, r, code, local, n, coop: !!coop, picks: p0, ready: Array(n).fill(false), padOk: Array(n).fill(false),
+    previews: Array(n).fill(null), shown: Array(n).fill(-1), missing: 0, go: 0, t: 0, prevM: prevM || 0, sendT: 0, ui: [], base: base || null };
+  if (n === 4 && !sel.base) gameUrl().then(b => { if (sel) sel.base = b; });
+  $('selScr').classList.toggle('quad', n === 4);
+  for (let i = 2; i < 4; i++) $('sel' + i).hidden = i >= n;
   sel.map = map === undefined ? mapIdx : mapOf(map); sel.lastMp = null; buildMap(sel.map);
   const canMap = mode === 'couch' || role === 'host';
   $('selMaps').innerHTML = '';
   sel.mapBtns = MAPS.map((D, i) => $('selMaps').appendChild(mapCard(i, canMap ? selMap : null)));
-  [0, 1].forEach(buildSelPanel);
+  for (let i = 0; i < n; i++) buildSelPanel(i);
   $('selLede').textContent = mode === 'couch'
-    ? 'Each player picks on their phone, then taps Ready. Choose the map below (click it, or P1 taps Change map).'
+    ? 'Everyone picks on their phone, then taps Ready. More players can still scan in. The match starts when everyone in is ready.'
     : (role === 'host' ? 'Pick with the mouse or the arrow keys, then press Ready (Enter). You choose the map.' : 'Pick with the mouse or the arrow keys, then press Ready (Enter). The host chooses the map.');
   $('selScr').hidden = false;
   state = 'select';
-  if (mode === 'couch') r.presence({ role: 'tv', code, phase: 'select', m: 0, hud: null, picks: sel.picks, ready: sel.ready, map: sel.map, mapName: MAPS[sel.map].name }).catch(() => {});
-  else r.presence({ role, code, phase: 'select', m: 0, ch: sel.picks[local], rdy: 0, map: sel.map }).catch(() => {});
+  if (mode === 'couch') r.presence({ role: 'tv', code, phase: 'select', m: 0, hud: null, picks: sel.picks, ready: sel.ready, in: sel.padOk, map: sel.map, mapName: MAPS[sel.map].name, coop: coop ? 1 : 0 }).catch(() => {});
+  else r.presence({ role, code, phase: 'select', m: 0, ch: sel.picks[local], rdy: 0, map: sel.map, coop: coop ? 1 : 0 }).catch(() => {});
 }
 function buildSelPanel(i){
   const el = $('sel' + i), isLocal = sel.local === i;
   el.style.setProperty('--pc', PALS[i].css);
-  const who = sel.mode === 'couch' ? PALS[i].name + ' team · phone' : (isLocal ? 'You · ' + PALS[i].name + ' team' : 'Opponent · ' + PALS[i].name + ' team');
-  el.innerHTML = '<div class="sel-head"><b>P' + (i + 1) + '</b><span></span></div><div class="sel-name"></div><div class="sel-list"></div><div class="sel-foot"><span class="sel-status"></span></div>';
+  const who = sel.mode === 'couch' ? PALS[i].name + ' team · phone' : (isLocal ? 'You · ' + PALS[i].name + ' team' : (sel.coop ? 'Teammate · ' : 'Opponent · ') + PALS[i].name + ' team');
+  el.innerHTML = '<div class="sel-head"><b>P' + (i + 1) + '</b><span></span></div><div class="sel-name"></div><div class="sel-list"></div><div class="sel-join" hidden><div class="qr-code"></div><span>Scan to join</span></div><div class="sel-foot"><span class="sel-status"></span></div>';
   el.querySelector('.sel-head span').textContent = who;
   const list = el.querySelector('.sel-list');
   const btns = CHARS.map((c, k) => {
@@ -3480,7 +4114,7 @@ function buildSelPanel(i){
     ready.addEventListener('click', selToggleReady);
     el.querySelector('.sel-foot').appendChild(ready);
   }
-  sel.ui[i] = { name: el.querySelector('.sel-name'), status: el.querySelector('.sel-status'), btns, ready };
+  sel.ui[i] = { el, name: el.querySelector('.sel-name'), status: el.querySelector('.sel-status'), btns, ready, join: el.querySelector('.sel-join'), qr: el.querySelector('.sel-join .qr-code'), qrDone: false };
 }
 function selMap(i){
   if (!sel) return;
@@ -3500,7 +4134,7 @@ function selToggleReady(){
   sel.r.presence({ ch: sel.picks[sel.local], rdy: sel.ready[sel.local] ? 1 : 0 }).catch(() => {});
   if (sel.ready[sel.local]) sfx.pickup(true);
 }
-function clearPreviews(){ sel.previews.forEach(m => { if (m) scene.remove(m.group); }); sel.previews = [null, null]; sel.shown = [-1, -1]; }
+function clearPreviews(){ sel.previews.forEach(m => { if (m) scene.remove(m.group); }); sel.previews = sel.previews.map(() => null); sel.shown = sel.shown.map(() => -1); }
 function selAbort(msg){
   const r = sel.r; clearPreviews(); sel = null; leaveRoom(r);
   $('selScr').hidden = true; sq.group.visible = true; player.pos.set(0, 0, 9);
@@ -3510,15 +4144,17 @@ function selTick(dt){
   const S = sel; S.t += dt;
   const peers = peersFor(S.r, S.code);
   if (S.mode === 'couch') {
-    for (let i = 0; i < 2; i++) {
+    for (let i = 0; i < S.n; i++) {
       const ps = peers.filter(p => p.presence.role === 'pad' && p.presence.slot === i + 1), p = ps[ps.length - 1];
       S.padOk[i] = !!p;
       const inp = p && p.presence.i && typeof p.presence.i === 'object' ? p.presence.i : null;
       if (inp) { S.picks[i] = chIdx(inp.ch); S.ready[i] = S.t > 1 && !!inp.rdy; } else S.ready[i] = false;
       if (i === 0 && inp) { const mp = +inp.mp || 0; if (S.lastMp !== null && mp !== S.lastMp) selMap((S.map + 1) % MAPS.length); S.lastMp = mp; }
+      // a controller holding this spot
+      if (gpHas(i + 1, S.code)) { const st = GP.sel[i + 1]; S.padOk[i] = true; S.picks[i] = st.ch; S.ready[i] = S.t > 1 && !!st.rdy; }
     }
     S.sendT -= dt;
-    if (S.sendT <= 0) { S.sendT = 0.15; S.r.presence({ role: 'tv', code: S.code, phase: 'select', m: 0, picks: S.picks.slice(), ready: S.ready.slice(), map: S.map, mapName: MAPS[S.map].name }).catch(() => {}); }
+    if (S.sendT <= 0) { S.sendT = 0.15; S.r.presence({ role: 'tv', code: S.code, phase: 'select', m: 0, picks: S.picks.slice(), ready: S.ready.slice(), in: S.padOk.slice(), map: S.map, mapName: MAPS[S.map].name, coop: S.coop ? 1 : 0 }).catch(() => {}); }
   } else {
     const want = S.role === 'host' ? 'guest' : 'host', p = peers.find(q => q.presence.role === want), o = 1 - S.local;
     if (!p) { S.missing += dt; if (S.missing > 6) { selAbort('Your opponent left the room. Start a new versus game from the menu.'); return; } }
@@ -3527,21 +4163,29 @@ function selTick(dt){
       const pr = p.presence;
       if (S.role === 'guest' && (pr.phase === 'countdown' || pr.phase === 'play') && +pr.m > 0) {
         const chars = hostChars(pr); chars[S.local] = S.picks[S.local];
-        const r = S.r, code = S.code; clearPreviews(); sel = null; $('selScr').hidden = true;
-        startPvp('online', 'guest', r, code, +pr.m, chars, mapOf(pr.map)); return;
+        const r = S.r, code = S.code, coop = S.coop; clearPreviews(); sel = null; $('selScr').hidden = true;
+        startPvp('online', 'guest', r, code, +pr.m, chars, mapOf(pr.map), coop); return;
       }
       if (S.role === 'guest' && pr.map !== undefined && mapOf(pr.map) !== S.map) { S.map = mapOf(pr.map); buildMap(S.map); }
       if (pr.phase === 'select' || S.role === 'host') { S.picks[o] = chIdx(pr.ch); S.ready[o] = S.t > 1 && pr.phase === 'select' && !!pr.rdy; }
     }
   }
-  // both ready: the TV or the host starts the match
-  if ((S.mode === 'couch' || S.role === 'host') && S.ready[0] && S.ready[1]) {
+  // everyone ready: the TV or the host starts the match (couch co-op: everyone whose phone is in, at least two)
+  const inSlots = S.mode === 'couch' ? S.padOk.map((ok, i) => ok ? i : -1).filter(i => i >= 0) : [0, 1];
+  const allReady = inSlots.length >= 2 && inSlots.every(i => S.ready[i]);
+  if ((S.mode === 'couch' || S.role === 'host') && allReady) {
     S.go += dt;
-    if (S.go > 0.8) { const { mode, role, r, code } = S, chars = S.picks.slice(), m = S.prevM + 1, map = S.map; clearPreviews(); sel = null; $('selScr').hidden = true; startPvp(mode, role, r, code, m, chars, map); return; }
+    if (S.go > 0.8) {
+      const { mode, role, r, code, coop } = S, chars = inSlots.map(i => S.picks[i]), slots = inSlots.map(i => i + 1), m = S.prevM + 1, map = S.map;
+      clearPreviews(); sel = null; $('selScr').hidden = true; $('selScr').classList.remove('quad');
+      startPvp(mode, role, r, code, m, chars, map, coop, slots); return;
+    }
   } else S.go = 0;
   if (S.mapBtns) S.mapBtns.forEach((b, i) => setClass(b, 'on', i === S.map));
-  // 3D previews standing in the meadow
-  for (let i = 0; i < 2; i++) {
+  // 3D previews standing in the meadow (couch co-op: only players whose phone is in)
+  for (let i = 0; i < S.n; i++) {
+    const here = S.mode !== 'couch' || S.padOk[i];
+    if (!here) { if (S.previews[i]) { scene.remove(S.previews[i].group); S.previews[i] = null; S.shown[i] = -1; } continue; }
     if (S.shown[i] !== S.picks[i]) {
       if (S.previews[i]) scene.remove(S.previews[i].group);
       const m = buildCritter(CHARS[S.picks[i]].id, PALS[i]); scene.add(m.group);
@@ -3550,22 +4194,31 @@ function selTick(dt){
     }
     const m = S.previews[i];
     selPos(i, m.group.position); m.group.position.y = S.ready[i] ? Math.abs(Math.sin(time * 6)) * 0.25 : 0;
-    m.group.rotation.y = Math.atan2(-SEL.ux, -SEL.uz) + (i ? 0.3 : -0.3) + Math.sin(time * 0.8 + i) * 0.15;
+    m.group.rotation.y = Math.atan2(-SEL.ux, -SEL.uz) + selSide(i) * -0.2 + Math.sin(time * 0.8 + i) * 0.15;
     m.body.position.y = Math.sin(time * 2.2 + i) * 0.015;
     const wg = m.wag || 1;
     m.segs.forEach((s, k) => { const b = s.userData.base, t = s.userData.t; s.position.set(b.x + Math.sin(time * 2.6 * Math.max(1, wg) - k * 0.45) * 0.07 * t * wg, b.y, b.z); });
     m.gunRig.rotation.x = -0.15;
   }
-  camera.position.set(SEL.sx + SEL.ux * 6.2, 1.75, SEL.sz + SEL.uz * 6.2);
+  const back = S.n === 4 ? 8.4 : 6.2;
+  camera.position.set(SEL.sx + SEL.ux * back, 1.75, SEL.sz + SEL.uz * back);
   camera.lookAt(SEL_SPOT.x, 1.15, SEL_SPOT.z);
   if (Math.abs(camera.fov - 50) > 0.05) { camera.fov = 50; camera.updateProjectionMatrix(); }
   player.pos.copy(SEL_SPOT);
   // panels
-  for (let i = 0; i < 2; i++) {
+  for (let i = 0; i < S.n; i++) {
     const u = S.ui[i]; if (!u) continue;
+    // couch co-op: a missing player's panel shows their QR code instead
+    const away = S.mode === 'couch' && !S.padOk[i];
+    setClass(u.el, 'away', away); u.join.hidden = !away;
+    if (away && !u.qrDone && S.base && window.QRCode) {
+      u.qrDone = true;
+      try { new QRCode(u.qr, { text: S.base + '#vs-' + S.code + '-p' + (i + 1), width: 120, height: 120, colorDark: '#1b120b', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M }); } catch (e) {}
+    }
     const nm = CHARS[S.picks[i]].name; if (u.name.textContent !== nm) u.name.textContent = nm;
+    if (S.mode === 'couch') { const hd = PALS[i].name + ' team · ' + (gpHas(i + 1, S.code) ? 'controller' : 'phone'), he = u.el.querySelector('.sel-head span'); if (he.textContent !== hd) he.textContent = hd; }
     u.btns.forEach((b, k) => setClass(b, 'on', k === S.picks[i]));
-    const st = S.ready[i] ? 'Ready!' : (S.mode === 'couch' && !S.padOk[i] ? 'Phone disconnected' : (S.mode === 'online' && i !== S.local && S.missing > 0 ? 'Reconnecting…' : 'Picking…'));
+    const st = S.ready[i] ? 'Ready!' : (S.mode === 'couch' && !S.padOk[i] ? 'Not joined' : (S.mode === 'online' && i !== S.local && S.missing > 0 ? 'Reconnecting…' : 'Picking…'));
     if (u.status.textContent !== st) u.status.textContent = st;
     setClass(u.status, 'ok', S.ready[i]);
     if (u.ready) { const t = S.ready[i] ? 'Not ready' : 'Ready'; if (u.ready.textContent !== t) u.ready.textContent = t; setClass(u.ready, 'ready-on', S.ready[i]); }
@@ -3574,7 +4227,7 @@ function selTick(dt){
 $('selLeave').addEventListener('click', () => {
   if (!sel) return;
   const r = sel.r; clearPreviews(); sel = null; leaveRoom(r);
-  $('selScr').hidden = true; sq.group.visible = true; player.pos.set(0, 0, 9);
+  $('selScr').hidden = true; $('selScr').classList.remove('quad'); sq.group.visible = true; player.pos.set(0, 0, 9);
   state = 'menu'; $('menu').hidden = false;
 });
 
@@ -3596,31 +4249,34 @@ function qrCard(label, css, link){
   return d.querySelector('.qr-status');
 }
 function showLobby(title, lede){
-  ['menu', 'vsScr', 'overScr', 'pauseScr'].forEach(id => { $(id).hidden = true; });
+  ['menu', 'vsScr', 'coScr', 'overScr', 'pauseScr'].forEach(id => { $(id).hidden = true; });
   $('lobbyScr').hidden = false; $('lobbyCancel').textContent = 'Cancel'; $('lobbyTitle').textContent = title; $('lobbyLede').textContent = lede; $('lobbyQrs').innerHTML = ''; $('lobbyNote').hidden = true;
 }
 const roomErr = (err) => err === 'unavailable'
   ? (window.claude ? 'Multiplayer could not connect in this view. Open the game on claude.ai while signed in, then try again.' : 'Could not reach the game server. Check your connection and try again.')
   : 'Could not open a game room (' + err + '). Try again in a moment.';
-async function openLobby(mode){
+async function openLobby(mode, coop){
   initAudio();
   const ticket = {}; lobby = ticket;
-  showLobby(mode === 'couch' ? 'Couch versus' : 'Online versus', 'Opening a game room…');
+  showLobby((mode === 'couch' ? 'Couch ' : 'Online ') + (coop ? 'co-op' : 'versus'), 'Opening a game room…');
   const code = Math.random().toString(36).slice(2, 8).replace(/[^a-z0-9]/g, 'x').padEnd(6, '7');
   const j = await joinCode(code);
   if (lobby !== ticket) { if (j.r) leaveRoom(j.r); return; }
   if (!j.r) { $('lobbyLede').textContent = roomErr(j.err); return; }
   const base = await gameUrl();
   if (lobby !== ticket) { leaveRoom(j.r); return; }
-  Object.assign(ticket, { mode, code, r: j.r, status: [] });
-  j.r.presence({ role: mode === 'couch' ? 'tv' : 'host', code, phase: 'lobby', m: 0 }).catch(() => {});
+  Object.assign(ticket, { mode, code, r: j.r, status: [], coop: !!coop, base });
+  j.r.presence({ role: mode === 'couch' ? 'tv' : 'host', code, phase: 'lobby', m: 0, coop: coop ? 1 : 0 }).catch(() => {});
   $('lobbyNote').hidden = false;
   if (!window.claude) $('lobbyNote').textContent = mode === 'couch'
     ? 'Phones on the same Wi-Fi as this screen connect straight to it, so the controls feel instant.'
-    : 'Your opponent can join from anywhere with this link.';
+    : coop ? 'Your teammate can join from anywhere with this link.' : 'Your opponent can join from anywhere with this link.';
   if (mode === 'couch') {
-    $('lobbyLede').textContent = 'Each player scans their code with their phone. The game starts on this screen as soon as both phones are in.';
-    ticket.status = [qrCard('Player 1 · Red', PALS[0].css, base + '#vs-' + code + '-p1'), qrCard('Player 2 · Gray', PALS[1].css, base + '#vs-' + code + '-p2')];
+    $('lobbyLede').textContent = 'Up to four players: each scans their own code, or presses A on a game controller. Fighter select opens as soon as two players are in, and the others can still join there.' + (coop ? '' : ' Three or four players is a free-for-all.');
+    ticket.status = PALS.map((P, i) => qrCard('Player ' + (i + 1) + ' · ' + P.name, P.css, base + '#vs-' + code + '-p' + (i + 1)));
+  } else if (coop) {
+    $('lobbyLede').textContent = 'Send this link to your teammate, or have them scan the code. You pick fighters as soon as they open it.';
+    ticket.status = [qrCard('Join link', PALS[1].css, base + '#vs-' + code + '-join')];
   } else {
     $('lobbyLede').textContent = 'Send this link to your opponent, or have them scan the code. The match starts as soon as they open it.';
     ticket.status = [qrCard('Join link', PALS[1].css, base + '#vs-' + code + '-join')];
@@ -3642,17 +4298,17 @@ function lobbyTick(dt){
   const L = lobby; if (!L || !L.r) return;
   const peers = peersFor(L.r, L.code);
   if (L.mode === 'couch') {
-    const pads = [1, 2].map(s => peers.find(p => p.presence.role === 'pad' && p.presence.slot === s));
-    const has = pads.map(p => !!p);
-    pads.forEach((p, i) => { const el = L.status[i]; const t = p ? (p.direct ? 'Phone connected ⚡ direct' : 'Phone connected') : 'Waiting for phone…'; if (el.textContent !== t) { el.textContent = t; el.classList.toggle('ok', !!p); } });
-    if (has[0] && has[1]) enterSelect('couch', 'tv', L.r, L.code);
+    const pads = [1, 2, 3, 4].map(s => peers.find(p => p.presence.role === 'pad' && p.presence.slot === s));
+    const has = pads.map((p, i) => !!p || gpHas(i + 1, L.code));
+    pads.forEach((p, i) => { const el = L.status[i]; const t = gpHas(i + 1, L.code) ? '🎮 Controller connected' : p ? (p.direct ? 'Phone connected ⚡ direct' : 'Phone connected') : 'Waiting for phone…'; if (el.textContent !== t) { el.textContent = t; el.classList.toggle('ok', has[i]); } });
+    if (has.filter(Boolean).length >= 2) enterSelect('couch', 'tv', L.r, L.code, undefined, 0, undefined, L.coop, L.base);
   } else if (L.mode === 'online') {
-    if (peers.some(p => p.presence.role === 'guest')) { L.status[0].textContent = 'Opponent joined'; L.status[0].classList.add('ok'); enterSelect('online', 'host', L.r, L.code); }
+    if (peers.some(p => p.presence.role === 'guest')) { L.status[0].textContent = L.coop ? 'Teammate joined' : 'Opponent joined'; L.status[0].classList.add('ok'); enterSelect('online', 'host', L.r, L.code, undefined, 0, undefined, L.coop); }
   } else if (L.mode === 'guest') {
     L.t += dt;
     const host = peers.find(p => p.presence.role === 'host');
-    if (host && host.presence.phase === 'select') enterSelect('online', 'guest', L.r, L.code);
-    else if (host && (host.presence.phase === 'countdown' || host.presence.phase === 'play') && +host.presence.m > 0) startPvp('online', 'guest', L.r, L.code, +host.presence.m, hostChars(host.presence), mapOf(host.presence.map));
+    if (host && host.presence.phase === 'select') enterSelect('online', 'guest', L.r, L.code, undefined, 0, undefined, !!host.presence.coop);
+    else if (host && (host.presence.phase === 'countdown' || host.presence.phase === 'play') && +host.presence.m > 0) startPvp('online', 'guest', L.r, L.code, +host.presence.m, hostChars(host.presence), mapOf(host.presence.map), !!host.presence.coop);
     else if (!host && L.t > 8) { const t = 'Still waiting. Ask the host to keep the game open on the lobby screen.'; if ($('lobbyLede').textContent !== t) $('lobbyLede').textContent = t; }
   }
 }
@@ -3662,6 +4318,10 @@ function cancelLobby(){
   $('lobbyScr').hidden = true; $('menu').hidden = false;
 }
 $('versusBtn').addEventListener('click', () => { $('menu').hidden = true; $('vsScr').hidden = false; $('couchBtn').focus({ preventScroll: true }); });
+$('coopBtn').addEventListener('click', () => { $('menu').hidden = true; $('coScr').hidden = false; $('coCouchBtn').focus({ preventScroll: true }); });
+$('coBack').addEventListener('click', () => { $('coScr').hidden = true; $('menu').hidden = false; });
+$('coCouchBtn').addEventListener('click', () => openLobby('couch', true));
+$('coOnlineBtn').addEventListener('click', () => openLobby('online', true));
 $('vsBack').addEventListener('click', () => { $('vsScr').hidden = true; $('menu').hidden = false; });
 $('couchBtn').addEventListener('click', () => openLobby('couch'));
 $('onlineBtn').addEventListener('click', () => openLobby('online'));
@@ -3671,6 +4331,135 @@ $('pvpLeave').addEventListener('click', leavePvp);
 $('pvpOverLeave').addEventListener('click', leavePvp);
 $('pvpReselect').addEventListener('click', backToSelect);
 $('pvpRematch').addEventListener('click', () => { if (!pvp) return; pvpBegin(pvp.m + 1); if (pvp.mode === 'online') { document.body.classList.add('playing'); lockPointer(); } });
+
+// ---------------------------------------------------------------- game controllers
+// Any controller the browser reports with the "standard" layout (Xbox, PlayStation, Switch Pro...):
+// left stick moves, right stick aims, RT fires, A jumps, X reloads, LB/RB switch weapons,
+// Y changes the camera, B or L3 sprints, Start pauses. On menus the d-pad moves and A presses.
+// On the couch a controller takes a player spot of its own: press A in the lobby or at fighter select.
+const GP = { prev: {}, rep: {}, now: {}, slots: {}, sel: {}, code: null, dt: 0, firing: false,
+  solo: { x: 0, y: 0, sprint: false } };
+const GB = { A: 0, B: 1, X: 2, Y: 3, LB: 4, RB: 5, LT: 6, RT: 7, BACK: 8, START: 9, L3: 10, R3: 11, UP: 12, DOWN: 13, LEFT: 14, RIGHT: 15 };
+function gpList(){ try { return [...(navigator.getGamepads ? navigator.getGamepads() : [])].filter(g => g && g.connected && g.buttons && g.axes); } catch (e) { return []; } }
+const gpDead = (v) => Math.abs(v) < 0.18 ? 0 : (v - Math.sign(v) * 0.18) / 0.82;
+function gpSlotOf(idx){ for (const k in GP.slots) if (GP.slots[k] === idx) return +k; return 0; }
+// a couch player spot held by a controller (in this room)
+function gpHas(slot, code){ return GP.code === code && GP.slots[slot] !== undefined && !!GP.now[GP.slots[slot]]; }
+function gpNote(text){ const n = $('gpNote'); if (!n) return; n.textContent = text; n.classList.remove('show'); void n.offsetWidth; n.classList.add('show'); }
+window.addEventListener('gamepadconnected', (e) => { gpNote('🎮 Controller ready' + (e.gamepad && e.gamepad.id ? ': ' + e.gamepad.id.replace(/\s*\(.*$/, '').slice(0, 40) : '')); });
+window.addEventListener('gamepaddisconnected', (e) => { const sl = gpSlotOf(e.gamepad.index); if (sl) { delete GP.slots[sl]; delete GP.sel[sl]; } delete GP.now[e.gamepad.index]; gpNote('🎮 Controller disconnected'); });
+function gpPoll(dt){
+  GP.dt = dt; GP.solo.x = 0; GP.solo.y = 0; GP.solo.sprint = false;
+  const pads = gpList(), seen = {};
+  let anyFire = false;
+  for (const g of pads) {
+    const b = g.buttons.map(x => !!x && (x.pressed || x.value > 0.5));
+    // the aim stick gets a curve: small pushes for fine aim, full push to spin round
+    const a = [0, 1, 2, 3].map(i => { const v = gpDead(+g.axes[i] || 0); return i < 2 ? v : Math.sign(v) * Math.pow(Math.abs(v), 1.7); });
+    const pv = GP.prev[g.index] || []; GP.prev[g.index] = b;
+    const P = { idx: g.index, b, a, hit: (i) => b[i] && !pv[i] };
+    // the left stick also works as a d-pad on menus, repeating while held
+    let dir = P.hit(GB.UP) ? 'up' : P.hit(GB.DOWN) ? 'down' : P.hit(GB.LEFT) ? 'left' : P.hit(GB.RIGHT) ? 'right' : '';
+    const r = GP.rep[g.index] || (GP.rep[g.index] = { t: 0, d: '' }), sx = a[0], sy = a[1];
+    const sd = Math.max(Math.abs(sx), Math.abs(sy)) > 0.6 ? (Math.abs(sx) > Math.abs(sy) ? (sx > 0 ? 'right' : 'left') : (sy > 0 ? 'down' : 'up')) : '';
+    if (sd) { if (sd !== r.d) { dir = dir || sd; r.t = 0.35; } else if ((r.t -= dt) <= 0) { dir = dir || sd; r.t = 0.14; } }
+    r.d = sd;
+    P.dir = dir; GP.now[g.index] = P; seen[g.index] = 1;
+    if (gpHandle(P, dt)) anyFire = true;
+  }
+  for (const k in GP.now) if (!seen[k]) delete GP.now[k];
+  if (anyFire) { firing = true; GP.firing = true; } else if (GP.firing) { firing = false; GP.firing = false; }
+}
+// returns true while this controller holds the trigger for the local player
+function gpHandle(P, dt){
+  if (state === 'playing') return gpLocal(P, dt, null);
+  if (state === 'pvp' && pvp) {
+    if (pvp.phase === 'over' && !$('pvpOverScr').hidden) { gpMenu(P); return false; }
+    if (pvp.mode === 'online') { if (!$('pvpPauseScr').hidden) { gpMenu(P); return false; } return gpLocal(P, dt, pvp.local); }
+    return false; // couch: padRead reads each controller for its own fighter
+  }
+  if (state === 'select' && sel) {
+    if (sel.mode === 'couch') {
+      const slot = GP.code === sel.code ? gpSlotOf(P.idx) : 0;
+      if (!slot) { if (P.hit(GB.A) || P.hit(GB.START)) gpClaim(P.idx, sel.r, sel.code); else if (P.hit(GB.B)) gpMenu(P); return false; }
+      const st = GP.sel[slot];
+      if (P.dir === 'left' || P.dir === 'right') { st.ch = (st.ch + (P.dir === 'right' ? 1 : -1) + CHARS.length) % CHARS.length; st.rdy = 0; sfx.swap(); }
+      if (P.hit(GB.A) || P.hit(GB.START)) { st.rdy = st.rdy ? 0 : 1; if (st.rdy) sfx.pickup(true); }
+      if (P.hit(GB.B)) { if (st.rdy) st.rdy = 0; else { delete GP.slots[slot]; delete GP.sel[slot]; gpNote('🎮 Controller left P' + slot); } }
+      if (P.hit(GB.Y)) selMap((sel.map + 1) % MAPS.length);
+      return false;
+    }
+    if (P.dir === 'left' || P.dir === 'right') selPick(sel.picks[sel.local] + (P.dir === 'right' ? 1 : -1));
+    if (P.hit(GB.A) || P.hit(GB.START)) selToggleReady();
+    if (P.hit(GB.Y) && sel.role === 'host') selMap((sel.map + 1) % MAPS.length);
+    if (P.hit(GB.B)) gpMenu(P);
+    return false;
+  }
+  if (state === 'lobby' && lobby && lobby.mode === 'couch' && lobby.r && (P.hit(GB.A) || P.hit(GB.START))) {
+    if (!(GP.code === lobby.code && gpSlotOf(P.idx))) gpClaim(P.idx, lobby.r, lobby.code);
+    return false;
+  }
+  if (state === 'paused' && P.hit(GB.START)) { resume(); return false; }
+  gpMenu(P);
+  return false;
+}
+// a controller takes the first player spot no phone or controller has
+function gpClaim(idx, r, code){
+  if (GP.code !== code) { GP.code = code; GP.slots = {}; GP.sel = {}; }
+  const peers = peersFor(r, code);
+  for (let k = 1; k <= 4; k++) {
+    if (GP.slots[k] !== undefined || peers.some(p => p.presence.role === 'pad' && p.presence.slot === k)) continue;
+    GP.slots[k] = idx; GP.sel[k] = { ch: sel && sel.picks[k - 1] !== undefined ? sel.picks[k - 1] : 0, rdy: 0 };
+    sfx.pickup(true); gpNote('🎮 Controller is P' + k + ' (' + PALS[k - 1].name + ')');
+    return k;
+  }
+  gpNote('All four spots are taken');
+  return 0;
+}
+// solo, or your own fighter online
+function gpLocal(P, dt, f){
+  const S = GP.solo; S.x += P.a[0]; S.y -= P.a[1]; S.sprint = S.sprint || P.b[GB.B] || P.b[GB.L3];
+  if (f) {
+    if (!f.dead && pvp.phase !== 'over') { f.yaw -= P.a[2] * 2.7 * dt; f.pitch = clamp(f.pitch - P.a[3] * 1.8 * dt, PMIN, PMAX); }
+    if (P.hit(GB.A)) jumpQueued = true;
+    if (P.hit(GB.X)) fReload(f);
+    if (P.hit(GB.RB)) fCycle(f, 1); if (P.hit(GB.LB)) fCycle(f, -1);
+    if (P.hit(GB.Y)) { f.camMode = (f.camMode + 1) % 2; pvpToast(f, 'Camera: ' + CAMS[f.camMode].name); }
+    if (P.hit(GB.START)) { firing = false; showPvpPause(); return false; }
+    if (P.b[GB.RT]) document.body.classList.add('playing');
+  } else {
+    yaw -= P.a[2] * 2.7 * dt; pitch = clamp(pitch - P.a[3] * 1.8 * dt, PMIN, PMAX);
+    if (P.hit(GB.A)) jumpQueued = true;
+    if (P.hit(GB.X)) startReload();
+    if (P.hit(GB.RB)) cycleWeapon(1); if (P.hit(GB.LB)) cycleWeapon(-1);
+    if (P.hit(GB.Y)) cycleCam();
+    if (P.hit(GB.START)) { pause(); return false; }
+  }
+  return P.b[GB.RT];
+}
+// a couch fighter driven by a controller (read once a frame by padRead)
+function gpFighter(f, P){
+  const dt = GP.dt;
+  f.in.x = P.a[0]; f.in.y = -P.a[1]; f.in.fire = P.b[GB.RT]; f.in.sprint = P.b[GB.B] || P.b[GB.L3];
+  f.last = null;
+  if (f.dead || pvp.phase === 'over') return;
+  f.yaw -= P.a[2] * 2.6 * dt; f.pitch = clamp(f.pitch - P.a[3] * 1.8 * dt, PMIN, PMAX);
+  if (P.hit(GB.A)) f.in.jumpQ = true;
+  if (P.hit(GB.X)) fReload(f);
+  if (P.hit(GB.RB)) fCycle(f, 1); if (P.hit(GB.LB)) fCycle(f, -1);
+  if (P.hit(GB.Y)) { f.camMode = (f.camMode + 1) % 2; pvpToast(f, 'Camera: ' + CAMS[f.camMode].name); }
+}
+// menus: the d-pad moves between buttons, A presses, B goes back
+function gpMenu(P){
+  const roots = [...document.querySelectorAll('.screen:not([hidden]), #selScr:not([hidden])')];
+  const root = roots[roots.length - 1]; if (!root) return;
+  const btns = [...root.querySelectorAll('button, input[type=text], a[href]')].filter(b => !b.disabled && b.offsetParent !== null && !b.closest('[hidden]') && !b.classList.contains('sel-ch'));
+  if (!btns.length) return;
+  const cur = btns.indexOf(document.activeElement);
+  if (P.dir) { const step = P.dir === 'up' || P.dir === 'left' ? -1 : 1; btns[cur < 0 ? 0 : (cur + step + btns.length) % btns.length].focus(); sfx.swap(); }
+  if (P.hit(GB.A) || P.hit(GB.START)) (cur >= 0 ? btns[cur] : btns[0]).click();
+  if (P.hit(GB.B)) { const back = btns.find(b => /^(back|cancel|leave|back to menu)\b/i.test(b.textContent.trim())); if (back) back.click(); }
+}
 
 // ---------------------------------------------------------------- loop
 const clock = new THREE.Clock();
@@ -3707,7 +4496,7 @@ function update(dt){
   if (firing && gun.cd <= 0) tryShoot();
   for (let i = enemies.length - 1; i >= 0; i--) {
     const e = enemies[i];
-    if (e.type === 'gnome') updateGnome(e, dt); else updateCrow(e, dt);
+    if (e.type === 'gnome') updateGnome(e, dt); else if (e.type === 'mole') updateMole(e, dt); else updateCrow(e, dt);
     if (state !== 'playing') return;
     flashMats(e, dt);
     e.barT = Math.max(0, e.barT - dt);
@@ -3723,6 +4512,7 @@ function update(dt){
 function frame(){
   requestAnimationFrame(frame);
   const dt = Math.min(clock.getDelta(), 0.05);
+  gpPoll(dt);
   if (state === 'paused') { renderer.render(scene, camera); return; }
   time += dt;
   if (state === 'pvp' && pvp) {
@@ -3735,6 +4525,7 @@ function frame(){
   if (state === 'playing') update(dt);
   else if (state === 'select' && sel) selTick(dt);
   else if (state === 'menu' || state === 'lobby') { attract(dt); if (state === 'lobby') lobbyTick(dt); }
+  else if (state === 'perk') { updateFloats(dt); renderer.render(scene, camera); return; }
   else { updatePickups(dt); updateProps(dt); }
   updateParticles(dt);
   updateFloats(dt);
@@ -3742,6 +4533,15 @@ function frame(){
   renderer.render(scene, camera);
 }
 
+// For tests and the browser console: a look at the running game (and a few levers)
+window.__sq = {
+  get pvp(){ return pvp; }, get enemies(){ return enemies; }, get wave(){ return wave; }, get stash(){ return stash; },
+  get score(){ return score; }, get state(){ return state; }, get sel(){ return sel; },
+  get player(){ return player; }, get perk(){ return perk; }, get waveState(){ return waveState; }, shootAt(e){ const b = enemyBody(e), t = new V3(e.pos.x, b.y, e.pos.z), o = t.clone().add(new V3(e.pos.x, 0, e.pos.z).normalize().multiplyScalar(6)); o.y = b.y + 0.6; camera.position.copy(o); const d = t.clone().sub(o).normalize(); const r = castRay(d); if (r.e) hurtEnemy(r.e, 20, r.head, t, d, 1); return r.kind; }, spawn(k){ spawnEnemy(k); return enemies[enemies.length - 1]; }, killAll(){ while (enemies.length) removeEnemy(enemies[0]); queue.length = 0; }, get yaw(){ return yaw; }, get ammo(){ return inv[cur].ammo; }, get gp(){ return GP; },
+  hit(e, dmg, shooter){ coopHitEnemy(shooter, e, dmg, false, e.pos.clone(), new V3(0, 0, 1), 1); },
+  hurt(f, d){ coopHurt(f, d, new V3(0, 0, 0)); }, dmg(v, d, by){ applyDamage(v, d, by); }, bonks(f){ return bonksOf(f); },
+  setStash(v){ stash = v; updateStashPile(); }, damageStash(d){ damageStash(d, new V3(0, 0, 3)); }
+};
 function boot(data){
   if (data && data.best > best) { best = data.best; saveBest(); }
   updateMenuBest(); updateStashPile(); resize();
