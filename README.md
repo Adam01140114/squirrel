@@ -20,6 +20,13 @@ At the end of a versus or co-op match the TV hands out awards (Bonk Machine, Sha
 Untouchable, Hoarder) to whoever leads each one outright, and each phone shows the ones its player won. Phones
 buzz when you get hit, bonk someone or go down; controllers that support it rumble too.
 
+## Hats
+
+Solo setup has ten hats to unlock on this device: Acorn Cap (from the start), Party Hat (finish a game), Propeller
+Cap (reach wave 10), Viking Helmet (beat a boss), Pirate Hat (play 3 versus matches), Top Hat (score 25,000 in
+solo), Wizard Hat (beat the Gnome Wizard), Chef Hat (bonk 1,000 enemies), Halo (revive teammates 10 times) and
+the Golden Crown (beat all 100 waves). Your hat shows in solo and on your fighter in online matches.
+
 ## Bosses
 
 A boss comes every 5 waves, in turn: the Gnome King (ground slam), the Crow Queen (calls her flock, then dives),

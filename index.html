@@ -181,6 +181,10 @@ body.touch .desk-only{display:none}
 .perk b{font-family:var(--display);font-size:20px;font-weight:400;color:var(--gold)}
 .perk kbd{justify-self:start;font-family:var(--display);font-size:13px;padding:2px 8px;border-radius:6px;background:rgba(255,243,220,.14)}
 .perk .lv{display:flex;gap:4px}.perk .lv i{width:10px;height:10px;border-radius:50%;background:rgba(255,243,220,.18)}.perk .lv i.on{background:var(--gold)}
+.hats .sel-ch{position:relative}.hats .sel-ch i{background:none;box-shadow:none;font-style:normal;font-size:22px;line-height:30px;width:auto;height:30px}
+.hats .sel-ch.locked{opacity:.45}.hats .sel-ch.locked::after{content:"🔒";position:absolute;top:4px;right:6px;font-size:11px}
+.hat-count{font-family:var(--body);font-size:12px;color:var(--cream-dim);letter-spacing:0;text-transform:none}
+.hat-tip{margin:6px 0 0;font-size:13px;color:var(--cream-dim);min-height:1.3em}
 .solo-drag{margin:0;font-size:13px;color:var(--cream-dim)}
 #soloScr{cursor:grab}#soloScr .placard{cursor:auto}#soloScr.dragging{cursor:grabbing}
 #pvpStats .award{grid-column:1/-1;display:flex;justify-content:space-between;gap:12px;align-items:baseline;border-top:1px solid rgba(255,243,220,.12);padding-top:6px}
@@ -470,6 +474,7 @@ body.pad-mode{background:#1b120b}
     <div class="placard wide">
       <h2 class="h2">Solo setup</h2>
       <section class="pick-sec"><h3 class="pick-h">Fighter</h3><div class="pick-row" id="soloChars"></div></section>
+      <section class="pick-sec"><h3 class="pick-h">Hat <span class="hat-count" id="hatCount"></span></h3><div class="pick-row hats" id="soloHats"></div><p class="hat-tip" id="hatTip"></p></section>
       <section class="pick-sec"><h3 class="pick-h">Map</h3><div class="map-grid" id="soloMaps"></div></section>
       <div class="row"><button class="btn" id="soloStart">Start</button><button class="btn ghost" id="soloPhone">Phone controller</button><button class="btn ghost" id="soloBack">Back</button></div>
       <p class="solo-drag">Phone controller: the game plays on this screen (your TV) and your phone steers. Drag your fighter to turn it around.</p>
@@ -1668,6 +1673,7 @@ function setSoloChar(ch){
   m.guns.forEach((g, k) => { g.visible = k === cur; });
   m.muzzles[cur].add(flash); m.muzzles[cur].add(flashLight); m.group.add(shieldBubble);
   sq = m; soloChar = ch;
+  if (typeof wearHat === 'function') wearHat(sq, hatId);
   if (wasFps) setFps(true);
 }
 
@@ -2714,6 +2720,7 @@ function killEnemy(e, head, dir, shooter){
   const co = isCoop();
   const mult = Math.min(1 + Math.floor(combo / 3), 5), pts = Math.round(base * mult * (co ? 1 : 1 + 0.25 * perkLv('show')));
   score += pts; kills++;
+  if (!isCoop() || pvp.mode === 'couch' || shooter === pvp.local) progUpdate(q => { q.kills++; if (e.boss) q.bosses[e.bk || 'king'] = (q.bosses[e.bk || 'king'] | 0) + 1; });
   if (!co && perkLv('snack') && player.hp < maxHp()) { const h = Math.min(maxHp() - player.hp, 4 * perkLv('snack')); player.hp += h; }
   const v = co && shooter ? viewOf(shooter) : null;
   if (!co || v) {
@@ -2819,6 +2826,7 @@ function updatePlayer(dt){
   return sprint;
 }
 function animateSquirrel(dt){
+  animateHat(sq, dt);
   const sp = Math.hypot(player.vel.x, player.vel.z), run = clamp(sp / 7, 0, 1), air = !player.onGround;
   player.phase += dt * (3 + sp * 1.7);
   sq.group.position.copy(player.pos);
@@ -3170,6 +3178,7 @@ function resume(){
 }
 function gameOver(reason){
   if (state !== 'playing') return;
+  progUpdate(p => { p.games++; p.bestWave = Math.max(p.bestWave, wave); p.bestScore = Math.max(p.bestScore, score); if (reason === 'win') p.won++; });
   state = 'over'; firing = false; document.body.classList.remove('playing'); showTouch(false);
   if (document.pointerLockElement) document.exitPointerLock();
   const rec = score > best; if (rec) { best = score; saveBest(); }
@@ -3339,8 +3348,99 @@ function charBtn(k, onPick){
   b.addEventListener('click', () => onPick(k)); return b;
 }
 const soloCharBtns = CHARS.map((c, k) => $('soloChars').appendChild(charBtn(k, pickSoloChar)));
+
+// ---------- hats: unlocked by milestones, kept on this device, worn in solo and online
+let prog = { games: 0, bestWave: 0, bestScore: 0, kills: 0, bosses: {}, revives: 0, vsGames: 0, won: 0 };
+try { Object.assign(prog, JSON.parse(localStorage.getItem('squirrel-commando-progress') || '{}')); } catch (e) {}
+const saveProg = () => { try { localStorage.setItem('squirrel-commando-progress', JSON.stringify(prog)); } catch (e) {} };
+const bossWins = () => Object.values(prog.bosses || {}).reduce((a, b) => a + (+b || 0), 0);
+const HATS = [
+  { id: 'none', name: 'No hat', icon: '🚫', need: 'Bare head', ok: () => true },
+  { id: 'acorn', name: 'Acorn Cap', icon: '🌰', need: 'Yours from the start', ok: () => true },
+  { id: 'party', name: 'Party Hat', icon: '🎉', need: 'Finish a game', ok: () => prog.games >= 1 },
+  { id: 'propeller', name: 'Propeller Cap', icon: '🧢', need: 'Reach wave 10', ok: () => prog.bestWave >= 10 },
+  { id: 'viking', name: 'Viking Helmet', icon: '🪖', need: 'Beat a boss', ok: () => bossWins() >= 1 },
+  { id: 'pirate', name: 'Pirate Hat', icon: '🏴‍☠️', need: 'Play 3 versus matches', ok: () => prog.vsGames >= 3 },
+  { id: 'top', name: 'Top Hat', icon: '🎩', need: 'Score 25,000 in solo', ok: () => prog.bestScore >= 25000 },
+  { id: 'wizard', name: 'Wizard Hat', icon: '🧙', need: 'Beat the Gnome Wizard', ok: () => (prog.bosses.wizard | 0) >= 1 },
+  { id: 'chef', name: 'Chef Hat', icon: '👨‍🍳', need: 'Bonk 1,000 enemies in all', ok: () => prog.kills >= 1000 },
+  { id: 'halo', name: 'Halo', icon: '😇', need: 'Revive teammates 10 times', ok: () => prog.revives >= 10 },
+  { id: 'crown', name: 'Golden Crown', icon: '👑', need: 'Beat all 100 waves', ok: () => prog.won >= 1 }
+];
+const hatOk = (id) => { const H = HATS.find(h => h.id === id); return !!(H && H.ok()); };
+let hatId = 'acorn';
+try { const h = localStorage.getItem('squirrel-commando-hat'); if (h && HATS.some(q => q.id === h)) hatId = h; } catch (e) {}
+if (!hatOk(hatId)) hatId = 'acorn';
+let hatsHad = new Set(HATS.filter(h => h.ok()).map(h => h.id));
+// after any progress: say which hats just unlocked
+function progUpdate(fn){
+  fn(prog); saveProg();
+  const now = HATS.filter(h => h.ok()), fresh = now.filter(h => !hatsHad.has(h.id));
+  hatsHad = new Set(now.map(h => h.id));
+  if (fresh.length) {
+    const t = 'New hat: ' + fresh.map(h => h.icon + ' ' + h.name).join(', ') + '!';
+    if (state === 'pvp' && pvp) showPvBanner(t, 'Wear it from Solo setup'); else if (state === 'playing') toast(t); else gpNote(t);
+    paintHats();
+  }
+}
+// the hat models, sized for a head about half a unit across
+const HG = {
+  cone: new THREE.ConeGeometry(0.17, 0.42, 12), pom: new THREE.SphereGeometry(0.06, 8, 6), cyl: new THREE.CylinderGeometry(0.17, 0.17, 0.32, 14),
+  brim: new THREE.CylinderGeometry(0.29, 0.29, 0.03, 18), band: new THREE.CylinderGeometry(0.175, 0.175, 0.07, 14), dome: new THREE.SphereGeometry(0.24, 14, 8, 0, TAU, 0, Math.PI / 2),
+  horn: new THREE.ConeGeometry(0.06, 0.26, 8), blade: new THREE.BoxGeometry(0.44, 0.015, 0.07), stem: new THREE.CylinderGeometry(0.02, 0.02, 0.1, 6),
+  puff: new THREE.SphereGeometry(0.12, 10, 8), ring: new THREE.TorusGeometry(0.2, 0.03, 8, 28), tri: new THREE.BoxGeometry(0.42, 0.12, 0.12),
+  spike: new THREE.ConeGeometry(0.045, 0.14, 5), crown: new THREE.CylinderGeometry(0.19, 0.19, 0.12, 12, 1, true), star: new THREE.OctahedronGeometry(0.06, 0)
+};
+function buildHat(id){
+  const g = new THREE.Group(), m = (hex, o) => MU(hex, o);
+  if (id === 'acorn') { mk(HG.dome, m(0x7a4a24), 0, 0, 0, g).scale.set(1, 0.7, 1); mk(HG.stem, m(0x5a3418), 0, 0.18, 0, g); }
+  else if (id === 'party') { mk(HG.cone, m(0xff5aa8), 0, 0.2, 0, g); mk(HG.pom, m(0xffd23f), 0, 0.43, 0, g); }
+  else if (id === 'propeller') { mk(HG.dome, m(0x2f6fd0), 0, 0, 0, g).scale.set(1, 0.75, 1); mk(HG.stem, m(0xffd23f), 0, 0.2, 0, g); const p = new THREE.Group(); p.position.y = 0.26; g.add(p); mk(HG.blade, m(0xd8342c), 0, 0, 0, p); mk(HG.blade, m(0x3a9a4a), 0, 0, 0, p).rotation.y = Math.PI / 2; g.userData.spin = p; }
+  else if (id === 'viking') { mk(HG.dome, m(0x9aa3ad, { metalness: 0.6, roughness: 0.4 }), 0, 0, 0, g); for (const k of [-1, 1]) { const h = mk(HG.horn, m(0xf6efe0), 0.24 * k, 0.12, 0, g); h.rotation.z = -0.9 * k; } }
+  else if (id === 'pirate') { mk(HG.tri, m(0x1a1a1f), 0, 0.06, 0, g); const b = mk(HG.tri, m(0x1a1a1f), 0, 0.12, 0.02, g); b.scale.set(0.8, 1.2, 1); mk(HG.pom, m(0xffffff), 0, 0.12, -0.08, g).scale.setScalar(0.6); }
+  else if (id === 'top') { mk(HG.brim, m(0x1a1a1f), 0, 0, 0, g); mk(HG.cyl, m(0x1a1a1f), 0, 0.17, 0, g); mk(HG.band, m(0xd8342c), 0, 0.05, 0, g); }
+  else if (id === 'wizard') { mk(HG.brim, m(0x3a2a8a), 0, 0, 0, g); const c = mk(HG.cone, m(0x3a2a8a), 0, 0.22, 0.03, g); c.scale.set(1.1, 1.3, 1.1); c.rotation.x = -0.18; mk(HG.star, m(0xffd23f, { emissive: lin(0xaa8800), emissiveIntensity: 0.6 }), 0, 0.5, 0.12, g); }
+  else if (id === 'chef') { mk(HG.band, m(0xffffff), 0, 0.03, 0, g).scale.set(1.2, 2, 1.2); for (let i = 0; i < 4; i++) { const a = i / 4 * TAU; mk(HG.puff, m(0xffffff), Math.cos(a) * 0.1, 0.18, Math.sin(a) * 0.1, g); } mk(HG.puff, m(0xffffff), 0, 0.24, 0, g); }
+  else if (id === 'halo') { const r = mk(HG.ring, MU(0xffd23f, { emissive: lin(0xffcc33), emissiveIntensity: 1 }), 0, 0.28, 0, g, false); r.rotation.x = Math.PI / 2; g.userData.bob = r; }
+  else if (id === 'crown') { const gold = m(0xf2c230, { metalness: 0.6, roughness: 0.35 }); mk(HG.crown, gold, 0, 0.04, 0, g); for (let i = 0; i < 6; i++) { const a = i / 6 * TAU; mk(HG.spike, gold, Math.cos(a) * 0.19, 0.15, Math.sin(a) * 0.19, g); } }
+  return g;
+}
+// put a hat on a critter, sitting on top of its head
+function wearHat(model, id){
+  if (model.hat) { model.head.remove(model.hat); model.hat = null; }
+  if (!id || id === 'none' || !model.head) return;
+  const h = buildHat(id);
+  if (model.hatY === undefined) {
+    // the top of the skull: the highest point of the head's middle (ears stick out to the sides)
+    model.head.updateMatrixWorld(true); let top = 0.25;
+    model.head.children.forEach(c => { if (!c.geometry) return; c.geometry.computeBoundingBox(); const b = c.geometry.boundingBox; if (Math.abs(c.position.x) < 0.08) top = Math.max(top, c.position.y + b.max.y * c.scale.y); });
+    model.hatY = top - 0.05;
+  }
+  h.position.set(0, model.hatY, 0.02); model.head.add(h); model.hat = h;
+}
+function animateHat(model, dt){
+  const h = model && model.hat; if (!h) return;
+  if (h.userData.spin) h.userData.spin.rotation.y += dt * 14;
+  if (h.userData.bob) h.userData.bob.position.y = 0.28 + Math.sin(time * 3) * 0.03;
+}
+const soloHatBtns = HATS.map((H, k) => {
+  const b = document.createElement('button'); b.className = 'sel-ch'; b.innerHTML = '<i></i><span></span>';
+  b.querySelector('i').textContent = H.icon; b.querySelector('span').textContent = H.name;
+  b.addEventListener('click', () => {
+    if (!H.ok()) { $('hatTip').textContent = '🔒 ' + H.name + ': ' + H.need + '.'; sfx.empty(); return; }
+    hatId = H.id; try { localStorage.setItem('squirrel-commando-hat', hatId); } catch (e) {}
+    wearHat(sq, hatId); paintHats(); sfx.swap();
+  });
+  b.addEventListener('mouseenter', () => { $('hatTip').textContent = (H.ok() ? '' : '🔒 ') + H.name + ': ' + H.need + '.'; });
+  return $('soloHats').appendChild(b);
+});
+function paintHats(){
+  soloHatBtns.forEach((b, k) => { const H = HATS[k]; setClass(b, 'on', H.id === hatId); setClass(b, 'locked', !H.ok()); b.title = H.name + (H.ok() ? '' : ' (locked: ' + H.need + ')'); });
+  $('hatCount').textContent = '· ' + HATS.filter(h => h.ok() && h.id !== 'none').length + ' of ' + (HATS.length - 1) + ' unlocked';
+}
 const soloMapBtns = MAPS.map((D, i) => $('soloMaps').appendChild(mapCard(i, pickSoloMap)));
-function paintSolo(){ soloCharBtns.forEach((b, k) => setClass(b, 'on', k === soloChar)); soloMapBtns.forEach((b, i) => setClass(b, 'on', i === mapIdx)); }
+function paintSolo(){ paintHats(); wearHat(sq, hatId); paintSolo0(); }
+function paintSolo0(){ soloCharBtns.forEach((b, k) => setClass(b, 'on', k === soloChar)); soloMapBtns.forEach((b, i) => setClass(b, 'on', i === mapIdx)); }
 function pickSoloChar(k){ setSoloChar(k); try { localStorage.setItem('squirrel-commando-char', String(k)); } catch (e) {} paintSolo(); sfx.swap(); }
 function pickSoloMap(i){ buildMap(i); try { localStorage.setItem('squirrel-commando-map', String(i)); } catch (e) {} paintSolo(); sfx.swap(); }
 try { setSoloChar(clamp(parseInt(localStorage.getItem('squirrel-commando-char') || '0', 10) || 0, 0, CHARS.length - 1)); } catch (e) {}
@@ -3446,6 +3546,7 @@ function fCycle(f, dir){
   for (let k = 0; k < WEAPONS.length; k++) { i = (i + dir + WEAPONS.length) % WEAPONS.length; if (f.w[i].owned) { fSwitch(f, i); return; } }
 }
 function fAnimate(f, dt){
+  animateHat(f.model, dt);
   const m = f.model, sp = Math.hypot(f.vel.x, f.vel.z), run = clamp(sp / 7, 0, 1), air = !f.onGround;
   f.phase += dt * (3 + sp * 1.7);
   m.group.position.copy(f.pos);
@@ -3635,6 +3736,7 @@ function showAwards(){
 function revive(f){
   // credit whoever stood by them
   const by = pvp.fighters.filter(o => o !== f && !o.dead).sort((a, b) => Math.hypot(a.pos.x - f.pos.x, a.pos.z - f.pos.z) - Math.hypot(b.pos.x - f.pos.x, b.pos.z - f.pos.z))[0];
+  if (by && pvp.mode === 'couch') progUpdate(q => { q.revives++; });
   if (by && by.st) { by.st.revives++; if (f.st) f.st.savedBy++; if (pvp.mode === 'online' && by === pvp.remote) by.st.savedByYou = (by.st.savedByYou || 0) + 1; }
   f.dead = false; f.hp = 50; f.inv = 1.5; f.revT = 0; f.respawnT = 0; f.hurtT = 0;
   f.model.group.visible = true;
@@ -3797,6 +3899,7 @@ function netSend(dt){
   const st = { x: r2(f.pos.x), y: r2(f.pos.y), z: r2(f.pos.z), vx: r2(f.vel.x), vz: r2(f.vel.z), yw: Math.round(f.yaw * 1000) / 1000, pt: Math.round(f.pitch * 1000) / 1000,
     w: f.cur, f: f.shots, hp: Math.ceil(f.hp), dd: f.dead ? 1 : 0, d: f.deaths, sh: f.pw.shield > 0 ? 1 : 0, iv: f.inv > 0 ? 1 : 0, g: f.onGround ? 1 : 0 };
   const T = f.st || newStats(), R = pvp.remote && pvp.remote.st;
+  st.ht = hatId;
   st.ss = [T.hits, T.heads, Math.round(T.dmg), Math.round(T.taken), T.revives, T.picks, R ? R.savedByYou || 0 : 0, f.shots];
   if (pvp.coop) { st.k = f.kills | 0; if (f.dead) st.rv = Math.round(clamp((f.revT || 0) / REVIVE_T, 0, 1) * 100); }
   const p = { role: pvp.role, code: pvp.code, m: pvp.m, phase: pvp.phase, st, ev: pvp.ev };
@@ -3814,6 +3917,8 @@ function applyRemoteState(f, st){
   const d = num(st.d) | 0;
   if (d > f.deaths) { f.deaths = d; if (pvp.phase === 'play' && !pvp.coop) killFeed(pvp.local, f); } else if (d < f.deaths) f.deaths = d;
   if (pvp.coop) { f.kills = num(st.k) | 0; f.revT = num(st.rv) / 100 * REVIVE_T; }
+  const ht = typeof st.ht === 'string' && HATS.some(h => h.id === st.ht) ? st.ht : 'none';
+  if (f.hatSeen !== ht) { f.hatSeen = ht; wearHat(f.model, ht); }
   if (Array.isArray(st.ss) && f.st) {
     const q = st.ss.map(num), F = f.st;
     F.hits = q[0]; F.heads = q[1]; F.dmg = q[2]; F.taken = q[3]; F.revives = Math.max(F.revives, q[4]); F.picks = q[5];
@@ -3842,6 +3947,7 @@ function handleEv(e, from){
       const en = enemies.find(q => q.id === +e.id);
       const p = en ? coopKillFx(en, !!e.h) : null;
       // The enemy may already be gone (the host's enemy list can land first): the kill still counts
+      if (+e.by === local.idx) progUpdate(q => { q.kills++; if (en && en.boss) q.bosses[en.bk || 'king'] = (q.bosses[en.bk || 'king'] | 0) + 1; });
       if (+e.by === local.idx) { if (p) floatText(p.add(new V3(0, 0.6, 0)), '+' + fmt(+e.p || 0), 'pts', local.view); local.kills++; local.killT = 0.25; }
       return;
     }
@@ -4233,6 +4339,7 @@ function coopKillFx(e, head){
 }
 function coopOver(why){
   if (!pvp || pvp.phase === 'over') return;
+  if (why !== 'left') progUpdate(q => { q.games++; q.bestWave = Math.max(q.bestWave, wave); if (why === 'win') q.won++; });
   pvp.phase = 'over'; pvp.why = why; firing = false;
   if (document.pointerLockElement) document.exitPointerLock();
   document.body.classList.remove('playing');
@@ -4287,6 +4394,7 @@ function startPvp(mode, role, r, code, m, chars, map, coop, slots, bots){
     const el = $('pv' + i); buildPv(el, f);
     f.view = { cam: f.cam, rw: mode === 'couch' && humans.length > 1 ? 0.5 : 1, rh: quad ? 0.5 : 1, layer: f.ui.fx };
   });
+  if (mode === 'online') wearHat(pvp.local.model, hatId);
   if (mode === 'online') { const el = $('pv0'); buildPv(el, pvp.local); pvp.local.view = { cam: pvp.local.cam, rw: 1, layer: pvp.local.ui.fx }; pvp.remote.ui = null; pvp.remote.view = null; }
   state = 'pvp'; firing = false; for (const k in keys) delete keys[k];
   initAudio();
@@ -4324,6 +4432,7 @@ function pvpBegin(m){
 }
 function pvpOver(w, reason){
   if (!pvp || pvp.phase === 'over') return;
+  if (reason !== 'left') progUpdate(q => { q.games++; q.vsGames++; });
   pvp.phase = 'over'; pvp.winner = w; firing = false;
   if (document.pointerLockElement) document.exitPointerLock();
   document.body.classList.remove('playing');
@@ -5069,14 +5178,14 @@ function frame(){
 window.__sq = {
   get pvp(){ return pvp; }, get enemies(){ return enemies; }, get wave(){ return wave; }, get stash(){ return stash; },
   get score(){ return score; }, get state(){ return state; }, get sel(){ return sel; },
-  get player(){ return player; }, get perk(){ return perk; }, get waveState(){ return waveState; }, shootAt(e){ const b = enemyBody(e), t = new V3(e.pos.x, b.y, e.pos.z), o = t.clone().add(new V3(e.pos.x, 0, e.pos.z).normalize().multiplyScalar(6)); o.y = b.y + 0.6; camera.position.copy(o); const d = t.clone().sub(o).normalize(); const r = castRay(d); if (r.e) hurtEnemy(r.e, 20, r.head, t, d, 1); return r.kind; }, spawn(k){ spawnEnemy(k); return enemies[enemies.length - 1]; }, setWave(n){ wave = n; }, face(e){ yaw = Math.atan2(-(e.pos.x - player.pos.x), -(e.pos.z - player.pos.z)); pitch = 0.05; }, get eshots(){ return eshots; }, killAll(){ while (enemies.length) removeEnemy(enemies[0]); queue.length = 0; }, get yaw(){ return yaw; }, get ammo(){ return inv[cur].ammo; }, get gp(){ return GP; },
+  get player(){ return player; }, get perk(){ return perk; }, get prog(){ return prog; }, progUpdate(fn){ progUpdate(fn); }, get hat(){ return hatId; }, get waveState(){ return waveState; }, shootAt(e){ const b = enemyBody(e), t = new V3(e.pos.x, b.y, e.pos.z), o = t.clone().add(new V3(e.pos.x, 0, e.pos.z).normalize().multiplyScalar(6)); o.y = b.y + 0.6; camera.position.copy(o); const d = t.clone().sub(o).normalize(); const r = castRay(d); if (r.e) hurtEnemy(r.e, 20, r.head, t, d, 1); return r.kind; }, spawn(k){ spawnEnemy(k); return enemies[enemies.length - 1]; }, setWave(n){ wave = n; }, face(e){ yaw = Math.atan2(-(e.pos.x - player.pos.x), -(e.pos.z - player.pos.z)); pitch = 0.05; }, get eshots(){ return eshots; }, killAll(){ while (enemies.length) removeEnemy(enemies[0]); queue.length = 0; }, get yaw(){ return yaw; }, get ammo(){ return inv[cur].ammo; }, get gp(){ return GP; },
   hit(e, dmg, shooter){ coopHitEnemy(shooter, e, dmg, false, e.pos.clone(), new V3(0, 0, 1), 1); },
   hurt(f, d){ coopHurt(f, d, new V3(0, 0, 0)); }, dmg(v, d, by){ applyDamage(v, d, by); }, bonks(f){ return bonksOf(f); },
   setStash(v){ stash = v; updateStashPile(); }, damageStash(d){ damageStash(d, new V3(0, 0, 3)); }
 };
 function boot(data){
   if (data && data.best > best) { best = data.best; saveBest(); }
-  updateMenuBest(); updateStashPile(); resize();
+  updateMenuBest(); updateStashPile(); resize(); wearHat(sq, hatId);
   $('loading').remove();
   frame();
   if (VS_LINK && VS_LINK[2] === 'join') joinOnline(VS_LINK[1]);
