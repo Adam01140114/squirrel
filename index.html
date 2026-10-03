@@ -363,7 +363,7 @@ body.pad-mode{background:#1b120b}
       <div class="wave" id="waveLbl">Wave 1</div>
       <div class="left" id="leftLbl">Get ready</div>
       <div class="boss" id="bossBox" hidden>
-        <div class="boss-name">THE GNOME KING</div>
+        <div class="boss-name" id="bossName">THE GNOME KING</div>
         <div class="bar"><i id="bossFill"></i></div>
       </div>
     </div>
@@ -1803,15 +1803,16 @@ function makeBar(y){
   return { bar, fg };
 }
 const enemies = [];
-function buildGnome(boss){
-  const s = boss ? 2.3 : rand(0.92, 1.1);
+function buildGnome(boss, look){
+  look = look || {};
+  const s = look.s || (boss ? 2.3 : rand(0.92, 1.1));
   const root = new THREE.Group(), inner = new THREE.Group(); root.add(inner);
-  const tunicHex = boss ? 0x5b2a86 : pick([0x2f6fd0, 0x3a9a4a, 0x7a3fa0, 0x2b8a8a, 0xd06a2a]);
-  const hatHex = boss ? 0xf2c230 : pick([0xd8352a, 0xc92f3c, 0xe24a2a, 0xd8352a]);
+  const tunicHex = look.tunic || (boss ? 0x5b2a86 : pick([0x2f6fd0, 0x3a9a4a, 0x7a3fa0, 0x2b8a8a, 0xd06a2a]));
+  const hatHex = look.hatHex || (boss ? 0xf2c230 : pick([0xd8352a, 0xc92f3c, 0xe24a2a, 0xd8352a]));
   const mats = {
     skin: MU(0xf2b894), tunic: MU(tunicHex), hat: MU(hatHex, boss ? { metalness: 0.6, roughness: 0.35 } : undefined), beard: MU(0xf6f2ea),
     boot: MU(0x3a2618), belt: MU(0x2a1c12), buckle: MU(0xe8c14a, { metalness: 0.6, roughness: 0.35 }), nose: MU(0xe8906e),
-    wood: MU(0x8a5a2b), steel: MU(boss ? 0xe8c14a : 0x7c8590, { metalness: 0.5, roughness: 0.4 })
+    wood: MU(0x8a5a2b), steel: MU(look.steel || (boss ? 0xe8c14a : 0x7c8590), { metalness: 0.5, roughness: 0.4 })
   };
   const eyeMat = M(0x111111), browMat = M(0x5a3b22);
   mk(GG.body, mats.tunic, 0, 0.5, 0, inner);
@@ -1827,11 +1828,25 @@ function buildGnome(boss){
   mk(GG.beard, mats.beard, 0, -0.22, -0.1, headG).scale.set(1, 1, 0.7);
   let hat;
   if (!boss) { hat = mk(GG.hat, mats.hat, 0, 0.5, 0.02, headG); hat.rotation.x = 0.18; }
-  else {
+  else if (look.hat === 'wizard') {
+    // a tall pointed hat with a gold star on top
+    hat = new THREE.Group(); hat.position.y = 0.22; headG.add(hat);
+    mk(BG.brim, mats.hat, 0, 0, 0, hat); const cone = mk(BG.cone, mats.hat, 0, 0.45, 0.05, hat); cone.rotation.x = -0.15;
+    mk(BG.star, mats.steel, 0, 0.98, 0.18, hat);
+  } else if (look.hat === 'helmet') {
+    // a riveted steel dome with a glowing visor
+    hat = new THREE.Group(); hat.position.y = 0.05; headG.add(hat);
+    mk(BG.dome, mats.hat, 0, 0, 0, hat);
+    mk(BG.visor, MU(0xff3b30, { emissive: lin(0xff2a1a), emissiveIntensity: 1 }), 0, 0.04, -0.24, hat, false);
+  } else {
     hat = new THREE.Group(); hat.position.y = 0.26; headG.add(hat);
     mk(GG.crown, mats.hat, 0, 0, 0, hat);
-    for (let i = 0; i < 6; i++) { const a = i / 6 * TAU; mk(GG.spike, mats.hat, Math.cos(a) * 0.28, 0.17, Math.sin(a) * 0.28, hat); }
+    const nSp = look.hat === 'emperor' ? 10 : 6;
+    for (let i = 0; i < nSp; i++) { const a = i / nSp * TAU; mk(GG.spike, mats.hat, Math.cos(a) * 0.28, 0.17, Math.sin(a) * 0.28, hat); }
+    if (look.hat === 'emperor') mk(BG.gem, MU(0xd02a6a, { emissive: lin(0x8a1040), emissiveIntensity: 0.8 }), 0, 0.1, -0.3, hat, false);
   }
+  // the Mecha-Gnome carries a mortar on his back
+  if (look.cannon) { const c = mk(BG.cannon, mats.steel, 0, 0.95, 0.38, inner); c.rotation.x = -0.5; }
   const feet = [];
   for (const k of [-1, 1]) feet.push(mk(GG.boot, mats.boot, 0.15 * k, 0.06, -0.04, inner));
   const arm = new THREE.Group(); arm.position.set(0.36, 0.62, 0); inner.add(arm);
@@ -1841,7 +1856,7 @@ function buildGnome(boss){
   mk(GG.hand, mats.skin, -0.36, 0.55, -0.05, inner);
   const hb = makeBar(1.95); root.add(hb.bar);
   root.scale.setScalar(s);
-  const hp = boss ? 280 + wave * 22 : 30 + Math.max(0, wave - 3) * 3;
+  const hp = boss ? 280 + wave * 22 : 30 + Math.min(Math.max(0, wave - 3), 30) * 3 + Math.max(0, wave - 33) * 1.5;
   return {
     type: 'gnome', boss, mesh: root, inner, headG, hat, hatMat: mats.hat, arm, feet, bar: hb.bar, barFg: hb.fg,
     mats: Object.values(mats), colors: [tunicHex, hatHex, 0xf6f2ea], s, hp, maxHp: hp, pos: root.position,
@@ -1868,6 +1883,250 @@ function buildCrow(){
     state: 'enter', t: 0, ang: rand(0, TAU), rad: rand(7, 10), dir: Math.random() < 0.5 ? 1 : -1, wait: rand(2, 4), flap: rand(0, TAU)
   };
 }
+// ---------- bosses: a different one every 5 waves, tougher each time round. Wave 100 is the last.
+const BG = {
+  brim: new THREE.CylinderGeometry(0.46, 0.46, 0.04, 16), cone: new THREE.ConeGeometry(0.3, 0.95, 12), star: new THREE.OctahedronGeometry(0.12, 0),
+  dome: new THREE.SphereGeometry(0.33, 14, 8, 0, TAU, 0, Math.PI / 2), visor: new THREE.BoxGeometry(0.42, 0.07, 0.04),
+  gem: new THREE.OctahedronGeometry(0.08, 0), cannon: new THREE.CylinderGeometry(0.13, 0.17, 0.7, 10), cape: new THREE.ConeGeometry(0.62, 1.1, 10, 1, true)
+};
+const FINAL_WAVE = 100;
+const BOSS_KINDS = ['king', 'queen', 'overlord', 'wizard', 'mecha', 'emperor'];
+const BOSSES = {
+  king: { name: 'Gnome King', hp: 280, tip: 'Jump to dodge his ground slam. Aim for the crown.' },
+  queen: { name: 'Crow Queen', hp: 200, tip: 'She calls her flock, then dives. Shoot her while she circles.' },
+  overlord: { name: 'Mole Overlord', hp: 300, tip: 'He tunnels after you and bursts out of the ground. Keep moving when the dirt shakes.' },
+  wizard: { name: 'Gnome Wizard', hp: 230, tip: 'He blinks around and throws magic. Strafe sideways past the orbs.' },
+  mecha: { name: 'Mecha-Gnome', hp: 380, tip: 'Mortar shells land in the red rings. Get out of them.' },
+  emperor: { name: 'Gnome Emperor', hp: 900, tip: 'The last one. Slams, magic, mortars and an army. Everything at once.' }
+};
+const TIER_WORD = ['', 'Mighty ', 'Dread ', 'Legendary '];
+function bossFor(n){
+  if (n >= FINAL_WAVE) return { kind: 'emperor', tier: 3 };
+  const i = Math.max(1, Math.floor(n / 5));
+  return { kind: BOSS_KINDS[(i - 1) % 5], tier: Math.min(3, Math.floor((i - 1) / 5)) };
+}
+const bossTitle = (kind, tier) => 'The ' + (kind === 'emperor' ? '' : TIER_WORD[tier] || '') + BOSSES[kind].name;
+function buildBoss(kind, tier){
+  let e;
+  if (kind === 'queen') {
+    e = buildCrow(); e.mesh.scale.setScalar(3.2); e.s = 2.6; e.rad = rand(12, 15); e.fly = 9.5;
+    e.mats[0].color.set(lin(0x2c1838)); // the body
+    const crown = new THREE.Group(); crown.position.set(0, 0.32, -0.42); e.mesh.add(crown); crown.scale.setScalar(0.45);
+    const gold = MU(0xf2c230, { metalness: 0.6, roughness: 0.35 }); e.mats.push(gold);
+    mk(GG.crown, gold, 0, 0, 0, crown); for (let i = 0; i < 6; i++) { const a = i / 6 * TAU; mk(GG.spike, gold, Math.cos(a) * 0.28, 0.17, Math.sin(a) * 0.28, crown); }
+    e.colors = [0x2c1838, 0xf2c230, 0x5a3a6a];
+  } else if (kind === 'overlord') {
+    e = buildMole(); e.mesh.scale.setScalar(2.4); e.s = 2.4; e.speed = 6.5; e.state = 'dig'; e.t = 1.5;
+    e.mats[3].color.set(lin(0xb8b8c8)); e.mats[3].metalness = 0.7; // a steel helmet instead of the miner's hat
+    e.colors = [0x4a3a35, 0xb8b8c8, 0x6b4a2c];
+  } else if (kind === 'wizard') {
+    e = buildGnome(true, { s: 2.0, tunic: 0x2a3a9a, hatHex: 0x3a2a8a, steel: 0x9be7ff, hat: 'wizard' });
+  } else if (kind === 'mecha') {
+    e = buildGnome(true, { s: 2.4, tunic: 0x6c747e, hatHex: 0x9aa3ad, steel: 0x50565e, hat: 'helmet', cannon: true });
+  } else if (kind === 'emperor') {
+    e = buildGnome(true, { s: 3.0, tunic: 0x3a1a5a, hatHex: 0xf2c230, steel: 0xf2c230, hat: 'emperor' });
+    const cape = mk(BG.cape, MU(0xa01a3a, { side: THREE.DoubleSide }), 0, 0.62, 0.14, e.inner); cape.scale.set(1, 1, 0.55);
+  } else e = buildGnome(true);
+  const crew = isCoop() ? pvp.fighters.length : 1;
+  e.boss = true; e.bk = kind; e.tier = tier; e.bossName = bossTitle(kind, tier);
+  e.hp = e.maxHp = Math.round((BOSSES[kind].hp + wave * 22) * (1 + 0.6 * tier) * (1 + 0.5 * (crew - 1)));
+  e.cdMul = Math.pow(0.85, tier);
+  e.orbT = 2.5; e.blinkT = 6; e.mortarT = 3; e.summonT = 10; e.callT = 5; e.rockT = 1.5; e.enraged = false;
+  if (e.type === 'gnome') e.speed = (kind === 'mecha' ? 1.7 : kind === 'emperor' ? 1.9 : 2.0) * (1 + 0.08 * tier);
+  return e;
+}
+// what every boss does on top of moving: get angry, call for help, and its own attacks
+function bossExtra(e, dt){
+  const T = nearestFoe(e.pos) || STASH_FOE, k = e.bk, cd = e.cdMul * (e.enraged ? 0.75 : 1), up = enemyUp(e);
+  if (!e.enraged && (e.tier >= 1 || k === 'emperor') && e.hp < e.maxHp * 0.5) {
+    e.enraged = true; if (e.speed) e.speed *= 1.3;
+    (isCoop() ? showPvBanner : showBanner)(e.bossName + ' is furious!', 'Faster and meaner from here'); sfx.boss();
+  }
+  // escorts: from the third time round (and the Emperor's last third)
+  if (up && (e.tier >= 2 || (k === 'emperor' && e.hp < e.maxHp * 0.34))) {
+    e.summonT -= dt;
+    if (e.summonT <= 0 && enemies.length < 30) {
+      e.summonT = 14 * cd;
+      for (let i = 0; i < 2 + (e.tier >= 3 ? 1 : 0); i++) { spawnEnemy('gnome'); const g = enemies[enemies.length - 1]; const a = rand(0, TAU); g.pos.set(e.pos.x + Math.cos(a) * 3, 0, e.pos.z + Math.sin(a) * 3); collide(g.pos, 0.5); }
+      burst(e.pos.clone().setY(1), 30, [0x6b4a2c, 0x9b7148], 5, 0.1, 0.8, -10, 0.5);
+    }
+  }
+  // magic orbs: the Wizard, and the Emperor
+  if ((k === 'wizard' || k === 'emperor') && up && !T.stash) {
+    e.orbT -= dt;
+    if (e.orbT <= 0) {
+      e.orbT = (k === 'wizard' ? 1.7 : 2.4) * cd;
+      const n = k === 'wizard' ? 1 + Math.min(2, e.tier) : 3;
+      for (let i = 0; i < n; i++) fireShot('orb', e, T, (i - (n - 1) / 2) * 0.35);
+      e.swing = 1;
+    }
+  }
+  // mortars: the Mecha-Gnome, and the Emperor from two thirds down
+  if ((k === 'mecha' || (k === 'emperor' && e.hp < e.maxHp * 0.67)) && up) {
+    e.mortarT -= dt;
+    if (e.mortarT <= 0) {
+      e.mortarT = 3.4 * cd;
+      const ts = foeTargets(); const n = 1 + Math.min(3, e.tier) + (k === 'emperor' ? 1 : 0);
+      for (let i = 0; i < n; i++) { const t = ts.length ? ts[i % ts.length] : STASH_FOE; fireShot('shell', e, t, i ? rand(2, 5) : 0); }
+    }
+  }
+  // the Queen calls her flock
+  if (k === 'queen') {
+    e.callT -= dt;
+    if (e.callT <= 0 && enemies.length < 30) {
+      e.callT = 10 * cd; sfx.caw();
+      for (let i = 0; i < 2 + e.tier; i++) { spawnEnemy('crow'); const c = enemies[enemies.length - 1]; c.pos.copy(e.pos); c.pos.y += rand(-1, 1); c.state = 'circle'; c.wait = rand(1, 3); }
+      (isCoop() ? showPvBanner : toast)('The Crow Queen calls her flock!');
+    }
+  }
+  if (!isCoop()) setScaleX('bossFill', clamp(e.hp / e.maxHp, 0, 1));
+}
+// the Wizard keeps his distance, floats, and blinks somewhere else every few seconds
+function updateWizard(e, dt){
+  if (e.spawnT < 1) { e.spawnT = Math.min(1, e.spawnT + dt * 1.5); e.inner.position.y = (e.spawnT - 1) * 2.2; return; }
+  const T = nearestFoe(e.pos) || STASH_FOE;
+  const dx = T.pos.x - e.pos.x, dz = T.pos.z - e.pos.z, d = Math.hypot(dx, dz) || 1;
+  const want = 11, sp = e.speed * 1.4;
+  let mx = (d - want) / d * dx, mz = (d - want) / d * dz; const ml = Math.hypot(mx, mz); if (ml > 1) { mx = mx / ml * sp; mz = mz / ml * sp; }
+  mx += -dz / d * 1.6; mz += dx / d * 1.6; // circle round
+  e.vel.x = damp(e.vel.x, mx, 4, dt); e.vel.z = damp(e.vel.z, mz, 4, dt);
+  e.pos.x += e.vel.x * dt; e.pos.z += e.vel.z * dt; collide(e.pos, 0.42 * e.s);
+  const lim = ARENA - 3, r = Math.hypot(e.pos.x, e.pos.z); if (r > lim) { e.pos.x *= lim / r; e.pos.z *= lim / r; }
+  e.pos.y = 0.6 + Math.sin(time * 2) * 0.25;
+  e.mesh.rotation.y = angLerp(e.mesh.rotation.y, Math.atan2(-dx, -dz), 1 - Math.exp(-10 * dt));
+  e.inner.rotation.z = Math.sin(time * 1.3) * 0.06;
+  e.swing = Math.max(0, e.swing - dt * 2.6);
+  e.arm.rotation.x = -0.3 - Math.sin(e.swing * Math.PI) * 1.5;
+  e.blinkT -= dt;
+  if (e.blinkT <= 0) {
+    e.blinkT = 7 * e.cdMul;
+    burst(e.pos.clone().setY(1.5), 30, [0x9be7ff, 0x7a3fff, 0xffffff], 6, 0.1, 0.6, 0, 0.3);
+    const a = rand(0, TAU), rr = rand(9, 13); let nx = T.pos.x + Math.cos(a) * rr, nz = T.pos.z + Math.sin(a) * rr;
+    const nr = Math.hypot(nx, nz); if (nr > lim) { nx *= lim / nr; nz *= lim / nr; }
+    e.pos.x = nx; e.pos.z = nz; collide(e.pos, 0.42 * e.s);
+    burst(e.pos.clone().setY(1.5), 30, [0x9be7ff, 0x7a3fff, 0xffffff], 6, 0.1, 0.6, 0, 0.3); sfx.power();
+  }
+}
+// the Overlord tunnels to whoever is nearest, bursts up under them, throws rocks, then dives again
+function updateOverlord(e, dt){
+  const T = nearestFoe(e.pos) || STASH_FOE;
+  if (e.state === 'dig') {
+    e.up = Math.max(0, e.up - dt * 2);
+    const tx = T.pos.x, tz = T.pos.z, dx = tx - e.pos.x, dz = tz - e.pos.z, d = Math.hypot(dx, dz);
+    e.t -= dt;
+    if (d > 0.6) { const st = Math.min(d, e.speed * dt); e.pos.x += dx / d * st; e.pos.z += dz / d * st; e.mesh.rotation.y = Math.atan2(-dx, -dz); }
+    if ((d < 1.2 && e.t <= 0) || e.t < -6) { e.state = 'erupt'; e.t = 0.5; sfx.dig(); }
+  } else if (e.state === 'erupt') {
+    e.t -= dt; e.up = Math.min(1, e.up + dt * 3);
+    if (e.t <= 0) {
+      e.state = 'steal'; e.t = 5.5 * e.cdMul + 1.5;
+      // the shockwave
+      slam(e);
+      if (e.tier >= 1) for (let i = 0; i < e.tier; i++) if (enemies.length < 30) spawnEnemy('mole');
+    }
+  } else if (e.state === 'steal') {
+    e.up = 1; e.t -= dt; e.rockT -= dt;
+    e.mesh.rotation.y = angLerp(e.mesh.rotation.y, Math.atan2(-(T.pos.x - e.pos.x), -(T.pos.z - e.pos.z)), 1 - Math.exp(-6 * dt));
+    if (e.rockT <= 0 && !T.stash) { e.rockT = 1.4 * e.cdMul; fireShot('rock', e, T, 0); }
+    if (e.t <= 0) { e.state = 'dig'; e.t = 2; }
+  }
+  moleLook(e, dt);
+}
+
+function updateEnemy(e, dt){
+  if (e.bk === 'wizard') updateWizard(e, dt);
+  else if (e.bk === 'overlord') updateOverlord(e, dt);
+  else if (e.type === 'gnome') updateGnome(e, dt);
+  else if (e.type === 'mole') updateMole(e, dt);
+  else updateCrow(e, dt);
+  if (e.boss && enemies.includes(e)) bossExtra(e, dt);
+}
+// ---------- shots the bosses throw: magic orbs (they home in a little), mortar shells and rocks
+const eshots = [];
+let eshotSeq = 0;
+const ESG = { orb: new THREE.IcosahedronGeometry(0.3, 1), shell: new THREE.SphereGeometry(0.32, 10, 8), rock: new THREE.DodecahedronGeometry(0.4, 0), ring: new THREE.RingGeometry(0.85, 1, 36) };
+const ESM = {
+  orb: new THREE.MeshBasicMaterial({ color: 0xc77dff }), shell: MU(0x3a3f47, { metalness: 0.6, roughness: 0.4 }), rock: MU(0x7a6a5a),
+  ring: new THREE.MeshBasicMaterial({ color: 0xff3b30, transparent: true, opacity: 0.7, side: THREE.DoubleSide, depthWrite: false })
+};
+const ES_KINDS = ['orb', 'shell', 'rock'];
+function makeShotMesh(kind){ const m = new THREE.Mesh(ESG[kind], ESM[kind]); m.castShadow = kind !== 'orb'; scene.add(m); return m; }
+function makeRing(r){ const g = new THREE.Mesh(ESG.ring, ESM.ring); g.rotation.x = -Math.PI / 2; g.scale.setScalar(r); scene.add(g); return g; }
+function fireShot(kind, e, T, spread){
+  const from = new V3(e.pos.x, (e.pos.y || 0) + (kind === 'shell' ? 2.6 : 1.3) * e.s, e.pos.z);
+  const sh = { id: ++eshotSeq, kind, m: makeShotMesh(kind), vel: new V3(), life: 6, ring: null, r: 0, dmg: 0, tgt: T };
+  sh.m.position.copy(from);
+  if (kind === 'orb') {
+    const a = Math.atan2(T.pos.x - from.x, T.pos.z - from.z) + (spread || 0);
+    sh.vel.set(Math.sin(a) * 9, 0, Math.cos(a) * 9); sh.vel.y = clamp((T.pos.y + 1 - from.y) / 2, -3, 3); sh.dmg = 12; sh.life = 4.5;
+  } else {
+    // a lob that lands on (or near) where the target stands now
+    const flight = kind === 'shell' ? 1.7 : 1.0, g = 16;
+    const a = rand(0, TAU), j = spread || 0;
+    const tx = clamp(T.pos.x + Math.cos(a) * j, -ARENA + 2, ARENA - 2), tz = clamp(T.pos.z + Math.sin(a) * j, -ARENA + 2, ARENA - 2);
+    sh.vel.set((tx - from.x) / flight, (0.1 - from.y + 0.5 * g * flight * flight) / flight, (tz - from.z) / flight);
+    sh.r = kind === 'shell' ? 3.4 : 2.0; sh.dmg = kind === 'shell' ? 20 : 12; sh.tx = tx; sh.tz = tz;
+    if (kind === 'shell') { sh.ring = makeRing(sh.r); sh.ring.position.set(tx, 0.06, tz); }
+  }
+  eshots.push(sh);
+  if (kind === 'shell') sfx.shoot('launcher'); else if (kind === 'orb') sfx.spin();
+}
+function removeShot(i){ const sh = eshots[i]; scene.remove(sh.m); if (sh.ring) scene.remove(sh.ring); eshots.splice(i, 1); }
+function clearShots(){ while (eshots.length) removeShot(eshots.length - 1); }
+function updateEshots(dt){
+  for (let i = eshots.length - 1; i >= 0; i--) {
+    const sh = eshots[i], m = sh.m; sh.life -= dt;
+    if (sh.kind === 'orb') {
+      // steer a little toward the nearest target
+      const T = nearestFoe(m.position);
+      if (T) { pvA.set(T.pos.x - m.position.x, T.pos.y + 0.9 - m.position.y, T.pos.z - m.position.z).normalize().multiplyScalar(9); sh.vel.lerp(pvA, 1 - Math.exp(-0.9 * dt)); }
+      m.position.addScaledVector(sh.vel, dt); m.rotation.y += dt * 6;
+      if (Math.random() < 0.8) emit(m.position, new V3(rand(-0.4, 0.4), rand(-0.2, 0.4), rand(-0.4, 0.4)), pick([0xc77dff, 0x9be7ff]), rand(0.08, 0.14), 0.4, 0, 0);
+      let hit = null;
+      for (const t of foeTargets()) if (Math.hypot(m.position.x - t.pos.x, m.position.y - (t.pos.y + 0.8), m.position.z - t.pos.z) < 0.9) { hit = t; break; }
+      let wall = m.position.y < 0.1;
+      if (!wall) for (const c of colliders) if (m.position.y < c.h && Math.hypot(m.position.x - c.x, m.position.z - c.z) < c.r) { wall = true; break; }
+      if (hit) hurtFoe(hit, sh.dmg, m.position.clone());
+      if (hit || wall || sh.life <= 0) { burst(m.position, 14, [0xc77dff, 0x9be7ff, 0xffffff], 4, 0.07, 0.4, 0, 0.2); removeShot(i); }
+      continue;
+    }
+    sh.vel.y -= 16 * dt; m.position.addScaledVector(sh.vel, dt); m.rotation.x += dt * 5;
+    if (sh.ring) sh.ring.material.opacity = 0.45 + Math.sin(time * 14) * 0.25;
+    if (m.position.y <= 0.15 || sh.life <= 0) {
+      const pt = m.position.clone(); pt.y = 0.2;
+      if (sh.kind === 'shell') explodeFx(pt, sh.r); else { burst(pt, 18, [0x7a6a5a, 0x9b8a7a], 5, 0.1, 0.6, -12, 0.4); sfx.slam(); }
+      for (const t of foeTargets()) { const d = Math.hypot(t.pos.x - pt.x, t.pos.z - pt.z); if (d < sh.r && t.pos.y < 2) hurtFoe(t, Math.round(sh.dmg * clamp(1.2 - d / sh.r, 0.4, 1)), pt); }
+      removeShot(i);
+    }
+  }
+}
+// the online co-op guest draws the host's shots
+function unpackShots(list){
+  if (!Array.isArray(list)) return;
+  const seen = new Set();
+  for (const a of list) {
+    if (!Array.isArray(a)) continue;
+    const id = +a[0]; seen.add(id);
+    let sh = eshots.find(q => q.id === id);
+    if (!sh) {
+      const kind = ES_KINDS[+a[1]] || 'orb';
+      sh = { id, kind, m: makeShotMesh(kind), vel: new V3(), net: new V3(), ring: null, life: 99 };
+      if (kind === 'shell') { sh.ring = makeRing(3.4); sh.ring.position.set(+a[5] || 0, 0.06, +a[6] || 0); }
+      sh.m.position.set(+a[2] || 0, +a[3] || 0, +a[4] || 0); eshots.push(sh);
+    }
+    sh.net.set(+a[2] || 0, +a[3] || 0, +a[4] || 0);
+  }
+  for (let i = eshots.length - 1; i >= 0; i--) if (!seen.has(eshots[i].id)) {
+    const sh = eshots[i];
+    if (sh.kind === 'shell') explodeFx(sh.m.position.clone().setY(0.2), 3.4);
+    else burst(sh.m.position, 12, sh.kind === 'orb' ? [0xc77dff, 0x9be7ff] : [0x7a6a5a], 4, 0.07, 0.4, -6, 0.2);
+    removeShot(i);
+  }
+}
+function replicaShots(dt){
+  for (const sh of eshots) if (sh.net) { sh.m.position.lerp(sh.net, 1 - Math.exp(-14 * dt)); sh.m.rotation.y += dt * 5; if (sh.ring) sh.ring.material.opacity = 0.45 + Math.sin(time * 14) * 0.25; }
+}
+
 // ---------- the Mole: tunnels under the meadow straight to the stash, pops up beside it and
 // starts carrying nuts away. It can only be shot once it is up (an explosion reaches it underground).
 const MOG = {
@@ -1899,8 +2158,8 @@ function buildMole(){
 // the body an enemy is hit on (gnomes also have a head), and whether it can be hit at all
 function enemyBody(e){
   if (e.type === 'gnome') return { y: e.pos.y + e.inner.position.y + 0.65 * e.s, r: 0.6 * e.s };
-  if (e.type === 'mole') return { y: e.pos.y + e.inner.position.y + 0.45, r: 0.62 };
-  return { y: e.pos.y, r: 0.9 };
+  if (e.type === 'mole') return { y: e.pos.y + (e.inner.position.y + 0.45) * e.s, r: 0.62 * e.s };
+  return { y: e.pos.y, r: 0.9 * e.s };
 }
 const enemyUp = (e) => e.type === 'gnome' ? e.spawnT >= 0.6 : e.type === 'mole' ? e.up >= 0.5 : true;
 // how a mole looks, from its state (the online guest calls this for the host's moles too)
@@ -1956,7 +2215,18 @@ let enemySeq = 0;
 function spawnEnemy(kind){
   let e;
   const nearAny = (x, z) => foeTargets().some(t => Math.hypot(t.pos.x - x, t.pos.z - z) < 14);
-  if (kind === 'mole') {
+  if (kind === 'boss') {
+    const B = bossFor(wave);
+    e = buildBoss(B.kind, B.tier);
+    const a = rand(0, TAU), r = ARENA - 4;
+    if (e.type === 'crow') { e.pos.set(Math.cos(a) * (ARENA + 6), 16, Math.sin(a) * (ARENA + 6)); e.tgt = nearestFoe(e.pos) || STASH_FOE; e.ang = Math.atan2(e.pos.z - e.tgt.pos.z, e.pos.x - e.tgt.pos.x); }
+    else { e.pos.set(Math.cos(a) * r, 0, Math.sin(a) * r); if (nearAny(e.pos.x, e.pos.z)) e.pos.set(-e.pos.x, 0, -e.pos.z); e.mesh.rotation.y = Math.atan2(e.pos.x, e.pos.z); }
+    if (e.type === 'gnome') e.inner.position.y = -2;
+    const tip = BOSSES[B.kind].tip + (B.tier ? ' He has come back stronger.'.replace('He', B.kind === 'queen' ? 'She' : 'He') : '');
+    if (isCoop()) showPvBanner(e.bossName, tip);
+    else { showBanner(e.bossName, tip); bossBox.hidden = false; $('bossName').textContent = e.bossName.toUpperCase(); }
+    sfx.boss();
+  } else if (kind === 'mole') {
     e = buildMole();
     const a = rand(0, TAU), r = ARENA - 4;
     e.pos.set(Math.cos(a) * r, 0, Math.sin(a) * r);
@@ -1968,17 +2238,12 @@ function spawnEnemy(kind){
     e.tgt = nearestFoe(e.pos) || STASH_FOE;
     e.ang = Math.atan2(e.pos.z - e.tgt.pos.z, e.pos.x - e.tgt.pos.x);
   } else {
-    e = buildGnome(kind === 'boss');
+    e = buildGnome(false);
     let a = rand(0, TAU); const r = ARENA - 3;
     e.pos.set(Math.cos(a) * r, 0, Math.sin(a) * r);
     if (nearAny(e.pos.x, e.pos.z)) { a += Math.PI; e.pos.set(Math.cos(a) * r, 0, Math.sin(a) * r); }
     e.mesh.rotation.y = Math.atan2(e.pos.x, e.pos.z);
     e.inner.position.y = -2;
-    if (e.boss) {
-      if (isCoop()) showPvBanner('The Gnome King', 'Jump to dodge his ground slam. Aim for the crown.');
-      else { showBanner('The Gnome King', 'Jump to dodge his ground slam. Aim for the crown.'); bossBox.hidden = false; }
-      sfx.boss();
-    }
   }
   e.id = ++enemySeq;
   scene.add(e.mesh); enemies.push(e);
@@ -2257,7 +2522,7 @@ function perkSummary(){ return PERKS.filter(P => perkLv(P.id)).map(P => P.name +
 function startWave(n){
   wave = n; waveState = 'intro'; waveTimer = 2.6; queue = [];
   const co = isCoop(), crew = co ? pvp.fighters.length : 1, more = 1 + 0.5 * (crew - 1);
-  const g = Math.round((3 + n * 2) * more), c = n >= 2 ? Math.round((Math.floor(n / 2) + (n >= 6 ? 1 : 0)) * more) : 0;
+  const g = Math.round(Math.min(3 + n * 2, 22 + n * 0.45) * more), c = n >= 2 ? Math.round(Math.min(Math.floor(n / 2) + (n >= 6 ? 1 : 0), 4 + n / 6) * more) : 0;
   for (let i = 0; i < g; i++) queue.push('gnome');
   for (let i = 0; i < c; i++) queue.splice(Math.floor(rand(2, queue.length + 1)), 0, 'crow');
   // moles from wave 3: one, then another every other wave
@@ -2265,7 +2530,7 @@ function startWave(n){
   for (let i = 0; i < ml; i++) queue.splice(Math.floor(rand(1, queue.length + 1)), 0, 'mole');
   const isBoss = n % 5 === 0;
   if (isBoss) queue.push('boss');
-  (co ? showPvBanner : showBanner)('Wave ' + n, isBoss ? 'Something big is coming' : (c ? g + ' gnomes and ' + c + ' crows' : g + ' gnomes incoming') + (ml ? (ml === 1 ? ', and a mole' : ', and ' + ml + ' moles') : ''));
+  (co ? showPvBanner : showBanner)(n >= FINAL_WAVE ? 'Wave 100: the last stand' : 'Wave ' + n, isBoss ? bossTitle(bossFor(n).kind, bossFor(n).tier) + ' is coming' : (c ? g + ' gnomes and ' + c + ' crows' : g + ' gnomes incoming') + (ml ? (ml === 1 ? ', and a mole' : ', and ' + ml + ' moles') : ''));
   sfx.wave();
   if (co) {
     // a crate per player from wave 2, so everyone can find a new weapon
@@ -2281,12 +2546,13 @@ function updateWave(dt){
   if (waveState === 'intro') { waveTimer -= dt; if (waveTimer <= 0) { waveState = 'fight'; spawnT = 0; } }
   else if (waveState === 'fight') {
     spawnT -= dt;
-    if (queue.length && spawnT <= 0 && enemies.length < 14 + wave + (isCoop() ? 5 * (pvp.fighters.length - 1) : 0)) {
+    if (queue.length && spawnT <= 0 && enemies.length < 14 + Math.min(wave, 14) + (isCoop() ? 5 * (pvp.fighters.length - 1) : 0)) {
       const k = queue[0];
       if (k !== 'boss' || enemies.length < 4) { queue.shift(); spawnEnemy(k); spawnT = Math.max(0.35, 1.15 - wave * 0.06); }
     }
     if (!queue.length && !enemies.length) {
-      waveState = 'clear'; waveTimer = 3.2;
+      waveState = 'clear'; waveTimer = 3.2; clearShots();
+      if (wave >= FINAL_WAVE) { if (isCoop()) coopOver('win'); else gameOver('win'); return; }
       const bonus = 250 * wave; score += bonus; stash = Math.min(100, stash + 10); updateStashPile();
       (isCoop() ? showPvBanner : showBanner)('Wave cleared', '+' + fmt(bonus) + ' points, stash restocked'); sfx.clear();
       bossBox.hidden = true;
@@ -2349,13 +2615,13 @@ function castRay(dir){
       if (t < r.t) { r.t = t; r.kind = 'enemy'; r.e = e; r.head = false; }
     } else if (e.type === 'mole') {
       if (e.up < 0.5) continue;
-      const y0 = e.pos.y + e.inner.position.y;
-      let t = raySphere(o, dir, e.pos.x, y0 + 0.86, e.pos.z, 0.28);
+      const sc = e.s, y0 = e.pos.y + e.inner.position.y * sc;
+      let t = raySphere(o, dir, e.pos.x, y0 + 0.86 * sc, e.pos.z, 0.28 * sc);
       if (t < r.t) { r.t = t; r.kind = 'enemy'; r.e = e; r.head = true; }
-      t = raySphere(o, dir, e.pos.x, y0 + 0.45, e.pos.z, 0.55);
+      t = raySphere(o, dir, e.pos.x, y0 + 0.45 * sc, e.pos.z, 0.55 * sc);
       if (t < r.t) { r.t = t; r.kind = 'enemy'; r.e = e; r.head = false; }
     } else {
-      const t = raySphere(o, dir, e.pos.x, e.pos.y, e.pos.z, 0.75);
+      const t = raySphere(o, dir, e.pos.x, e.pos.y, e.pos.z, 0.75 * e.s);
       if (t < r.t) { r.t = t; r.kind = 'enemy'; r.e = e; r.head = false; }
     }
   }
@@ -2433,7 +2699,7 @@ function killEnemy(e, head, dir, shooter){
     scene.attach(e.hat);
     props.push({ obj: e.hat, mat: e.hatMat, vel: new V3(dir.x * 4 + rand(-1, 1), rand(6, 8), dir.z * 4 + rand(-1, 1)), spin: new V3(rand(-9, 9), rand(-9, 9), rand(-9, 9)), life: 2.4, ground: e.boss ? 0.4 : 0.25 });
   }
-  let base = e.boss ? 2000 : e.type === 'crow' ? 150 : e.type === 'mole' ? 200 : 100; if (head) base += 50;
+  let base = e.boss ? 2000 + 400 * (e.tier || 0) + (e.bk === 'emperor' ? 20000 : 0) : e.type === 'crow' ? 150 : e.type === 'mole' ? 200 : 100; if (head) base += 50;
   combo = comboT > 0 ? combo + 1 : 1; comboT = 3;
   const co = isCoop();
   const mult = Math.min(1 + Math.floor(combo / 3), 5), pts = Math.round(base * mult * (co ? 1 : 1 + 0.25 * perkLv('show')));
@@ -2453,8 +2719,9 @@ function killEnemy(e, head, dir, shooter){
   if (e.boss) {
     for (let i = 0; i < 8; i++) drop(i < 3 ? 'golden' : 'acorn');
     drop('crate'); drop('power'); drop('power');
-    if (co) showPvBanner('King bonked!', '+' + fmt(pts) + ' points' + (shooter ? ' for ' + shooter.tag : ''));
-    else { bossBox.hidden = true; addShake(0.9); showBanner('King bonked!', '+' + fmt(pts) + ' points'); }
+    const bn = (e.bossName || 'The Gnome King').replace(/^The /, '');
+    if (co) showPvBanner(bn + ' bonked!', '+' + fmt(pts) + ' points' + (shooter ? ' for ' + shooter.tag : ''));
+    else { bossBox.hidden = true; addShake(0.9); showBanner(bn + ' bonked!', '+' + fmt(pts) + ' points'); }
   } else {
     const r = Math.random(), crate = e.type === 'crow' ? 0.08 : e.type === 'mole' ? 0.1 : 0.04;
     if (r < crate) drop('crate');
@@ -2680,7 +2947,7 @@ function updateCrow(e, dt){
   pc.set(T.pos.x, T.pos.y + (T.stash ? 1.2 : 0.9), T.pos.z);
   if (e.state === 'enter' || e.state === 'circle') {
     e.ang += dt * 0.9 * e.dir;
-    const tx = T.pos.x + Math.cos(e.ang) * e.rad, tz = T.pos.z + Math.sin(e.ang) * e.rad, ty = 6.5 + Math.sin(e.t * 1.7) * 0.8;
+    const tx = T.pos.x + Math.cos(e.ang) * e.rad, tz = T.pos.z + Math.sin(e.ang) * e.rad, ty = (e.fly || 6.5) + Math.sin(e.t * 1.7) * 0.8;
     tv.set(tx - e.pos.x, ty - e.pos.y, tz - e.pos.z);
     const d = tv.length(), spd = e.state === 'enter' ? 13 : 10;
     if (d > 0.01) tv.multiplyScalar(Math.min(spd, d * 2.5) / d);
@@ -2692,7 +2959,7 @@ function updateCrow(e, dt){
   } else if (e.state === 'dive') {
     tv.copy(pc).sub(e.pos).normalize().multiplyScalar(e.vel.length());
     e.vel.lerp(tv, 1 - Math.exp(-0.9 * dt));
-    if (e.pos.distanceTo(pc) < (T.stash ? 1.8 : 1.1)) { hurtFoe(T, 12, e.pos); e.state = 'climb'; e.t = 0; }
+    if (e.pos.distanceTo(pc) < (T.stash ? 1.8 : 1.1) * (e.boss ? 1.8 : 1)) { hurtFoe(T, e.boss ? 24 : 12, e.pos); e.state = 'climb'; e.t = 0; }
     else if (e.pos.y < 0.6 || e.t > 2.2) { e.state = 'climb'; e.t = 0; }
   } else {
     e.vel.y = damp(e.vel.y, 9, 4, dt); e.vel.x = damp(e.vel.x, 0, 1.5, dt); e.vel.z = damp(e.vel.z, 0, 1.5, dt);
@@ -2810,7 +3077,7 @@ function updateHUD(dt){
   setClass(els.hpMeter, 'low', player.hp <= 30);
   setScaleX('stashFill', clamp(stash / 100, 0, 1)); setText('stashNum', String(Math.ceil(stash)));
   setClass(els.stashMeter, 'low', stash <= 30);
-  setText('wave', 'Wave ' + wave);
+  setText('wave', 'Wave ' + wave + '/' + FINAL_WAVE);
   const left = queue.length + enemies.length;
   setText('left', waveState === 'intro' ? 'Get ready' : waveState === 'clear' ? 'Next wave soon' : left + (left === 1 ? ' enemy left' : ' enemies left'));
   setText('score', fmt(score));
@@ -2844,6 +3111,7 @@ function updateHUD(dt){
 // ---------------------------------------------------------------- flow
 function clearWorld(){
   while (enemies.length) removeEnemy(enemies[0]);
+  clearShots();
   pickups.forEach(k => scene.remove(k.obj)); pickups.length = 0;
   props.forEach(p => { scene.remove(p.obj); if (p.mat) p.mat.dispose(); }); props.length = 0;
   projs.forEach(p => scene.remove(p.m)); projs.length = 0;
@@ -2894,8 +3162,9 @@ function gameOver(reason){
   state = 'over'; firing = false; document.body.classList.remove('playing'); showTouch(false);
   if (document.pointerLockElement) document.exitPointerLock();
   const rec = score > best; if (rec) { best = score; saveBest(); }
-  $('overTitle').textContent = reason === 'stash' ? 'Stash lost' : 'Knocked out';
-  $('overReason').textContent = reason === 'stash'
+  $('overTitle').textContent = reason === 'win' ? 'You saved the Great Oak!' : reason === 'stash' ? 'Stash lost' : 'Knocked out';
+  $('overReason').textContent = reason === 'win' ? 'All ' + FINAL_WAVE + ' waves and every boss, Emperor included. The meadow is safe. Play again to beat your score.'
+    : reason === 'stash'
     ? 'The gnomes carried off the last acorn from the Great Oak. Keep them away from the trunk next time.'
     : 'A gnome mallet got you. Keep moving, jump the slams, and grab golden acorns to heal.';
   $('finScore').textContent = fmt(score); $('finWave').textContent = String(wave); $('finKills').textContent = fmt(kills);
@@ -3646,8 +3915,8 @@ function pvpHudUpdate(dt){
   if (pvp.coop) {
     // the team's shared state: wave, stash, score, and the King when he's out
     const king = enemies.find(e => e.boss);
-    sc = '<span>Wave ' + wave + '</span><small>stash</small><span style="color:' + (stash <= 30 ? '#ff5a4e' : 'var(--leaf)') + '">' + Math.ceil(stash) + '%</span><small>score</small><span>' + fmt(score) + '</span>'
-      + (king ? '<small>King</small><span style="color:#ffd23f">' + Math.ceil(clamp(king.hp / king.maxHp, 0, 1) * 100) + '%</span>' : '');
+    sc = '<span>Wave ' + wave + '<small> of ' + FINAL_WAVE + '</small></span><small>stash</small><span style="color:' + (stash <= 30 ? '#ff5a4e' : 'var(--leaf)') + '">' + Math.ceil(stash) + '%</span><small>score</small><span>' + fmt(score) + '</span>'
+      + (king ? '<small>' + BOSSES[king.bk || 'king'].name.split(' ').pop() + '</small><span style="color:#ffd23f">' + Math.ceil(clamp(king.hp / king.maxHp, 0, 1) * 100) + '%</span>' : '');
   } else {
     const F = pvp.fighters;
     if (F.length === 2) sc = '<span style="color:' + F[0].pal.css + '">' + F[0].tag + ' ' + bonksOf(F[0]) + '</span><small>first to ' + MATCH_KILLS + '</small><span style="color:' + F[1].pal.css + '">' + bonksOf(F[1]) + ' ' + F[1].tag + '</span>';
@@ -3676,13 +3945,13 @@ function coopCast(o, dir, minT){
       if (t < r.t) { r.t = t; r.kind = 'enemy'; r.e = e; r.head = false; }
     } else if (e.type === 'mole') {
       if (e.up < 0.5) continue;
-      const y0 = e.pos.y + e.inner.position.y;
-      let t = raySphere(o, dir, e.pos.x, y0 + 0.86, e.pos.z, 0.28 * big);
+      const ms = e.s, y0 = e.pos.y + e.inner.position.y * ms;
+      let t = raySphere(o, dir, e.pos.x, y0 + 0.86 * ms, e.pos.z, 0.28 * ms * big);
       if (t < r.t) { r.t = t; r.kind = 'enemy'; r.e = e; r.head = true; }
-      t = raySphere(o, dir, e.pos.x, y0 + 0.45, e.pos.z, 0.55 * big);
+      t = raySphere(o, dir, e.pos.x, y0 + 0.45 * ms, e.pos.z, 0.55 * ms * big);
       if (t < r.t) { r.t = t; r.kind = 'enemy'; r.e = e; r.head = false; }
     } else {
-      const t = raySphere(o, dir, e.pos.x, e.pos.y, e.pos.z, 0.75 * big);
+      const t = raySphere(o, dir, e.pos.x, e.pos.y, e.pos.z, 0.75 * e.s * big);
       if (t < r.t) { r.t = t; r.kind = 'enemy'; r.e = e; r.head = false; }
     }
   }
@@ -3735,10 +4004,12 @@ function coopTick(dt){
   if (pvp.phase === 'play') {
     for (let i = enemies.length - 1; i >= 0; i--) {
       const e = enemies[i];
-      if (e.type === 'gnome') updateGnome(e, dt); else if (e.type === 'mole') updateMole(e, dt); else updateCrow(e, dt);
+      updateEnemy(e, dt);
       if (!pvp || pvp.phase !== 'play') return;
       flashMats(e, dt); e.barT = Math.max(0, e.barT - dt);
     }
+    updateEshots(dt);
+    if (!pvp || pvp.phase !== 'play') return;
     if (comboT > 0) { comboT -= dt; if (comboT <= 0) combo = 0; }
     updateWave(dt);
     // everyone down at the same moment: the gnomes win
@@ -3750,8 +4021,9 @@ function coopTick(dt){
 function coopPack(){
   return {
     w: wave, ws: waveState, sd: Math.ceil(stash), sc: score,
-    en: enemies.slice(0, 40).map(e => [e.id, e.type === 'crow' ? 1 : e.boss ? 2 : e.type === 'mole' ? 3 : 0, r2(e.pos.x), r2(e.pos.y), r2(e.pos.z), r2(e.mesh.rotation.y),
-      Math.max(0, Math.round(e.hp / e.maxHp * 100)), Math.round((e.swing || 0) * 10), e.type === 'gnome' ? Math.round(e.spawnT * 10) : e.type === 'mole' ? Math.round(e.up * 10) : 10, e.type === 'mole' ? (e.state === 'steal' ? 2 : e.state === 'rise' ? 1 : 0) : 0])
+    es: eshots.slice(0, 24).map(sh => [sh.id, ES_KINDS.indexOf(sh.kind), r2(sh.m.position.x), r2(sh.m.position.y), r2(sh.m.position.z), r2(sh.tx || 0), r2(sh.tz || 0)]),
+    en: enemies.slice(0, 40).map(e => [e.id, e.boss ? 2 : e.type === 'crow' ? 1 : e.type === 'mole' ? 3 : 0, r2(e.pos.x), r2(e.pos.y), r2(e.pos.z), r2(e.mesh.rotation.y),
+      Math.max(0, Math.round(e.hp / e.maxHp * 100)), Math.round((e.swing || 0) * 10), e.type === 'gnome' ? Math.round(e.spawnT * 10) : e.type === 'mole' ? Math.round(e.up * 10) : 10, e.type === 'mole' ? (e.state === 'steal' ? 2 : e.state === 'rise' || e.state === 'erupt' ? 1 : 0) : 0, e.boss ? BOSS_KINDS.indexOf(e.bk || 'king') : -1, e.tier || 0])
   };
 }
 function coopUnpack(co){
@@ -3761,6 +4033,7 @@ function coopUnpack(co){
   if (co.ws === 'clear' && pvp.seenWs !== 'clear') { showPvBanner('Wave cleared', 'Stash restocked'); sfx.clear(); }
   pvp.seenWs = co.ws;
   wave = w; waveState = String(co.ws || 'fight'); score = +co.sc || 0;
+  unpackShots(co.es);
   const sd = clamp(+co.sd || 0, 0, 100); if (sd !== stash) { stash = sd; updateStashPile(); }
   if (!Array.isArray(co.en)) return;
   const seen = new Set();
@@ -3769,10 +4042,10 @@ function coopUnpack(co){
     const id = +a[0]; seen.add(id);
     let e = enemies.find(q => q.id === id);
     if (!e) {
-      e = a[1] === 1 ? buildCrow() : a[1] === 3 ? buildMole() : buildGnome(a[1] === 2);
+      e = a[1] === 2 ? buildBoss(BOSS_KINDS[+a[10]] || 'king', clamp(+a[11] || 0, 0, 3)) : a[1] === 1 ? buildCrow() : a[1] === 3 ? buildMole() : buildGnome(false);
       e.id = id; e.pos.set(+a[2] || 0, +a[3] || 0, +a[4] || 0); e.net = e.pos.clone(); e.netYaw = +a[5] || 0;
       scene.add(e.mesh); enemies.push(e);
-      if (e.boss) { showPvBanner('The Gnome King', 'Jump to dodge his ground slam. Aim for the crown.'); sfx.boss(); }
+      if (e.boss) { showPvBanner(e.bossName, BOSSES[e.bk].tip); sfx.boss(); }
     }
     e.net.set(+a[2] || 0, +a[3] || 0, +a[4] || 0); e.netYaw = +a[5] || 0;
     const hp = clamp(+a[6] || 0, 0, 100) / 100 * e.maxHp;
@@ -3786,6 +4059,7 @@ function coopUnpack(co){
 }
 // the online guest: move and animate the host's enemies between updates
 function coopReplicaTick(dt){
+  replicaShots(dt);
   for (const e of enemies) {
     if (!e.net) continue;
     pvC.copy(e.pos);
@@ -3835,8 +4109,9 @@ function coopOver(why){
   $('pvpPauseScr').hidden = true;
   const rec = score > bestCoop && score > 0;
   if (rec) { bestCoop = score; try { localStorage.setItem('squirrel-commando-coop-best', String(bestCoop)); } catch (e) {} }
-  $('pvpOverTitle').textContent = why === 'stash' ? 'The stash fell' : why === 'left' ? 'Your teammate left' : 'Everyone got bonked';
+  $('pvpOverTitle').textContent = why === 'win' ? 'Victory! The meadow is safe' : why === 'stash' ? 'The stash fell' : why === 'left' ? 'Your teammate left' : 'Everyone got bonked';
   $('pvpOverLede').textContent = why === 'left' ? 'The other player disconnected. Head back to the menu to start a new room.'
+    : why === 'win' ? 'All ' + FINAL_WAVE + ' waves and every boss, Emperor included, with ' + fmt(score) + ' points.' + (rec ? ' New team best!' : '')
     : 'You held out to wave ' + wave + ' with ' + fmt(score) + ' points.' + (rec ? ' New team best!' : bestCoop ? ' Team best: ' + fmt(bestCoop) + '.' : '');
   const rows = pvp.fighters.map(f => '<div><dt style="color:' + f.pal.css + '"></dt><dd>' + (f.kills | 0) + '</dd></div>').join('') + '<div><dt>Wave</dt><dd>' + wave + '</dd></div>';
   const dl = $('pvpStats'); dl.innerHTML = rows;
@@ -3891,7 +4166,7 @@ function pvpBegin(m){
   pvp.projs.forEach(p => scene.remove(p.m)); pvp.projs.length = 0;
   if (pvp.coop) {
     // fresh waves, a full stash, and everyone around the Great Oak
-    while (enemies.length) removeEnemy(enemies[0]);
+    while (enemies.length) removeEnemy(enemies[0]); clearShots();
     wave = 1; waveState = 'intro'; queue = []; score = 0; combo = 0; comboT = 0; kills = 0; stash = 100; updateStashPile();
     pvp.waveOn = false; pvp.why = null; pvp.seenWave = 0; pvp.seenWs = null;
     const n = pvp.fighters.length;
@@ -3931,7 +4206,7 @@ function pvpOver(w, reason){
   setTimeout(() => { if (pvp && pvp.phase === 'over') $('pvpOverScr').hidden = false; }, 900);
 }
 function teardownPvp(){
-  if (pvp.coop) { while (enemies.length) removeEnemy(enemies[0]); stash = 100; updateStashPile(); }
+  if (pvp.coop) { while (enemies.length) removeEnemy(enemies[0]); clearShots(); stash = 100; updateStashPile(); }
   pvp.fighters.forEach(f => { scene.remove(f.model.group); scene.remove(f.cam); if (f.rev) { scene.remove(f.rev.g); f.rev.fg.geometry.dispose(); } });
   pvp.pk.forEach(k => scene.remove(k.obj)); pvp.projs.forEach(p => scene.remove(p.m));
   floats.forEach(f => f.el.remove()); floats.length = 0;
@@ -4580,12 +4855,14 @@ function update(dt){
   if (firing && gun.cd <= 0) tryShoot();
   for (let i = enemies.length - 1; i >= 0; i--) {
     const e = enemies[i];
-    if (e.type === 'gnome') updateGnome(e, dt); else if (e.type === 'mole') updateMole(e, dt); else updateCrow(e, dt);
+    updateEnemy(e, dt);
     if (state !== 'playing') return;
     flashMats(e, dt);
     e.barT = Math.max(0, e.barT - dt);
     billboardBar(e);
   }
+  updateEshots(dt);
+  if (state !== 'playing') return;
   updateProjs(dt);
   if (state !== 'playing') return;
   updatePickups(dt); updateProps(dt);
@@ -4622,7 +4899,7 @@ function frame(){
 window.__sq = {
   get pvp(){ return pvp; }, get enemies(){ return enemies; }, get wave(){ return wave; }, get stash(){ return stash; },
   get score(){ return score; }, get state(){ return state; }, get sel(){ return sel; },
-  get player(){ return player; }, get perk(){ return perk; }, get waveState(){ return waveState; }, shootAt(e){ const b = enemyBody(e), t = new V3(e.pos.x, b.y, e.pos.z), o = t.clone().add(new V3(e.pos.x, 0, e.pos.z).normalize().multiplyScalar(6)); o.y = b.y + 0.6; camera.position.copy(o); const d = t.clone().sub(o).normalize(); const r = castRay(d); if (r.e) hurtEnemy(r.e, 20, r.head, t, d, 1); return r.kind; }, spawn(k){ spawnEnemy(k); return enemies[enemies.length - 1]; }, killAll(){ while (enemies.length) removeEnemy(enemies[0]); queue.length = 0; }, get yaw(){ return yaw; }, get ammo(){ return inv[cur].ammo; }, get gp(){ return GP; },
+  get player(){ return player; }, get perk(){ return perk; }, get waveState(){ return waveState; }, shootAt(e){ const b = enemyBody(e), t = new V3(e.pos.x, b.y, e.pos.z), o = t.clone().add(new V3(e.pos.x, 0, e.pos.z).normalize().multiplyScalar(6)); o.y = b.y + 0.6; camera.position.copy(o); const d = t.clone().sub(o).normalize(); const r = castRay(d); if (r.e) hurtEnemy(r.e, 20, r.head, t, d, 1); return r.kind; }, spawn(k){ spawnEnemy(k); return enemies[enemies.length - 1]; }, setWave(n){ wave = n; }, face(e){ yaw = Math.atan2(-(e.pos.x - player.pos.x), -(e.pos.z - player.pos.z)); pitch = 0.05; }, get eshots(){ return eshots; }, killAll(){ while (enemies.length) removeEnemy(enemies[0]); queue.length = 0; }, get yaw(){ return yaw; }, get ammo(){ return inv[cur].ammo; }, get gp(){ return GP; },
   hit(e, dmg, shooter){ coopHitEnemy(shooter, e, dmg, false, e.pos.clone(), new V3(0, 0, 1), 1); },
   hurt(f, d){ coopHurt(f, d, new V3(0, 0, 0)); }, dmg(v, d, by){ applyDamage(v, d, by); }, bonks(f){ return bonksOf(f); },
   setStash(v){ stash = v; updateStashPile(); }, damageStash(d){ damageStash(d, new V3(0, 0, 3)); }

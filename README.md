@@ -7,11 +7,19 @@ Sunny Meadow, Frosty Pines, Canyon Dunes, Spooky Hollow and Blossom Garden.
 
 ## Modes
 
-- **Solo:** defend the nut stash at the centre of the map from waves of garden gnomes, diving crows and the Gnome King. After each wave, pick one of three upgrades for the rest of the run (more health, speed, damage, faster reloads, stash walls, longer power-ups, healing on kills, an extra air jump, bonus points). Solo setup also has **Phone controller**: play on the TV and steer with your phone (scan the code). Drag your fighter on Solo setup to turn it around.
+- **Solo:** defend the nut stash at the centre of the map from 100 waves of garden gnomes, diving crows, tunnelling moles and a boss every fifth wave. Clear wave 100 to win. After each wave, pick one of three upgrades for the rest of the run (more health, speed, damage, faster reloads, stash walls, longer power-ups, healing on kills, an extra air jump, bonus points). Solo setup also has **Phone controller**: play on the TV and steer with your phone (scan the code). Drag your fighter on Solo setup to turn it around.
 - **Versus (couch):** 2 to 4 players split screen on one computer or TV, with each player's phone used as a controller via QR code. Phones connect straight to the TV over your Wi-Fi. Three or four players is a free-for-all: first to 7 bonks.
 - **Versus (online):** two computers, joined with a link or QR code, through the game server.
 - **Co-op (couch):** 2 to 4 players on one TV, each with a phone controller, defend the stash together. Waves grow with the team; a downed player stays where they fell: stand next to them for a couple of seconds to revive them, or they are back at the stash after 12 seconds. With three players the spare quarter of the screen shows a map.
 - **Co-op (online):** two computers defend one stash; the host runs the waves.
+
+## Bosses
+
+A boss comes every 5 waves, in turn: the Gnome King (ground slam), the Crow Queen (calls her flock, then dives),
+the Mole Overlord (tunnels to you and bursts out of the ground, throws rocks), the Gnome Wizard (teleports, throws
+homing magic) and the Mecha-Gnome (mortar shells that land in red rings). Each time round they come back tougher:
+Mighty, then Dread, then Legendary, with more health, faster attacks, fury at half health and escorts. Wave 100 is
+the Gnome Emperor, who uses everything at once.
 
 ## Weapons and power-ups
 
