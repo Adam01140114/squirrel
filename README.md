@@ -27,6 +27,12 @@ Cap (reach wave 10), Viking Helmet (beat a boss), Pirate Hat (play 3 versus matc
 solo), Wizard Hat (beat the Gnome Wizard), Chef Hat (bonk 1,000 enemies), Halo (revive teammates 10 times) and
 the Golden Crown (beat all 100 waves). Your hat shows in solo and on your fighter in online matches.
 
+## Daily challenge
+
+Solo setup offers a daily challenge: the same map and two twists for everyone that day (low gravity, a glass
+stash worth more points, crow day, mole rush, big heads, turbo gnomes, golden rain or Acorn Blaster only), with
+your best score for the day kept on this device.
+
 ## Bosses
 
 A boss comes every 5 waves, in turn: the Gnome King (ground slam), the Crow Queen (calls her flock, then dives),

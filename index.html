@@ -181,10 +181,15 @@ body.touch .desk-only{display:none}
 .perk b{font-family:var(--display);font-size:20px;font-weight:400;color:var(--gold)}
 .perk kbd{justify-self:start;font-family:var(--display);font-size:13px;padding:2px 8px;border-radius:6px;background:rgba(255,243,220,.14)}
 .perk .lv{display:flex;gap:4px}.perk .lv i{width:10px;height:10px;border-radius:50%;background:rgba(255,243,220,.18)}.perk .lv i.on{background:var(--gold)}
-.hats .sel-ch{position:relative}.hats .sel-ch i{background:none;box-shadow:none;font-style:normal;font-size:22px;line-height:30px;width:auto;height:30px}
+.pick-row.hats{grid-template-columns:repeat(11,minmax(0,1fr));gap:4px}.hats .sel-ch{position:relative;padding:6px 2px}.hats .sel-ch span{display:none}
+@media (max-width:640px){.pick-row.hats{grid-template-columns:repeat(6,minmax(0,1fr))}}.hats .sel-ch i{background:none;box-shadow:none;font-style:normal;font-size:22px;line-height:30px;width:auto;height:30px}
 .hats .sel-ch.locked{opacity:.45}.hats .sel-ch.locked::after{content:"🔒";position:absolute;top:4px;right:6px;font-size:11px}
 .hat-count{font-family:var(--body);font-size:12px;color:var(--cream-dim);letter-spacing:0;text-transform:none}
 .hat-tip{margin:6px 0 0;font-size:13px;color:var(--cream-dim);min-height:1.3em}
+.daily{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:12px 14px;border-radius:12px;background:rgba(255,210,63,.1);border:2px solid rgba(255,210,63,.35)}
+.daily b{font-family:var(--display);font-weight:400;font-size:18px;color:var(--gold)}.daily span{font-size:12px;color:var(--cream-dim)}
+.daily p{margin:4px 0 0;font-size:13px;line-height:1.35;color:var(--cream)}
+.daily-chip{font-family:var(--display);font-size:13px;color:var(--gold);background:var(--panel);padding:3px 12px;border-radius:999px;margin-top:4px}
 .solo-drag{margin:0;font-size:13px;color:var(--cream-dim)}
 #soloScr{cursor:grab}#soloScr .placard{cursor:auto}#soloScr.dragging{cursor:grabbing}
 #pvpStats .award{grid-column:1/-1;display:flex;justify-content:space-between;gap:12px;align-items:baseline;border-top:1px solid rgba(255,243,220,.12);padding-top:6px}
@@ -369,6 +374,7 @@ body.pad-mode{background:#1b120b}
     </div>
     <div class="tc">
       <div class="wave" id="waveLbl">Wave 1</div>
+      <div class="daily-chip" id="dailyChip" hidden></div>
       <div class="left" id="leftLbl">Get ready</div>
       <div class="boss" id="bossBox" hidden>
         <div class="boss-name" id="bossName">THE GNOME KING</div>
@@ -476,6 +482,7 @@ body.pad-mode{background:#1b120b}
       <section class="pick-sec"><h3 class="pick-h">Fighter</h3><div class="pick-row" id="soloChars"></div></section>
       <section class="pick-sec"><h3 class="pick-h">Hat <span class="hat-count" id="hatCount"></span></h3><div class="pick-row hats" id="soloHats"></div><p class="hat-tip" id="hatTip"></p></section>
       <section class="pick-sec"><h3 class="pick-h">Map</h3><div class="map-grid" id="soloMaps"></div></section>
+      <div class="daily" id="dailyBox"><div><b>Daily challenge</b> <span id="dailyDate"></span><p id="dailyText"></p></div><button class="btn sm" id="dailyBtn">Play today's</button></div>
       <div class="row"><button class="btn" id="soloStart">Start</button><button class="btn ghost" id="soloPhone">Phone controller</button><button class="btn ghost" id="soloBack">Back</button></div>
       <p class="solo-drag">Phone controller: the game plays on this screen (your TV) and your phone steers. Drag your fighter to turn it around.</p>
     </div>
@@ -2262,6 +2269,10 @@ function spawnEnemy(kind){
     e.inner.position.y = -2;
   }
   e.id = ++enemySeq;
+  if (!isCoop() && DAILY) {
+    if (mod('heads') && e.type === 'gnome' && !e.boss) e.headG.scale.setScalar(1.7);
+    if (mod('turbo') && e.speed) e.speed *= 1.3;
+  }
   scene.add(e.mesh); enemies.push(e);
 }
 function removeEnemy(e){
@@ -2540,13 +2551,14 @@ function startWave(n){
   const co = isCoop(), crew = co ? pvp.fighters.length : 1, more = 1 + 0.5 * (crew - 1);
   const g = Math.round(Math.min(3 + n * 2, 22 + n * 0.45) * more), c = n >= 2 ? Math.round(Math.min(Math.floor(n / 2) + (n >= 6 ? 1 : 0), 4 + n / 6) * more) : 0;
   for (let i = 0; i < g; i++) queue.push('gnome');
-  for (let i = 0; i < c; i++) queue.splice(Math.floor(rand(2, queue.length + 1)), 0, 'crow');
+  const cc = co ? c : mod('crows') ? Math.max(2, c * 2) : c;
+  for (let i = 0; i < cc; i++) queue.splice(Math.floor(rand(2, queue.length + 1)), 0, 'crow');
   // moles from wave 3: one, then another every other wave
-  const ml = n >= 3 ? Math.round(Math.min(4, Math.floor((n - 1) / 2)) * more) : 0;
+  const ml = !co && mod('moles') ? 2 * Math.max(1, Math.min(4, Math.floor((n - 1) / 2))) : n >= 3 ? Math.round(Math.min(4, Math.floor((n - 1) / 2)) * more) : 0;
   for (let i = 0; i < ml; i++) queue.splice(Math.floor(rand(1, queue.length + 1)), 0, 'mole');
   const isBoss = n % 5 === 0;
   if (isBoss) queue.push('boss');
-  (co ? showPvBanner : showBanner)(n >= FINAL_WAVE ? 'Wave 100: the last stand' : 'Wave ' + n, isBoss ? bossTitle(bossFor(n).kind, bossFor(n).tier) + ' is coming' : (c ? g + ' gnomes and ' + c + ' crows' : g + ' gnomes incoming') + (ml ? (ml === 1 ? ', and a mole' : ', and ' + ml + ' moles') : ''));
+  (co ? showPvBanner : showBanner)(n >= FINAL_WAVE ? 'Wave 100: the last stand' : 'Wave ' + n, isBoss ? bossTitle(bossFor(n).kind, bossFor(n).tier) + ' is coming' : (cc ? g + ' gnomes and ' + cc + ' crows' : g + ' gnomes incoming') + (ml ? (ml === 1 ? ', and a mole' : ', and ' + ml + ' moles') : ''));
   sfx.wave();
   if (co) {
     // a crate per player from wave 2, so everyone can find a new weapon
@@ -2554,7 +2566,7 @@ function startWave(n){
     if (n >= 3 && n % 2 === 1) pvpSpawnRandom('power');
     return;
   }
-  if (n >= 2) { dropFromSky('crate'); setTimeout(() => { if (state === 'playing') toast('Supply crate dropped. Follow the gold beam'); }, 1400); }
+  if (n >= 2 && !mod('blaster')) { dropFromSky('crate'); setTimeout(() => { if (state === 'playing') toast('Supply crate dropped. Follow the gold beam'); }, 1400); }
   if (n >= 3 && n % 2 === 1) dropFromSky('power');
 }
 let perkOffered = 0;
@@ -2625,7 +2637,7 @@ function castRay(dir){
     if (e.type === 'gnome') {
       if (e.spawnT < 0.6) continue;
       const s = e.s, y0 = e.pos.y + e.inner.position.y;
-      let t = raySphere(o, dir, e.pos.x, y0 + 1.25 * s, e.pos.z, 0.36 * s);
+      let t = raySphere(o, dir, e.pos.x, y0 + 1.25 * s, e.pos.z, 0.36 * s * (mod('heads') ? 1.7 : 1));
       if (t < r.t) { r.t = t; r.kind = 'enemy'; r.e = e; r.head = true; }
       t = raySphere(o, dir, e.pos.x, y0 + 0.58 * s, e.pos.z, 0.5 * s);
       if (t < r.t) { r.t = t; r.kind = 'enemy'; r.e = e; r.head = false; }
@@ -2718,7 +2730,7 @@ function killEnemy(e, head, dir, shooter){
   let base = e.boss ? 2000 + 400 * (e.tier || 0) + (e.bk === 'emperor' ? 20000 : 0) : e.type === 'crow' ? 150 : e.type === 'mole' ? 200 : 100; if (head) base += 50;
   combo = comboT > 0 ? combo + 1 : 1; comboT = 3;
   const co = isCoop();
-  const mult = Math.min(1 + Math.floor(combo / 3), 5), pts = Math.round(base * mult * (co ? 1 : 1 + 0.25 * perkLv('show')));
+  const mult = Math.min(1 + Math.floor(combo / 3), 5), pts = Math.round(base * mult * (co ? 1 : (1 + 0.25 * perkLv('show')) * (mod('glass') ? 1.5 : 1)));
   score += pts; kills++;
   if (!isCoop() || pvp.mode === 'couch' || shooter === pvp.local) progUpdate(q => { q.kills++; if (e.boss) q.bosses[e.bk || 'king'] = (q.bosses[e.bk || 'king'] | 0) + 1; });
   if (!co && perkLv('snack') && player.hp < maxHp()) { const h = Math.min(maxHp() - player.hp, 4 * perkLv('snack')); player.hp += h; }
@@ -2732,7 +2744,7 @@ function killEnemy(e, head, dir, shooter){
     if (pvp.mode === 'online') pushEv({ k: 'ekill', id: e.id, h: head ? 1 : 0, by: shooter ? shooter.idx : -1, p: pts });
   } else if (combo >= 3) { els.combo.classList.remove('pop'); void els.combo.offsetWidth; els.combo.classList.add('pop'); }
   // drops: solo pickups, or the shared co-op pickups everyone can grab
-  const drop = (kind) => co ? coopDrop(p, kind) : dropPickup(p, kind);
+  const drop = (kind) => co ? coopDrop(p, kind) : dropPickup(p, kind === 'crate' && mod('blaster') ? 'golden' : kind);
   if (e.boss) {
     for (let i = 0; i < 8; i++) drop(i < 3 ? 'golden' : 'acorn');
     drop('crate'); drop('power'); drop('power');
@@ -2743,7 +2755,7 @@ function killEnemy(e, head, dir, shooter){
     const r = Math.random(), crate = e.type === 'crow' ? 0.08 : e.type === 'mole' ? 0.1 : 0.04;
     if (r < crate) drop('crate');
     else if (r < crate + 0.07) drop('power');
-    else if (r < crate + 0.17) drop('golden');
+    else if (r < crate + (mod('gold') ? 0.45 : 0.17)) drop('golden');
     else if (r < crate + 0.62) drop('acorn');
     if (!co) addShake(0.12);
   }
@@ -2765,7 +2777,7 @@ function hurtPlayer(d, src){
   if (player.hp <= 0) { player.hp = 0; gameOver('knocked'); }
 }
 function damageStash(d, from){
-  if (!isCoop()) d *= 1 - 0.25 * perkLv('walls');
+  if (!isCoop()) d *= (1 - 0.25 * perkLv('walls')) * (mod('glass') ? 2 : 1);
   stash -= d; sfx.stash(); flashMeter(els.stashMeter);
   if (from) { tv.set(from.x, 0.6, from.z).multiplyScalar(0.8); for (let i = 0; i < 3; i++) emit(tv, new V3(from.x * 0.5 + rand(-2, 2), rand(3, 5), from.z * 0.5 + rand(-2, 2)), 0xb8732f, 0.1, 0.8, -14); }
   updateStashPile();
@@ -2809,7 +2821,7 @@ function updatePlayer(dt){
   const wx = (-sy * iz + cy * ix) * spd, wz = (-cy * iz - sy * ix) * spd;
   const acc = player.onGround ? 14 : 5;
   player.vel.x = damp(player.vel.x, wx, acc, dt); player.vel.z = damp(player.vel.z, wz, acc, dt);
-  player.vel.y -= 26 * dt;
+  player.vel.y -= 26 * (mod('low') ? 0.45 : 1) * dt;
   if (jumpQueued) {
     jumpQueued = false;
     if (player.onGround) { player.vel.y = 9.2; player.onGround = false; player.jumps = 1; sfx.jump(); burst(player.pos, 6, [0x9b7148, 0xc8b08a], 2, 0.07, 0.4, -6, 0.2); }
@@ -3156,6 +3168,7 @@ function lockPointer(){
 }
 function startGame(){
   initAudio(); resetGame();
+  $('dailyChip').hidden = !DAILY; if (DAILY) $('dailyChip').textContent = 'Daily: ' + DAILY.mods.map(id => MODS.find(m => m.id === id).name).join(' + ');
   state = 'playing'; document.body.classList.add('playing');
   $('menu').hidden = true; $('soloScr').hidden = true; $('overScr').hidden = true; $('pauseScr').hidden = true; hud.hidden = false; showTouch(true);
   lockPointer(); clock.getDelta();
@@ -3178,6 +3191,7 @@ function resume(){
 }
 function gameOver(reason){
   if (state !== 'playing') return;
+  if (DAILY && score > dailyBest(DAILY.key)) { try { localStorage.setItem('squirrel-commando-daily', JSON.stringify({ key: DAILY.key, best: score })); } catch (e) {} }
   progUpdate(p => { p.games++; p.bestWave = Math.max(p.bestWave, wave); p.bestScore = Math.max(p.bestScore, score); if (reason === 'win') p.won++; });
   state = 'over'; firing = false; document.body.classList.remove('playing'); showTouch(false);
   if (document.pointerLockElement) document.exitPointerLock();
@@ -3326,7 +3340,7 @@ $('tWeap').addEventListener('pointerdown', (e) => { e.preventDefault(); cycleWea
 $('tCam').addEventListener('pointerdown', (e) => { e.preventDefault(); cycleCam(); });
 
 $('playBtn').addEventListener('click', () => { initAudio(); paintSolo(); $('menu').hidden = true; $('soloScr').hidden = false; $('soloStart').focus({ preventScroll: true }); });
-$('soloStart').addEventListener('click', () => { endSoloPad(); startGame(); });
+$('soloStart').addEventListener('click', () => { endSoloPad(); DAILY = null; startGame(); });
 $('soloPhone').addEventListener('click', () => { $('soloScr').hidden = true; openLobby('solo'); });
 $('soloBack').addEventListener('click', () => { $('soloScr').hidden = true; $('menu').hidden = false; });
 $('againBtn').addEventListener('click', startGame);
@@ -3429,17 +3443,50 @@ const soloHatBtns = HATS.map((H, k) => {
   b.addEventListener('click', () => {
     if (!H.ok()) { $('hatTip').textContent = '🔒 ' + H.name + ': ' + H.need + '.'; sfx.empty(); return; }
     hatId = H.id; try { localStorage.setItem('squirrel-commando-hat', hatId); } catch (e) {}
-    wearHat(sq, hatId); paintHats(); sfx.swap();
+    wearHat(sq, hatId); paintHats(); sfx.swap(); $('hatTip').textContent = 'Wearing: ' + H.name + '.';
   });
-  b.addEventListener('mouseenter', () => { $('hatTip').textContent = (H.ok() ? '' : '🔒 ') + H.name + ': ' + H.need + '.'; });
+  const tip = () => { $('hatTip').textContent = (H.ok() ? '' : '🔒 ') + H.name + ': ' + H.need + '.'; };
+  b.addEventListener('mouseenter', tip); b.addEventListener('focus', tip);
+  b.addEventListener('mouseleave', () => { const C = HATS.find(q => q.id === hatId); $('hatTip').textContent = 'Wearing: ' + C.name + '.'; });
   return $('soloHats').appendChild(b);
+});
+// ---------- the daily challenge: everyone gets the same map and two twists each day
+const MODS = [
+  { id: 'low', name: 'Low gravity', text: 'You float: jumps go much higher.' },
+  { id: 'glass', name: 'Glass stash', text: 'The stash breaks twice as fast, but every bonk scores 50% more.' },
+  { id: 'crows', name: 'Crow day', text: 'Twice the crows, from wave 1.' },
+  { id: 'moles', name: 'Mole rush', text: 'Moles from wave 1, twice as many.' },
+  { id: 'heads', name: 'Big heads', text: 'Gnome heads are huge, and so are the headshots.' },
+  { id: 'turbo', name: 'Turbo gnomes', text: 'Everything on the ground moves 30% faster.' },
+  { id: 'gold', name: 'Golden rain', text: 'Golden acorns drop far more often.' },
+  { id: 'blaster', name: 'Blaster only', text: 'No supply crates: just you and the Acorn Blaster.' }
+];
+let DAILY = null;
+const mod = (id) => !!(DAILY && DAILY.mods.includes(id));
+function todayKey(){ const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function dailyFor(key){
+  let h = 2166136261; for (const c of key) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619) >>> 0; }
+  const rnd = () => { h = Math.imul(h ^ (h >>> 15), 2246822507) >>> 0; h = Math.imul(h ^ (h >>> 13), 3266489909) >>> 0; return ((h ^= h >>> 16) >>> 0) / 4294967296; };
+  const a = Math.floor(rnd() * MODS.length); let b = Math.floor(rnd() * (MODS.length - 1)); if (b >= a) b++;
+  return { key, map: Math.floor(rnd() * MAPS.length), mods: [MODS[a].id, MODS[b].id] };
+}
+function dailyBest(key){ try { const d = JSON.parse(localStorage.getItem('squirrel-commando-daily') || '{}'); return d.key === key ? +d.best || 0 : 0; } catch (e) { return 0; } }
+function paintDaily(){
+  const D = dailyFor(todayKey()), names = D.mods.map(id => MODS.find(m => m.id === id));
+  $('dailyDate').textContent = todayKey() + ' · ' + MAPS[D.map].name;
+  const best = dailyBest(D.key);
+  $('dailyText').textContent = names.map(m => m.name + ': ' + m.text).join(' ') + (best ? ' Your best today: ' + fmt(best) + '.' : '');
+}
+$('dailyBtn').addEventListener('click', () => {
+  endSoloPad();
+  const D = dailyFor(todayKey()); buildMap(D.map); DAILY = D; startGame();
 });
 function paintHats(){
   soloHatBtns.forEach((b, k) => { const H = HATS[k]; setClass(b, 'on', H.id === hatId); setClass(b, 'locked', !H.ok()); b.title = H.name + (H.ok() ? '' : ' (locked: ' + H.need + ')'); });
   $('hatCount').textContent = '· ' + HATS.filter(h => h.ok() && h.id !== 'none').length + ' of ' + (HATS.length - 1) + ' unlocked';
 }
 const soloMapBtns = MAPS.map((D, i) => $('soloMaps').appendChild(mapCard(i, pickSoloMap)));
-function paintSolo(){ paintHats(); wearHat(sq, hatId); paintSolo0(); }
+function paintSolo(){ paintHats(); paintDaily(); $('hatTip').textContent = 'Wearing: ' + HATS.find(q => q.id === hatId).name + '. Hover a hat to see how to unlock it.'; wearHat(sq, hatId); paintSolo0(); }
 function paintSolo0(){ soloCharBtns.forEach((b, k) => setClass(b, 'on', k === soloChar)); soloMapBtns.forEach((b, i) => setClass(b, 'on', i === mapIdx)); }
 function pickSoloChar(k){ setSoloChar(k); try { localStorage.setItem('squirrel-commando-char', String(k)); } catch (e) {} paintSolo(); sfx.swap(); }
 function pickSoloMap(i){ buildMap(i); try { localStorage.setItem('squirrel-commando-map', String(i)); } catch (e) {} paintSolo(); sfx.swap(); }
@@ -4370,6 +4417,7 @@ function viewRects(n, W, H){
 // ---------- match flow
 // coop: true for co-op; slots: each fighter's phone slot (1-4) in a couch co-op game
 function startPvp(mode, role, r, code, m, chars, map, coop, slots, bots){
+  DAILY = null;
   if (map !== undefined) buildMap(mapOf(map));
   lobby = null;
   ['menu', 'vsScr', 'coScr', 'lobbyScr', 'pvpOverScr', 'pvpPauseScr', 'overScr', 'pauseScr'].forEach(id => { $(id).hidden = true; });
@@ -5178,7 +5226,7 @@ function frame(){
 window.__sq = {
   get pvp(){ return pvp; }, get enemies(){ return enemies; }, get wave(){ return wave; }, get stash(){ return stash; },
   get score(){ return score; }, get state(){ return state; }, get sel(){ return sel; },
-  get player(){ return player; }, get perk(){ return perk; }, get prog(){ return prog; }, progUpdate(fn){ progUpdate(fn); }, get hat(){ return hatId; }, get waveState(){ return waveState; }, shootAt(e){ const b = enemyBody(e), t = new V3(e.pos.x, b.y, e.pos.z), o = t.clone().add(new V3(e.pos.x, 0, e.pos.z).normalize().multiplyScalar(6)); o.y = b.y + 0.6; camera.position.copy(o); const d = t.clone().sub(o).normalize(); const r = castRay(d); if (r.e) hurtEnemy(r.e, 20, r.head, t, d, 1); return r.kind; }, spawn(k){ spawnEnemy(k); return enemies[enemies.length - 1]; }, setWave(n){ wave = n; }, face(e){ yaw = Math.atan2(-(e.pos.x - player.pos.x), -(e.pos.z - player.pos.z)); pitch = 0.05; }, get eshots(){ return eshots; }, killAll(){ while (enemies.length) removeEnemy(enemies[0]); queue.length = 0; }, get yaw(){ return yaw; }, get ammo(){ return inv[cur].ammo; }, get gp(){ return GP; },
+  get player(){ return player; }, get perk(){ return perk; }, get prog(){ return prog; }, progUpdate(fn){ progUpdate(fn); }, get hat(){ return hatId; }, get daily(){ return DAILY; }, dailyFor(k){ return dailyFor(k); }, get waveState(){ return waveState; }, shootAt(e){ const b = enemyBody(e), t = new V3(e.pos.x, b.y, e.pos.z), o = t.clone().add(new V3(e.pos.x, 0, e.pos.z).normalize().multiplyScalar(6)); o.y = b.y + 0.6; camera.position.copy(o); const d = t.clone().sub(o).normalize(); const r = castRay(d); if (r.e) hurtEnemy(r.e, 20, r.head, t, d, 1); return r.kind; }, spawn(k){ spawnEnemy(k); return enemies[enemies.length - 1]; }, setWave(n){ wave = n; }, face(e){ yaw = Math.atan2(-(e.pos.x - player.pos.x), -(e.pos.z - player.pos.z)); pitch = 0.05; }, get eshots(){ return eshots; }, killAll(){ while (enemies.length) removeEnemy(enemies[0]); queue.length = 0; }, get yaw(){ return yaw; }, get ammo(){ return inv[cur].ammo; }, get gp(){ return GP; },
   hit(e, dmg, shooter){ coopHitEnemy(shooter, e, dmg, false, e.pos.clone(), new V3(0, 0, 1), 1); },
   hurt(f, d){ coopHurt(f, d, new V3(0, 0, 0)); }, dmg(v, d, by){ applyDamage(v, d, by); }, bonks(f){ return bonksOf(f); },
   setStash(v){ stash = v; updateStashPile(); }, damageStash(d){ damageStash(d, new V3(0, 0, 3)); }
