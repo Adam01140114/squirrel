@@ -1,0 +1,13 @@
+# Render blueprint: New > Blueprint in the Render dashboard, pick this repo.
+# One free web service running server.js (the game, its rooms, and the phone
+# controllers' set-up messages). It deploys again on every push to main.
+services:
+  - type: web
+    name: squirrel-commando
+    runtime: node
+    plan: free
+    branch: main
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /health
+    autoDeploy: true

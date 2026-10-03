@@ -255,6 +255,8 @@ body.touch .desk-only{display:none}
 @media (max-width:760px){.sel-panels{grid-template-columns:minmax(0,1fr)}.sel-name{font-size:24px}}
 
 /* phone controller */
+.pad-link{font-size:11px;color:var(--cream-dim);margin-top:2px}
+.pad-link.on{color:var(--leaf);font-weight:600}
 body.pad-mode{background:#1b120b}
 #pad{position:absolute;inset:0;background:radial-gradient(ellipse at 30% 10%,#4a2d18,#1b120b 70%);touch-action:none;overflow:hidden;user-select:none;-webkit-user-select:none}
 .pad-zone{position:absolute;inset:0;touch-action:none}
@@ -494,6 +496,8 @@ body.pad-mode{background:#1b120b}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<!-- Multiplayer through server.js (missing when the page is opened another way; then Claude's room is used if there is one) -->
+<script src="/socket.io/socket.io.js"></script>
 <script>
 (function(){
 'use strict';
@@ -517,8 +521,173 @@ const CHARS = [
 const r2 = (v) => Math.round((+v || 0) * 100) / 100;
 let roomP = null;
 function useRoom(){
-  if (!roomP) roomP = (async () => { try { return (window.claude && window.claude.use) ? await window.claude.use('room') : null; } catch (e) { return null; } })();
+  if (!roomP) roomP = (async () => {
+    try {
+      // Inside Claude: its room. Served by server.js: our own rooms (netRooms below)
+      if (window.claude && window.claude.use) return await window.claude.use('room');
+      return window.io ? netRooms() : null;
+    } catch (e) { return null; }
+  })();
   return roomP;
+}
+
+// ---------------------------------------------------------------- versus: rooms on our own server (server.js)
+// The same interface as Claude's room: join(name) -> { presence(patch), peers(), onPeers(cb), leave() }.
+// Presences go through the server. In couch mode each phone also opens a WebRTC link
+// straight to the TV over their Wi-Fi and sends its presence that way; the server copy
+// then only goes out twice a second (for anyone joining later). Every presence carries
+// a counter, so whichever way it arrives, an older one never replaces a newer one.
+const ICE = [{ urls: 'stun:stun.l.google.com:19302' }];
+let netBase = null;
+function netRooms(){
+  if (netBase) return netBase;
+  const socket = window.io({ reconnectionDelayMax: 2000 });
+  const handles = new Map();
+  socket.on('room:peer', (m) => { const h = handles.get(m.name); if (h) h._peer(m.peer, m.presence, m.q, 'server'); });
+  socket.on('room:gone', (m) => { const h = handles.get(m.name); if (h) h._gone(m.peer); });
+  socket.on('room:signal', (m) => { const h = handles.get(m.name); if (h) h._signal(m.from, m.data); });
+  socket.on('connect', () => { for (const h of handles.values()) h._rejoin(); });
+  netBase = { join: (name) => openRoom(name) };
+  // For checking from the console: window.squirrelNet.rooms.get('sqc-<code>').stats
+  window.squirrelNet = { socket, rooms: handles };
+  return netBase;
+
+  function openRoom(name){
+    const peers = new Map();     // socket id -> { peer, presence, q, link, retryAt }
+    let mine = {}, q = 0, left = false, lastServer = 0, serverTimer = null;
+    const listeners = [];
+    const notify = () => { for (const cb of listeners) { try { cb(); } catch (e) {} } };
+    const entry = (id) => { let p = peers.get(id); if (!p) { p = { peer: id, presence: null, q: 0, link: null, retryAt: 0 }; peers.set(id, p); } return p; };
+    const toServer = () => { lastServer = Date.now(); clearTimeout(serverTimer); serverTimer = null; socket.emit('room:presence', { name, presence: mine, q }); };
+    const h = {
+      stats: { server: 0, direct: 0 }, // updates received each way
+      presence(patch){
+        if (left || !patch) return Promise.resolve();
+        for (const k in patch) { if (patch[k] === null || patch[k] === undefined) delete mine[k]; else mine[k] = patch[k]; }
+        q++;
+        const msg = JSON.stringify({ t: 'p', presence: mine, q });
+        let allDirect = peers.size > 0;
+        for (const p of peers.values()) {
+          if (p.link && p.link.open) { try { p.link.ch.send(msg); } catch (e) { allDirect = false; } }
+          else allDirect = false;
+        }
+        if (!allDirect) toServer();
+        else if (Date.now() - lastServer > 500) toServer();
+        else if (!serverTimer) serverTimer = setTimeout(toServer, 500);
+        connect();
+        return Promise.resolve();
+      },
+      peers(){ return [...peers.values()].filter(p => p.presence).map(p => ({ peer: p.peer, presence: p.presence, sameTab: false, direct: !!(p.link && p.link.open) })); },
+      onPeers(cb){ listeners.push(cb); return () => { const i = listeners.indexOf(cb); if (i >= 0) listeners.splice(i, 1); }; },
+      leave(){
+        left = true; clearTimeout(serverTimer);
+        for (const p of peers.values()) closeLink(p);
+        peers.clear(); handles.delete(name);
+        socket.emit('room:leave', { name });
+        return Promise.resolve();
+      },
+      _peer(id, presence, pq, via){
+        const p = entry(id);
+        if (!presence || pq <= p.q) return;
+        p.presence = presence; p.q = pq;
+        if (via) h.stats[via]++;
+        notify(); connect();
+      },
+      _gone(id){ const p = peers.get(id); if (!p) return; closeLink(p); peers.delete(id); notify(); },
+      _rejoin(){
+        if (left) return;
+        socket.emit('room:join', { name }, (res) => {
+          if (!res || res.err) return;
+          for (const x of res.peers) h._peer(x.peer, x.presence, x.q, 'server');
+          if (Object.keys(mine).length) { q++; toServer(); }
+        });
+      },
+      _signal(from, data){
+        if (left || !data) return;
+        const p = entry(from);
+        if (data.d && data.d.type === 'offer') {
+          closeLink(p);
+          const link = openLink(p, false);
+          link.chain = link.pc.setRemoteDescription(data.d)
+            .then(() => link.pc.createAnswer()).then(a => link.pc.setLocalDescription(a))
+            .then(() => signal(p, { d: link.pc.localDescription })).catch(() => dropLink(p));
+        } else if (p.link && data.d) {
+          const link = p.link; link.chain = link.chain.then(() => link.pc.setRemoteDescription(data.d)).catch(() => dropLink(p));
+        } else if (p.link && data.c) {
+          const link = p.link; link.chain = link.chain.then(() => link.pc.addIceCandidate(data.c)).catch(() => {});
+        }
+      }
+    };
+    const signal = (p, data) => socket.emit('room:signal', { name, to: p.peer, data });
+    // Couch: a phone opens the direct link to the TV
+    function connect(){
+      if (left || mine.role !== 'pad' || !window.RTCPeerConnection) return;
+      for (const p of peers.values()) {
+        if (p.presence && p.presence.role === 'tv' && !p.link && Date.now() >= p.retryAt) {
+          const link = openLink(p, true);
+          link.pc.createOffer().then(o => link.pc.setLocalDescription(o))
+            .then(() => signal(p, { d: link.pc.localDescription })).catch(() => dropLink(p));
+        }
+      }
+    }
+    function openLink(p, offerer){
+      const pc = new RTCPeerConnection({ iceServers: ICE });
+      const link = p.link = { pc, ch: null, open: false, chain: Promise.resolve() };
+      pc.onicecandidate = (e) => { if (e.candidate && p.link === link) signal(p, { c: e.candidate }); };
+      pc.onconnectionstatechange = () => { if (pc.connectionState === 'failed' && p.link === link) dropLink(p); };
+      const useChannel = (ch) => {
+        link.ch = ch;
+        ch.onopen = () => {
+          if (p.link !== link) return;
+          link.open = true;
+          if (Object.keys(mine).length) { try { ch.send(JSON.stringify({ t: 'p', presence: mine, q })); } catch (e) {} }
+          notify();
+        };
+        ch.onmessage = (m) => { try { const d = JSON.parse(m.data); if (d.t === 'p') h._peer(p.peer, d.presence, +d.q || 0, 'direct'); } catch (e) {} };
+        ch.onclose = () => { if (p.link === link) dropLink(p); };
+      };
+      if (offerer) useChannel(pc.createDataChannel('presence', { ordered: true }));
+      else pc.ondatachannel = (e) => useChannel(e.channel);
+      return link;
+    }
+    // Lost or never opened: back to the server, try again in a few seconds
+    function dropLink(p){
+      const was = p.link && p.link.open;
+      closeLink(p); p.retryAt = Date.now() + 4000;
+      if (was) { toServer(); notify(); }
+      setTimeout(connect, 4100);
+    }
+    function closeLink(p){
+      if (!p.link) return;
+      try { p.link.pc.close(); } catch (e) {}
+      p.link = null;
+    }
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject({ code: 'timeout' }), 10000);
+      socket.emit('room:join', { name }, (res) => {
+        clearTimeout(timer);
+        if (!res || res.err) return reject({ code: (res && res.err) || 'error' });
+        handles.set(name, h);
+        for (const x of res.peers) h._peer(x.peer, x.presence, x.q, 'server');
+        resolve(h);
+      });
+    });
+  }
+}
+
+// The address a phone or the other computer opens: the game itself, but on
+// localhost the computer's Wi-Fi address (a phone can't reach "localhost")
+let lanP = null;
+async function gameUrl(){
+  if (window.claude && window.claude.use) return ART_URL;
+  const here = location.origin + location.pathname;
+  if (!['localhost', '127.0.0.1', '::1', '[::1]'].includes(location.hostname)) return here;
+  try {
+    if (!lanP) lanP = fetch('/api/lan').then(r => r.json());
+    const j = await lanP;
+    if (j && j.origins && j.origins[0]) return j.origins[0] + location.pathname;
+  } catch (e) {}
+  return here;
 }
 // joins the named room for a match code; falls back to the shared lobby (peers are filtered by code either way)
 async function joinCode(code){
@@ -544,7 +713,7 @@ function runController(code, slot){
   wrap.innerHTML =
     '<div class="pad-zone" id="padZone"><span class="pad-lbl l">MOVE</span><span class="pad-lbl r">AIM</span></div>' +
     '<div class="pad-top"><div class="pad-id"><b>P' + slot + '</b><span>' + pal.name + ' team</span></div>' +
-    '<div class="pad-stat" id="padStat">Connecting to the game room…</div>' +
+    '<div class="pad-stat" id="padStat">Connecting to the game room…</div><div class="pad-link" id="padLink"></div>' +
     '<div class="pad-hud" id="padHud" hidden><span class="bar"><i id="padHp"></i></span><span id="padHpN">100</span><span id="padAmmo"></span><span id="padScore"></span></div></div>' +
     '<div class="pad-joy" id="padJoy" hidden><div class="pad-knob" id="padKnob"></div></div>' +
     '<button class="pad-btn fire" id="pbFire">FIRE</button><button class="pad-btn jump" id="pbJump">JUMP</button>' +
@@ -613,7 +782,10 @@ function runController(code, slot){
     if (!room) return;
     const tv = peersFor(room, code).find(p => p.presence.role === 'tv');
     const me = peersFor(room, code).filter(p => p.presence.role === 'pad' && p.presence.slot === slot);
-    if (!tv) { stat('Connected. Waiting for the game screen. Keep it open on the computer.'); $('padHud').hidden = true; ps.hidden = true; return; }
+    if (!tv) { stat('Connected. Waiting for the game screen. Keep it open on the computer.'); $('padHud').hidden = true; ps.hidden = true; $('padLink').textContent = ''; return; }
+    // How this phone reaches the TV: straight over the Wi-Fi, or through the server
+    const lk = tv.direct === undefined ? '' : tv.direct ? '⚡ Direct to the TV' : '☁ Via the server';
+    if ($('padLink').textContent !== lk) { $('padLink').textContent = lk; $('padLink').classList.toggle('on', !!tv.direct); }
     const ph = tv.presence.phase, hud = Array.isArray(tv.presence.hud) ? tv.presence.hud[slot - 1] : null;
     if (ph === 'select' && lastPhase !== 'select') { I.rdy = 0; paintSel(); send(); }
     lastPhase = ph;
@@ -642,7 +814,7 @@ function runController(code, slot){
   };
   (async () => {
     const j = await joinCode(code);
-    if (!j.r) { stat(j.err === 'unavailable' ? 'Could not connect. Open this link while signed in to Claude, and make sure the game has been shared with you.' : 'Could not join the room (' + j.err + '). Try scanning the code again.'); return; }
+    if (!j.r) { stat(j.err === 'unavailable' ? 'Could not reach the game. Check your connection and scan the code again.' : 'Could not join the room (' + j.err + '). Try scanning the code again.'); return; }
     room = j.r; send(); readTv();
     try { room.onPeers(() => readTv()); } catch (e) {}
     setInterval(readTv, 400);
@@ -3428,7 +3600,7 @@ function showLobby(title, lede){
   $('lobbyScr').hidden = false; $('lobbyCancel').textContent = 'Cancel'; $('lobbyTitle').textContent = title; $('lobbyLede').textContent = lede; $('lobbyQrs').innerHTML = ''; $('lobbyNote').hidden = true;
 }
 const roomErr = (err) => err === 'unavailable'
-  ? 'Multiplayer could not connect in this view. Open the game on claude.ai while signed in, then try again.'
+  ? (window.claude ? 'Multiplayer could not connect in this view. Open the game on claude.ai while signed in, then try again.' : 'Could not reach the game server. Check your connection and try again.')
   : 'Could not open a game room (' + err + '). Try again in a moment.';
 async function openLobby(mode){
   initAudio();
@@ -3438,15 +3610,20 @@ async function openLobby(mode){
   const j = await joinCode(code);
   if (lobby !== ticket) { if (j.r) leaveRoom(j.r); return; }
   if (!j.r) { $('lobbyLede').textContent = roomErr(j.err); return; }
+  const base = await gameUrl();
+  if (lobby !== ticket) { leaveRoom(j.r); return; }
   Object.assign(ticket, { mode, code, r: j.r, status: [] });
   j.r.presence({ role: mode === 'couch' ? 'tv' : 'host', code, phase: 'lobby', m: 0 }).catch(() => {});
   $('lobbyNote').hidden = false;
+  if (!window.claude) $('lobbyNote').textContent = mode === 'couch'
+    ? 'Phones on the same Wi-Fi as this screen connect straight to it, so the controls feel instant.'
+    : 'Your opponent can join from anywhere with this link.';
   if (mode === 'couch') {
     $('lobbyLede').textContent = 'Each player scans their code with their phone. The game starts on this screen as soon as both phones are in.';
-    ticket.status = [qrCard('Player 1 · Red', PALS[0].css, ART_URL + '#vs-' + code + '-p1'), qrCard('Player 2 · Gray', PALS[1].css, ART_URL + '#vs-' + code + '-p2')];
+    ticket.status = [qrCard('Player 1 · Red', PALS[0].css, base + '#vs-' + code + '-p1'), qrCard('Player 2 · Gray', PALS[1].css, base + '#vs-' + code + '-p2')];
   } else {
     $('lobbyLede').textContent = 'Send this link to your opponent, or have them scan the code. The match starts as soon as they open it.';
-    ticket.status = [qrCard('Join link', PALS[1].css, ART_URL + '#vs-' + code + '-join')];
+    ticket.status = [qrCard('Join link', PALS[1].css, base + '#vs-' + code + '-join')];
   }
   state = 'lobby';
 }
@@ -3465,8 +3642,9 @@ function lobbyTick(dt){
   const L = lobby; if (!L || !L.r) return;
   const peers = peersFor(L.r, L.code);
   if (L.mode === 'couch') {
-    const has = [1, 2].map(s => peers.some(p => p.presence.role === 'pad' && p.presence.slot === s));
-    has.forEach((ok, i) => { const el = L.status[i]; const t = ok ? 'Phone connected' : 'Waiting for phone…'; if (el.textContent !== t) { el.textContent = t; el.classList.toggle('ok', ok); } });
+    const pads = [1, 2].map(s => peers.find(p => p.presence.role === 'pad' && p.presence.slot === s));
+    const has = pads.map(p => !!p);
+    pads.forEach((p, i) => { const el = L.status[i]; const t = p ? (p.direct ? 'Phone connected ⚡ direct' : 'Phone connected') : 'Waiting for phone…'; if (el.textContent !== t) { el.textContent = t; el.classList.toggle('ok', !!p); } });
     if (has[0] && has[1]) enterSelect('couch', 'tv', L.r, L.code);
   } else if (L.mode === 'online') {
     if (peers.some(p => p.presence.role === 'guest')) { L.status[0].textContent = 'Opponent joined'; L.status[0].classList.add('ok'); enterSelect('online', 'host', L.r, L.code); }
