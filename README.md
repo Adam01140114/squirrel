@@ -11,6 +11,7 @@ Sunny Meadow, Frosty Pines, Canyon Dunes, Spooky Hollow and Blossom Garden.
 - **Versus (couch):** 2 to 4 players split screen on one computer or TV, with each player's phone used as a controller via QR code. Phones connect straight to the TV over your Wi-Fi. Three or four players is a free-for-all: first to 7 bonks.
 - **Versus (online):** two computers, joined with a link or QR code, through the game server.
 - **Co-op (couch):** 2 to 4 players on one TV, each with a phone controller, defend the stash together. Waves grow with the team; a downed player stays where they fell: stand next to them for a couple of seconds to revive them, or they are back at the stash after 12 seconds. With three players the spare quarter of the screen shows a map.
+- **Bots:** on the couch, any empty spot can be a bot (Add a bot on its panel at fighter select; the Bots button sets Easy, Normal or Hard). One person with a phone or controller can practise versus against bots, or play co-op with a bot teammate. Only people get a slice of the screen.
 - **Co-op (online):** two computers defend one stash; the host runs the waves.
 
 ## Bosses

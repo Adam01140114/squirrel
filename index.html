@@ -202,6 +202,8 @@ body.touch .desk-only{display:none}
 #pvpHud{position:absolute;inset:0;pointer-events:none;font-variant-numeric:tabular-nums}
 .pv{position:absolute;top:0;bottom:0;left:0;width:100%;overflow:hidden}
 #pvpHud.couch .pv{width:50%}
+#pvpHud.couch.n1 .pv{width:100%}#pvpHud.couch.n1::after{display:none}
+#pvpHud.couch.n1 .pv-score{top:calc(60px + env(safe-area-inset-top,0px))}
 #pvpHud.couch #pv1{left:50%}
 #pvpHud.online #pv1{display:none}
 #pvpHud.couch::after{content:"";position:absolute;left:50%;top:0;bottom:0;width:4px;margin-left:-2px;background:var(--ink)}
@@ -512,7 +514,7 @@ body.pad-mode{background:#1b120b}
       <h2 class="h2">Pick your fighter</h2>
       <p id="selLede"></p>
       <div class="sel-maps" id="selMaps"></div>
-      <button class="btn ghost sm" id="selLeave">Leave</button>
+      <div class="row sel-btns"><button class="btn ghost sm" id="selBotLv" hidden>Bots: Normal</button><button class="btn ghost sm" id="selLeave">Leave</button></div>
     </div>
     <div class="sel-panels">
       <div class="sel-panel" id="sel0"></div>
@@ -3827,10 +3829,75 @@ function netRead(dt){
     for (const k of pvp.pk.slice()) if (!ids.has(k.id)) pvpRemovePickup(k);
   }
 }
+// ---------- bots: a fighter that plays itself. Easy bots turn slowly and miss a lot; hard ones don't.
+const BOT = [
+  { turn: 2.2, err: 0.16, react: 0.7, range: 26 },
+  { turn: 4.2, err: 0.08, react: 0.4, range: 32 },
+  { turn: 7.5, err: 0.035, react: 0.2, range: 40 }
+];
+function botThink(f, dt){
+  const B = f.bot, L = BOT[B.lv] || BOT[1], I = f.in;
+  I.x = 0; I.y = 0; I.fire = false; I.sprint = false;
+  if (f.dead || pvp.phase !== 'play' || !dt) return;
+  B.t -= dt;
+  // what to go for: a downed teammate, a pickup when hurt, else the nearest foe
+  let goal = null, aim = null, aimY = 0.9;
+  if (pvp.coop) {
+    const down = pvp.fighters.find(o => o !== f && o.dead && Math.hypot(o.pos.x - f.pos.x, o.pos.z - f.pos.z) < 14);
+    if (down) goal = down.pos;
+    let best = null, bd = Infinity;
+    for (const e of enemies) {
+      if (!enemyUp(e)) continue;
+      // the ones raiding the stash first
+      const d = Math.hypot(e.pos.x - f.pos.x, e.pos.z - f.pos.z) + Math.hypot(e.pos.x, e.pos.z) * 0.6 - (e.boss ? 6 : 0);
+      if (d < bd) { bd = d; best = e; }
+    }
+    if (best) { aim = best.pos; aimY = enemyBody(best).y - best.pos.y; if (!goal) goal = best.pos; }
+  } else {
+    let best = null, bd = Infinity;
+    for (const o of foesOf(f)) { if (o.dead) continue; const d = Math.hypot(o.pos.x - f.pos.x, o.pos.z - f.pos.z); if (d < bd) { bd = d; best = o; } }
+    if (best) { aim = best.pos; goal = best.pos; }
+  }
+  if (f.hp < 50 && pvp.pk.length) {
+    let pk = null, pd = 18;
+    for (const k of pvp.pk) { const d = Math.hypot(k.obj.position.x - f.pos.x, k.obj.position.z - f.pos.z); if (d < pd && k.kind !== 'crate') { pd = d; pk = k; } }
+    if (pk) goal = pk.obj.position;
+  }
+  // a little aim wobble that drifts over time
+  if (B.t <= 0) { B.t = L.react; B.aimErr.set(rand(-1, 1), rand(-0.5, 0.5), 0).multiplyScalar(L.err); if (Math.random() < 0.25) B.strafe *= -1; }
+  if (aim) {
+    const o = f.cam.position, dx = aim.x - o.x, dz = aim.z - o.z, dy = aim.y + aimY - o.y, hd = Math.hypot(dx, dz) || 1;
+    const wantYaw = Math.atan2(-dx, -dz) + B.aimErr.x, wantPitch = clamp(Math.atan2(dy, hd) + B.aimErr.y, PMIN, PMAX);
+    let dyaw = wantYaw - f.yaw; while (dyaw > Math.PI) dyaw -= TAU; while (dyaw < -Math.PI) dyaw += TAU;
+    const step = L.turn * dt; f.yaw += clamp(dyaw, -step, step); f.pitch += clamp(wantPitch - f.pitch, -step, step);
+    const dist = Math.hypot(aim.x - f.pos.x, aim.z - f.pos.z);
+    // pull the trigger when roughly on target and close enough
+    if (Math.abs(dyaw) < 0.15 + L.err && dist < L.range) I.fire = true;
+    const s = f.w[f.cur];
+    if (s.ammo === 0 && s.reserve === 0) fCycle(f, 1);
+    // the best gun it owns for the distance
+    if (B.t === L.react) { const best = [3, 1, 2, 0].find(i => f.w[i].owned && (f.w[i].ammo + (f.w[i].reserve === Infinity ? 99 : f.w[i].reserve)) > 0 && (i !== 1 || dist < 12)); if (best !== undefined && best !== f.cur) fSwitch(f, best); }
+  }
+  if (goal) {
+    // walk in the bot's own frame: forward is where it faces
+    const dx = goal.x - f.pos.x, dz = goal.z - f.pos.z, d = Math.hypot(dx, dz) || 1;
+    const keep = pvp.coop ? (goal === aim ? 9 : 0.5) : 10;
+    const toward = d > keep + 2 ? 1 : d < keep - 2 ? -0.6 : 0;
+    const wx = dx / d * toward + (-dz / d) * B.strafe * 0.6, wz = dz / d * toward + (dx / d) * B.strafe * 0.6;
+    const sy = Math.sin(f.yaw), cy = Math.cos(f.yaw);
+    I.y = clamp(-sy * wx - cy * wz, -1, 1); I.x = clamp(cy * wx - sy * wz, -1, 1);
+    I.sprint = toward > 0 && d > 18;
+    // stuck against something: hop
+    const moving = Math.hypot(f.vel.x, f.vel.z);
+    B.stuck = (Math.hypot(I.x, I.y) > 0.5 && moving < 1.2) ? B.stuck + dt : 0;
+    if (B.stuck > 0.5 || Math.random() < dt * 0.15) { I.jumpQ = true; B.stuck = 0; }
+  }
+}
 function padRead(){
   const peers = peersFor(pvp.r, pvp.code);
   for (const f of pvp.fighters) {
     const slot = f.idx + 1;
+    if (f.bot) { f.padOk = true; botThink(f, GP.dt); continue; }
     if (gpHas(slot, pvp.code)) { f.padOk = true; gpFighter(f, GP.now[GP.slots[slot]]); continue; }
     const ps = peers.filter(q => q.presence.role === 'pad' && q.presence.slot === slot);
     const p = ps[ps.length - 1];
@@ -3875,7 +3942,7 @@ function buildPv(el, f){
 }
 function uiSet(f, key, el, prop, val){ if (f.ui.cache[key] !== val) { f.ui.cache[key] = val; if (prop === 'text') el.textContent = val; else if (prop === 'tf') el.style.transform = val; else if (prop === 'op') el.style.opacity = val; else if (prop === 'html') el.innerHTML = val; } }
 function pvpHudUpdate(dt){
-  const shown = pvp.mode === 'couch' ? pvp.fighters : [pvp.local];
+  const shown = pvp.mode === 'couch' ? pvp.humans : [pvp.local];
   for (const f of shown) {
     const u = f.ui, s = f.w[f.cur], w = WEAPONS[f.cur], g = f.gun;
     const label = pvp.mode === 'couch' ? f.tag : 'You · ' + f.name;
@@ -4124,13 +4191,14 @@ function coopOver(why){
 }
 // split-screen rectangles (x, y from the bottom, w, h) for 2 to 4 couch players
 function viewRects(n, W, H){
+  if (n <= 1) return [[0, 0, W, H]];
   if (n <= 2) return [[0, 0, W / 2, H], [W / 2, 0, W / 2, H]];
   return [[0, H / 2, W / 2, H / 2], [W / 2, H / 2, W / 2, H / 2], [0, 0, W / 2, H / 2], [W / 2, 0, W / 2, H / 2]];
 }
 
 // ---------- match flow
 // coop: true for co-op; slots: each fighter's phone slot (1-4) in a couch co-op game
-function startPvp(mode, role, r, code, m, chars, map, coop, slots){
+function startPvp(mode, role, r, code, m, chars, map, coop, slots, bots){
   if (map !== undefined) buildMap(mapOf(map));
   lobby = null;
   ['menu', 'vsScr', 'coScr', 'lobbyScr', 'pvpOverScr', 'pvpPauseScr', 'overScr', 'pauseScr'].forEach(id => { $(id).hidden = true; });
@@ -4141,14 +4209,19 @@ function startPvp(mode, role, r, code, m, chars, map, coop, slots){
   slots = Array.isArray(slots) && slots.length === chars.length ? slots : chars.map((_, i) => i + 1);
   const fighters = chars.map((c, i) => { const f = makeFighter(slots[i] - 1, c | 0); f.vi = i; return f; });
   fighters.forEach(f => { f.tag = mode === 'couch' ? 'P' + (f.idx + 1) + ' ' + f.name : (f.idx === (role === 'host' ? 0 : 1) ? 'You' : f.name); });
+  if (mode === 'couch' && Array.isArray(bots)) fighters.forEach(f => { if (bots.includes(f.idx + 1)) { f.bot = { lv: botLv, t: 0, aimErr: new V3(), strafe: Math.random() < 0.5 ? 1 : -1, stuck: 0 }; f.tag += ' (bot)'; } });
+  // only people get a slice of the screen
+  const humans = fighters.filter(f => !f.bot);
   pvp = { mode, role, r, code, m: 0, fighters, local: null, remote: null, ev: [], seq: 0, lastSeq: 0, seqInit: false, pk: [], pkId: 1, pkTimer: 8,
-    projs: [], phase: 'countdown', count: 3.6, winner: -1, missing: 0, tvT: 0, lastPr: null, gone: new Set(), scoreHtml: '', coop: !!coop };
+    projs: [], phase: 'countdown', count: 3.6, winner: -1, missing: 0, tvT: 0, lastPr: null, gone: new Set(), scoreHtml: '', coop: !!coop,
+    humans, bots: fighters.filter(f => f.bot).map(f => f.idx + 1) };
   if (mode === 'online') { pvp.local = fighters[role === 'host' ? 0 : 1]; pvp.remote = fighters[role === 'host' ? 1 : 0]; }
-  const H = $('pvpHud'); H.hidden = false; H.className = mode + (coop ? ' coop' : '') + ' n' + fighters.length;
-  const quad = mode === 'couch' && fighters.length > 2;
-  fighters.forEach((f, i) => {
+  const H = $('pvpHud'); H.hidden = false; H.className = mode + (coop ? ' coop' : '') + ' n' + humans.length;
+  const quad = mode === 'couch' && humans.length > 2;
+  humans.forEach((f, i) => {
+    f.vi = i;
     const el = $('pv' + i); buildPv(el, f);
-    f.view = { cam: f.cam, rw: mode === 'couch' ? 0.5 : 1, rh: quad ? 0.5 : 1, layer: f.ui.fx };
+    f.view = { cam: f.cam, rw: mode === 'couch' && humans.length > 1 ? 0.5 : 1, rh: quad ? 0.5 : 1, layer: f.ui.fx };
   });
   if (mode === 'online') { const el = $('pv0'); buildPv(el, pvp.local); pvp.local.view = { cam: pvp.local.cam, rw: 1, layer: pvp.local.ui.fx }; pvp.remote.ui = null; pvp.remote.view = null; }
   state = 'pvp'; firing = false; for (const k in keys) delete keys[k];
@@ -4218,10 +4291,10 @@ function teardownPvp(){
 }
 function backToSelect(){
   if (!pvp) return;
-  const { mode, role, r, code, m, coop } = pvp, picks = [0, 0, 0, 0];
+  const { mode, role, r, code, m, coop } = pvp, picks = [0, 0, 0, 0], lastBots = (pvp.bots || []).map(k => k - 1);
   pvp.fighters.forEach(f => { picks[pvp.mode === 'couch' ? f.idx : f.vi] = f.ch; });
   teardownPvp();
-  enterSelect(mode, role, r, code, picks, m, mapIdx, coop);
+  enterSelect(mode, role, r, code, picks, m, mapIdx, coop, undefined, lastBots);
 }
 function leavePvp(){
   if (!pvp) return;
@@ -4283,8 +4356,8 @@ function pvpRender(){
   const W = stage.clientWidth || window.innerWidth, H = stage.clientHeight || window.innerHeight;
   if (pvp.mode === 'couch') {
     renderer.setScissorTest(true);
-    const rects = viewRects(pvp.fighters.length, W, H);
-    pvp.fighters.forEach((f, i) => {
+    const rects = viewRects(pvp.humans.length, W, H);
+    pvp.humans.forEach((f, i) => {
       const [x, y, w, h] = rects[i];
       f.cam.aspect = w / h; f.cam.updateProjectionMatrix();
       pvp.fighters.forEach(g => setTail(g, g === f ? CAMS[g.camMode].tail : 1));
@@ -4295,7 +4368,7 @@ function pvpRender(){
     });
     renderer.setScissorTest(false); renderer.setViewport(0, 0, W, H);
     // the spare quarter with three players: a map of the meadow (drawn flat, so it costs nothing)
-    if (pvp.fighters.length === 3) drawMap();
+    if (pvp.humans.length === 3) drawMap();
   } else {
     const f = pvp.local;
     f.cam.aspect = W / H; f.cam.updateProjectionMatrix();
@@ -4351,7 +4424,10 @@ const chIdx = (v) => { const n = Math.round(+v); return CHARS[n] ? n : 0; };
 function hostChars(pr){ return Array.isArray(pr.chars) ? [chIdx(pr.chars[0]), chIdx(pr.chars[1])] : [chIdx(pr.ch), 0]; }
 const mapOf = (v) => { const n = Math.round(+v); return MAPS[n] ? n : 0; };
 // coop: a co-op match; base: the join address, for the QR codes of players who are still to join
-function enterSelect(mode, role, r, code, picks, prevM, map, coop, base){
+const BOT_LV = ['Easy', 'Normal', 'Hard'];
+let botLv = 1;
+try { botLv = clamp(parseInt(localStorage.getItem('squirrel-commando-bots') || '1', 10) || 0, 0, 2); } catch (e) {}
+function enterSelect(mode, role, r, code, picks, prevM, map, coop, base, bots){
   lobby = null;
   ['menu', 'vsScr', 'coScr', 'lobbyScr', 'pvpOverScr', 'pvpPauseScr'].forEach(id => { $(id).hidden = true; });
   hud.hidden = true; sq.group.visible = false; firing = false;
@@ -4361,7 +4437,9 @@ function enterSelect(mode, role, r, code, picks, prevM, map, coop, base){
   const p0 = picks ? picks.slice(0, n) : []; while (p0.length < n) p0.push(0);
   for (const k in GP.sel) { GP.sel[k].rdy = 0; if (picks && picks[k - 1] !== undefined) GP.sel[k].ch = picks[k - 1]; }
   sel = { mode, role, r, code, local, n, coop: !!coop, picks: p0, ready: Array(n).fill(false), padOk: Array(n).fill(false),
-    previews: Array(n).fill(null), shown: Array(n).fill(-1), missing: 0, go: 0, t: 0, prevM: prevM || 0, sendT: 0, ui: [], base: base || null };
+    previews: Array(n).fill(null), shown: Array(n).fill(-1), missing: 0, go: 0, t: 0, prevM: prevM || 0, sendT: 0, ui: [], base: base || null,
+    bots: new Set(mode === 'couch' && Array.isArray(bots) ? bots : []) };
+  $('selBotLv').hidden = mode !== 'couch'; $('selBotLv').textContent = 'Bots: ' + BOT_LV[botLv];
   if (n === 4 && !sel.base) gameUrl().then(b => { if (sel) sel.base = b; });
   $('selScr').classList.toggle('quad', n === 4);
   for (let i = 2; i < 4; i++) $('sel' + i).hidden = i >= n;
@@ -4382,7 +4460,10 @@ function buildSelPanel(i){
   const el = $('sel' + i), isLocal = sel.local === i;
   el.style.setProperty('--pc', PALS[i].css);
   const who = sel.mode === 'couch' ? PALS[i].name + ' team · phone' : (isLocal ? 'You · ' + PALS[i].name + ' team' : (sel.coop ? 'Teammate · ' : 'Opponent · ') + PALS[i].name + ' team');
-  el.innerHTML = '<div class="sel-head"><b>P' + (i + 1) + '</b><span></span></div><div class="sel-name"></div><div class="sel-list"></div><div class="sel-join" hidden><div class="qr-code"></div><span>Scan to join</span></div><div class="sel-foot"><span class="sel-status"></span></div>';
+  el.innerHTML = '<div class="sel-head"><b>P' + (i + 1) + '</b><span></span></div><div class="sel-name"></div><div class="sel-list"></div><div class="sel-join" hidden><div class="qr-code"></div><span>Scan to join</span></div><div class="sel-foot"><span class="sel-status"></span></div>'
+    + (sel.mode === 'couch' ? '<button class="btn ghost sm sel-bot"></button>' : '');
+  const botBtn = el.querySelector('.sel-bot');
+  if (botBtn) botBtn.addEventListener('click', () => selToggleBot(i));
   el.querySelector('.sel-head span').textContent = who;
   const list = el.querySelector('.sel-list');
   const btns = CHARS.map((c, k) => {
@@ -4397,8 +4478,16 @@ function buildSelPanel(i){
     ready.addEventListener('click', selToggleReady);
     el.querySelector('.sel-foot').appendChild(ready);
   }
-  sel.ui[i] = { el, name: el.querySelector('.sel-name'), status: el.querySelector('.sel-status'), btns, ready, join: el.querySelector('.sel-join'), qr: el.querySelector('.sel-join .qr-code'), qrDone: false };
+  sel.ui[i] = { el, botBtn, name: el.querySelector('.sel-name'), status: el.querySelector('.sel-status'), btns, ready, join: el.querySelector('.sel-join'), qr: el.querySelector('.sel-join .qr-code'), qrDone: false };
 }
+// couch: an empty spot can be a bot instead (and a phone or controller joining there takes it back)
+function selToggleBot(i){
+  if (!sel || sel.mode !== 'couch') return;
+  if (sel.bots.has(i)) sel.bots.delete(i);
+  else if (!sel.padOk[i]) { sel.bots.add(i); sel.picks[i] = Math.floor(Math.random() * CHARS.length); }
+  sfx.swap(); sel.sendT = 0;
+}
+$('selBotLv').addEventListener('click', () => { botLv = (botLv + 1) % 3; try { localStorage.setItem('squirrel-commando-bots', String(botLv)); } catch (e) {} $('selBotLv').textContent = 'Bots: ' + BOT_LV[botLv]; sfx.swap(); });
 function selMap(i){
   if (!sel) return;
   sel.map = mapOf(i); buildMap(sel.map); sfx.swap();
@@ -4435,6 +4524,7 @@ function selTick(dt){
       if (i === 0 && inp) { const mp = +inp.mp || 0; if (S.lastMp !== null && mp !== S.lastMp) selMap((S.map + 1) % MAPS.length); S.lastMp = mp; }
       // a controller holding this spot
       if (gpHas(i + 1, S.code)) { const st = GP.sel[i + 1]; S.padOk[i] = true; S.picks[i] = st.ch; S.ready[i] = S.t > 1 && !!st.rdy; }
+      if (S.bots.has(i)) { if (S.padOk[i]) S.bots.delete(i); else S.ready[i] = true; }
     }
     S.sendT -= dt;
     if (S.sendT <= 0) { S.sendT = 0.15; S.r.presence({ role: 'tv', code: S.code, phase: 'select', m: 0, picks: S.picks.slice(), ready: S.ready.slice(), in: S.padOk.slice(), map: S.map, mapName: MAPS[S.map].name, coop: S.coop ? 1 : 0 }).catch(() => {}); }
@@ -4454,20 +4544,21 @@ function selTick(dt){
     }
   }
   // everyone ready: the TV or the host starts the match (couch co-op: everyone whose phone is in, at least two)
-  const inSlots = S.mode === 'couch' ? S.padOk.map((ok, i) => ok ? i : -1).filter(i => i >= 0) : [0, 1];
-  const allReady = inSlots.length >= 2 && inSlots.every(i => S.ready[i]);
+  const inSlots = S.mode === 'couch' ? S.padOk.map((ok, i) => ok || S.bots.has(i) ? i : -1).filter(i => i >= 0) : [0, 1];
+  const allReady = inSlots.length >= 2 && inSlots.every(i => S.ready[i]) && (S.mode !== 'couch' || S.padOk.some(Boolean));
   if ((S.mode === 'couch' || S.role === 'host') && allReady) {
     S.go += dt;
     if (S.go > 0.8) {
       const { mode, role, r, code, coop } = S, chars = inSlots.map(i => S.picks[i]), slots = inSlots.map(i => i + 1), m = S.prevM + 1, map = S.map;
+      const bots = inSlots.filter(i => S.bots.has(i)).map(i => i + 1);
       clearPreviews(); sel = null; $('selScr').hidden = true; $('selScr').classList.remove('quad');
-      startPvp(mode, role, r, code, m, chars, map, coop, slots); return;
+      startPvp(mode, role, r, code, m, chars, map, coop, slots, bots); return;
     }
   } else S.go = 0;
   if (S.mapBtns) S.mapBtns.forEach((b, i) => setClass(b, 'on', i === S.map));
   // 3D previews standing in the meadow (couch co-op: only players whose phone is in)
   for (let i = 0; i < S.n; i++) {
-    const here = S.mode !== 'couch' || S.padOk[i];
+    const here = S.mode !== 'couch' || S.padOk[i] || S.bots.has(i);
     if (!here) { if (S.previews[i]) { scene.remove(S.previews[i].group); S.previews[i] = null; S.shown[i] = -1; } continue; }
     if (S.shown[i] !== S.picks[i]) {
       if (S.previews[i]) scene.remove(S.previews[i].group);
@@ -4492,16 +4583,17 @@ function selTick(dt){
   for (let i = 0; i < S.n; i++) {
     const u = S.ui[i]; if (!u) continue;
     // couch co-op: a missing player's panel shows their QR code instead
-    const away = S.mode === 'couch' && !S.padOk[i];
+    const isBot = S.bots.has(i), away = S.mode === 'couch' && !S.padOk[i] && !isBot;
+    if (u.botBtn) { const bt = isBot ? 'Remove bot' : 'Add a bot'; if (u.botBtn.textContent !== bt) u.botBtn.textContent = bt; u.botBtn.hidden = !isBot && !away; }
     setClass(u.el, 'away', away); u.join.hidden = !away;
     if (away && !u.qrDone && S.base && window.QRCode) {
       u.qrDone = true;
       try { new QRCode(u.qr, { text: S.base + '#vs-' + S.code + '-p' + (i + 1), width: 120, height: 120, colorDark: '#1b120b', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M }); } catch (e) {}
     }
     const nm = CHARS[S.picks[i]].name; if (u.name.textContent !== nm) u.name.textContent = nm;
-    if (S.mode === 'couch') { const hd = PALS[i].name + ' team · ' + (gpHas(i + 1, S.code) ? 'controller' : 'phone'), he = u.el.querySelector('.sel-head span'); if (he.textContent !== hd) he.textContent = hd; }
+    if (S.mode === 'couch') { const hd = PALS[i].name + ' team · ' + (isBot ? BOT_LV[botLv].toLowerCase() + ' bot' : gpHas(i + 1, S.code) ? 'controller' : 'phone'), he = u.el.querySelector('.sel-head span'); if (he.textContent !== hd) he.textContent = hd; }
     u.btns.forEach((b, k) => setClass(b, 'on', k === S.picks[i]));
-    const st = S.ready[i] ? 'Ready!' : (S.mode === 'couch' && !S.padOk[i] ? 'Not joined' : (S.mode === 'online' && i !== S.local && S.missing > 0 ? 'Reconnecting…' : 'Picking…'));
+    const st = isBot ? 'Bot' : S.ready[i] ? 'Ready!' : (S.mode === 'couch' && !S.padOk[i] ? 'Not joined' : (S.mode === 'online' && i !== S.local && S.missing > 0 ? 'Reconnecting…' : 'Picking…'));
     if (u.status.textContent !== st) u.status.textContent = st;
     setClass(u.status, 'ok', S.ready[i]);
     if (u.ready) { const t = S.ready[i] ? 'Not ready' : 'Ready'; if (u.ready.textContent !== t) u.ready.textContent = t; setClass(u.ready, 'ready-on', S.ready[i]); }
@@ -4558,7 +4650,7 @@ async function openLobby(mode, coop){
     $('lobbyLede').textContent = 'Scan the code with your phone. It becomes your controller, and the game starts on this screen as soon as it connects.';
     ticket.status = [qrCard('Your phone', PALS[0].css, base + '#vs-' + code + '-p1')];
   } else if (mode === 'couch') {
-    $('lobbyLede').textContent = 'Up to four players: each scans their own code, or presses A on a game controller. Fighter select opens as soon as two players are in, and the others can still join there.' + (coop ? '' : ' Three or four players is a free-for-all.');
+    $('lobbyLede').textContent = 'Up to four players: each scans their own code, or presses A on a game controller. Fighter select opens as soon as someone is in; the others can still join there, and empty spots can be bots.' + (coop ? '' : ' Three or four players is a free-for-all.');
     ticket.status = PALS.map((P, i) => qrCard('Player ' + (i + 1) + ' · ' + P.name, P.css, base + '#vs-' + code + '-p' + (i + 1)));
   } else if (coop) {
     $('lobbyLede').textContent = 'Send this link to your teammate, or have them scan the code. You pick fighters as soon as they open it.';
@@ -4593,7 +4685,7 @@ function lobbyTick(dt){
     const pads = [1, 2, 3, 4].map(s => peers.find(p => p.presence.role === 'pad' && p.presence.slot === s));
     const has = pads.map((p, i) => !!p || gpHas(i + 1, L.code));
     pads.forEach((p, i) => { const el = L.status[i]; const t = gpHas(i + 1, L.code) ? '🎮 Controller connected' : p ? (p.direct ? 'Phone connected ⚡ direct' : 'Phone connected') : 'Waiting for phone…'; if (el.textContent !== t) { el.textContent = t; el.classList.toggle('ok', has[i]); } });
-    if (has.filter(Boolean).length >= 2) enterSelect('couch', 'tv', L.r, L.code, undefined, 0, undefined, L.coop, L.base);
+    if (has.filter(Boolean).length >= 1) enterSelect('couch', 'tv', L.r, L.code, undefined, 0, undefined, L.coop, L.base);
   } else if (L.mode === 'online') {
     if (peers.some(p => p.presence.role === 'guest')) { L.status[0].textContent = L.coop ? 'Teammate joined' : 'Opponent joined'; L.status[0].classList.add('ok'); enterSelect('online', 'host', L.r, L.code, undefined, 0, undefined, L.coop); }
   } else if (L.mode === 'guest') {
