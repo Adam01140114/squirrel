@@ -14,6 +14,12 @@ Sunny Meadow, Frosty Pines, Canyon Dunes, Spooky Hollow and Blossom Garden.
 - **Bots:** on the couch, any empty spot can be a bot (Add a bot on its panel at fighter select; the Bots button sets Easy, Normal or Hard). One person with a phone or controller can practise versus against bots, or play co-op with a bot teammate. Only people get a slice of the screen.
 - **Co-op (online):** two computers defend one stash; the host runs the waves.
 
+## Awards and rumble
+
+At the end of a versus or co-op match the TV hands out awards (Bonk Machine, Sharpshooter, Heavy Hitter, Medic,
+Untouchable, Hoarder) to whoever leads each one outright, and each phone shows the ones its player won. Phones
+buzz when you get hit, bonk someone or go down; controllers that support it rumble too.
+
 ## Bosses
 
 A boss comes every 5 waves, in turn: the Gnome King (ground slam), the Crow Queen (calls her flock, then dives),

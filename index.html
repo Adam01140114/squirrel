@@ -183,6 +183,8 @@ body.touch .desk-only{display:none}
 .perk .lv{display:flex;gap:4px}.perk .lv i{width:10px;height:10px;border-radius:50%;background:rgba(255,243,220,.18)}.perk .lv i.on{background:var(--gold)}
 .solo-drag{margin:0;font-size:13px;color:var(--cream-dim)}
 #soloScr{cursor:grab}#soloScr .placard{cursor:auto}#soloScr.dragging{cursor:grabbing}
+#pvpStats .award{grid-column:1/-1;display:flex;justify-content:space-between;gap:12px;align-items:baseline;border-top:1px solid rgba(255,243,220,.12);padding-top:6px}
+#pvpStats .award dt{font-family:var(--display);color:var(--gold)}#pvpStats .award dd{font-size:15px;text-align:right}
 .perks-held{font-size:13px;color:var(--cream-dim)}
 @media (max-width:640px){.perk-row{grid-template-columns:minmax(0,1fr)}.perk{padding:10px 12px}}
 .qrs{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
@@ -794,7 +796,7 @@ function runController(code, slot){
   $('app').appendChild(wrap);
   const stat = (t) => { $('padStat').textContent = t; };
   const I = { x: 0, y: 0, yaw: 0, pitch: -0.05, f: 0, s: 0, j: 0, r: 0, w: 0, c: 0, ch: 0, rdy: 0, mp: 0 };
-  let room = null, lastHp = 100, lastPhase = '';
+  let room = null, lastHp = 100, lastPhase = '', lastDead = false, lastK = 0;
   const send = () => {
     if (!room) return;
     room.presence({ role: 'pad', code, slot, i: { x: r2(I.x), y: r2(I.y), yaw: Math.round(I.yaw * 1000) / 1000, pitch: Math.round(I.pitch * 1000) / 1000, f: I.f, s: I.s, j: I.j, r: I.r, w: I.w, c: I.c, ch: I.ch, rdy: I.rdy, mp: I.mp } }).catch(() => {});
@@ -890,8 +892,14 @@ function runController(code, slot){
       $('padAmmo').textContent = String(hud.wn || '') + ' ' + (hud.am === undefined ? '' : hud.am + '/' + (hud.rs === -1 ? '∞' : hud.rs));
       const co = tv.presence.co;
       $('padScore').textContent = coop && co ? 'Wave ' + (+co.w || 1) + ' · ' + (+hud.k || 0) + ((+hud.k || 0) === 1 ? ' bonk' : ' bonks') : hudArr.length > 2 ? 'You ' + (+hud.k || 0) + ' · leader ' + Math.max(+hud.k || 0, +hud.o || 0) : (+hud.k || 0) + ' – ' + (+hud.o || 0);
-      if (hp < lastHp) { try { navigator.vibrate && navigator.vibrate(50); } catch (_) {} }
-      lastHp = hp;
+      const buzz = (p) => { try { navigator.vibrate && navigator.vibrate(p); } catch (_) {} };
+      if (hud.dead && !lastDead) buzz(350); else if (hp < lastHp) buzz(50);
+      if ((+hud.k || 0) > lastK) buzz([30, 40, 30]);
+      lastHp = hp; lastDead = !!hud.dead; lastK = +hud.k || 0;
+      if (ph === 'over' && Array.isArray(hud.aw) && hud.aw.length) {
+        const t = 'Match over. You won: ' + hud.aw.map(String).join(', ') + '!';
+        if ($('padStat').textContent !== t) { stat(t); buzz([60, 60, 60, 60, 160]); }
+      }
     }
   };
   (async () => {
@@ -2744,6 +2752,7 @@ function hurtPlayer(d, src){
     return;
   }
   player.hp -= d; player.inv = 0.55; dmgFlash = 1; addShake(0.35); sfx.hurt();
+  for (const k in GP.now) gpRumble(+k, d >= 18 ? 1 : 0.5, d >= 18 ? 260 : 120);
   flashMeter(els.hpMeter);
   if (src) { tv.set(player.pos.x - src.x, 0, player.pos.z - src.z).normalize(); player.vel.x += tv.x * 6; player.vel.z += tv.z * 6; }
   if (player.hp <= 0) { player.hp = 0; gameOver('knocked'); }
@@ -3560,6 +3569,7 @@ function viewOf(f){
   return f.view;
 }
 function dealHit(shooter, victim, dmg, head, pt){
+  if (shooter.st) { shooter.st.hits++; if (head) shooter.st.heads++; shooter.st.dmg += dmg; }
   const v = viewOf(shooter);
   if (v) { floatText(pt, String(dmg), head ? 'crit' : '', v); shooter.hitT = 0.12; }
   sfx.hit(head);
@@ -3570,7 +3580,9 @@ function dealHit(shooter, victim, dmg, head, pt){
 function applyDamage(v, d, attacker){
   if (v.dead || v.inv > 0 || pvp.phase !== 'play') return;
   if (v.pw.shield > 0) { sfx.blocked(); pvA.copy(v.pos); pvA.y += 1.6; const vw = viewOf(v); if (vw) floatText(pvA, 'BLOCKED', 'tag', vw); return; }
+  if (v.st) v.st.taken += Math.min(d, Math.max(0, v.hp));
   v.hp -= d; v.hurtT = 1; v.shake = Math.min(1.2, v.shake + 0.3); sfx.hurt();
+  gpRumbleFighter(v, d >= 18 ? 1 : 0.5, d >= 18 ? 260 : 120);
   if (attacker) { pvA.set(v.pos.x - attacker.pos.x, 0, v.pos.z - attacker.pos.z).normalize(); v.vel.x += pvA.x * 5; v.vel.z += pvA.z * 5; }
   if (v.hp <= 0) { v.hp = 0; fDie(v, attacker); }
 }
@@ -3584,7 +3596,46 @@ function deathFx(v){
 }
 // co-op: a downed player is back at the stash after this long, or sooner if a teammate stands by them
 const COOP_RESPAWN = 12, REVIVE_T = 2.5, REVIVE_R = 2.4;
+// ---------- end-of-match awards
+function newStats(){ return { hits: 0, heads: 0, dmg: 0, taken: 0, revives: 0, savedBy: 0, picks: 0 }; }
+const AWARDS = [
+  { id: 'bonk', icon: '🏆', name: 'Bonk Machine', val: (f) => pvp.coop ? f.kills | 0 : bonksOf(f), unit: (v) => v + (v === 1 ? ' bonk' : ' bonks') },
+  { id: 'aim', icon: '🎯', name: 'Sharpshooter', val: (f) => f.st.heads, unit: (v) => v + (v === 1 ? ' headshot' : ' headshots') },
+  { id: 'dmg', icon: '💥', name: 'Heavy Hitter', val: (f) => Math.round(f.st.dmg), unit: (v) => fmt(v) + ' damage' },
+  { id: 'medic', icon: '💚', name: 'Medic', val: (f) => f.st.revives, unit: (v) => v + (v === 1 ? ' revive' : ' revives'), coop: true },
+  { id: 'tank', icon: '🛡️', name: 'Untouchable', val: (f) => -Math.round(f.st.taken), unit: (v) => (v === 0 ? 'no' : fmt(-v)) + ' damage taken', low: true },
+  { id: 'loot', icon: '🌰', name: 'Hoarder', val: (f) => f.st.picks, unit: (v) => v + (v === 1 ? ' pickup' : ' pickups') }
+];
+// one award each, to whoever leads it outright (no award for a tie or for nothing)
+function matchAwards(){
+  const F = pvp.fighters.filter(f => f.st); if (F.length < 2) return [];
+  const out = [];
+  for (const A of AWARDS) {
+    if (A.coop && !pvp.coop) continue;
+    const vals = F.map(f => A.val(f)), top = Math.max(...vals);
+    if (!A.low && top <= 0) continue;
+    if (vals.filter(v => v === top).length !== 1) continue;
+    const f = F[vals.indexOf(top)];
+    out.push({ icon: A.icon, name: A.name, who: f, slot: f.idx + 1, text: A.unit(top) });
+  }
+  return out;
+}
+function showAwards(){
+  const aw = matchAwards(); pvp.awards = aw;
+  const dl = $('pvpStats');
+  aw.forEach(a => {
+    const row = document.createElement('div'); row.className = 'award';
+    const dt = document.createElement('dt'), dd = document.createElement('dd');
+    dt.textContent = a.icon + ' ' + a.name; dd.textContent = a.who.tag + ' · ' + a.text; dd.style.color = a.who.pal.css;
+    row.append(dt, dd); dl.appendChild(row);
+  });
+  const mine = pvp.mode === 'online' ? aw.filter(a => a.who === pvp.local) : [];
+  if (mine.length) for (const k in GP.now) gpRumble(+k, 0.6, 400);
+}
 function revive(f){
+  // credit whoever stood by them
+  const by = pvp.fighters.filter(o => o !== f && !o.dead).sort((a, b) => Math.hypot(a.pos.x - f.pos.x, a.pos.z - f.pos.z) - Math.hypot(b.pos.x - f.pos.x, b.pos.z - f.pos.z))[0];
+  if (by && by.st) { by.st.revives++; if (f.st) f.st.savedBy++; if (pvp.mode === 'online' && by === pvp.remote) by.st.savedByYou = (by.st.savedByYou || 0) + 1; }
   f.dead = false; f.hp = 50; f.inv = 1.5; f.revT = 0; f.respawnT = 0; f.hurtT = 0;
   f.model.group.visible = true;
   pvA.copy(f.pos); pvA.y += 1; burst(pvA, 24, [0x8fe07a, 0xfff6e6], 4, 0.08, 0.7, -6, 0.4); sfx.pickup(true);
@@ -3698,6 +3749,7 @@ function pvpTake(k, f){
   else pushEv({ k: 'grant', id: k.id, kc: PKINDS.indexOf(k.kind), pc: k.power ? PKEYS.indexOf(k.power) : -1, wi });
 }
 function fCollect(f, kind, power, wi, at){
+  if (f.st) f.st.picks++;
   const p = (at || f.pos).clone();
   if (kind === 'golden') { f.hp = Math.min(100, f.hp + 40); pvpToast(f, '+40 HP'); sfx.pickup(true); }
   else if (kind === 'acorn' && pvp.coop) { pvpToast(f, '+2 stash'); sfx.pickup(false); }
@@ -3744,6 +3796,8 @@ function netSend(dt){
   const f = pvp.local;
   const st = { x: r2(f.pos.x), y: r2(f.pos.y), z: r2(f.pos.z), vx: r2(f.vel.x), vz: r2(f.vel.z), yw: Math.round(f.yaw * 1000) / 1000, pt: Math.round(f.pitch * 1000) / 1000,
     w: f.cur, f: f.shots, hp: Math.ceil(f.hp), dd: f.dead ? 1 : 0, d: f.deaths, sh: f.pw.shield > 0 ? 1 : 0, iv: f.inv > 0 ? 1 : 0, g: f.onGround ? 1 : 0 };
+  const T = f.st || newStats(), R = pvp.remote && pvp.remote.st;
+  st.ss = [T.hits, T.heads, Math.round(T.dmg), Math.round(T.taken), T.revives, T.picks, R ? R.savedByYou || 0 : 0, f.shots];
   if (pvp.coop) { st.k = f.kills | 0; if (f.dead) st.rv = Math.round(clamp((f.revT || 0) / REVIVE_T, 0, 1) * 100); }
   const p = { role: pvp.role, code: pvp.code, m: pvp.m, phase: pvp.phase, st, ev: pvp.ev };
   if (pvp.coop) { p.coop = 1; if (pvp.role === 'host') { p.co = coopPack(); p.why = pvp.why; } }
@@ -3760,6 +3814,12 @@ function applyRemoteState(f, st){
   const d = num(st.d) | 0;
   if (d > f.deaths) { f.deaths = d; if (pvp.phase === 'play' && !pvp.coop) killFeed(pvp.local, f); } else if (d < f.deaths) f.deaths = d;
   if (pvp.coop) { f.kills = num(st.k) | 0; f.revT = num(st.rv) / 100 * REVIVE_T; }
+  if (Array.isArray(st.ss) && f.st) {
+    const q = st.ss.map(num), F = f.st;
+    F.hits = q[0]; F.heads = q[1]; F.dmg = q[2]; F.taken = q[3]; F.revives = Math.max(F.revives, q[4]); F.picks = q[5];
+    // revives the other page saw me give
+    if (pvp.local.st) pvp.local.st.revives = Math.max(pvp.local.st.revives, q[6]);
+  }
   const shots = num(st.f) | 0;
   if (f.shotsSeen === undefined || shots < f.shotsSeen) f.shotsSeen = shots;
   else if (shots > f.shotsSeen) { const n = Math.min(4, shots - f.shotsSeen); f.shotsSeen = shots; if (!f.dead) for (let i = 0; i < n; i++) remoteShotFx(f); }
@@ -3919,7 +3979,9 @@ function tvSend(dt){
   const hud = pvp.fighters.map(f => {
     const s = f.w[f.cur];
     const k = pvp.coop ? f.kills | 0 : bonksOf(f), o = pvp.coop ? 0 : Math.max(0, ...foesOf(f).map(bonksOf));
-    return { hp: Math.ceil(f.hp), dead: f.dead ? 1 : 0, wn: WEAPONS[f.cur].name, am: s.ammo, rs: s.reserve === Infinity ? -1 : s.reserve, k, o, slot: f.idx + 1 };
+    const h = { hp: Math.ceil(f.hp), dead: f.dead ? 1 : 0, wn: WEAPONS[f.cur].name, am: s.ammo, rs: s.reserve === Infinity ? -1 : s.reserve, k, o, slot: f.idx + 1 };
+    if (pvp.phase === 'over' && pvp.awards) h.aw = pvp.awards.filter(a => a.who === f).map(a => a.icon + ' ' + a.name);
+    return h;
   });
   const msg = { role: 'tv', code: pvp.code, phase: pvp.phase, m: pvp.m, hud, mapName: curMap.name };
   if (pvp.coop) { msg.coop = 1; msg.co = { w: wave, sd: Math.ceil(stash) }; }
@@ -4044,6 +4106,7 @@ function coopFire(f, w, spread, mul, minT){
   agg.forEach((a, e) => { if (enemies.includes(e)) coopHitEnemy(f, e, a.d, a.h, a.pt, a.dir, w.pellets > 1 ? 2.2 : 1); });
 }
 function coopHitEnemy(shooter, e, dmg, head, pt, dir, kb){
+  if (shooter && shooter.st) { shooter.st.hits++; if (head) shooter.st.heads++; shooter.st.dmg += Math.min(dmg, Math.max(0, e.hp)); }
   if (pvp.mode === 'couch' || pvp.role === 'host') { hurtEnemy(e, dmg, head, pt, dir, kb, shooter); return; }
   // online guest: show it now, the host applies it
   e.flash = 1; e.barT = 2.5;
@@ -4183,6 +4246,7 @@ function coopOver(why){
   const rows = pvp.fighters.map(f => '<div><dt style="color:' + f.pal.css + '"></dt><dd>' + (f.kills | 0) + '</dd></div>').join('') + '<div><dt>Wave</dt><dd>' + wave + '</dd></div>';
   const dl = $('pvpStats'); dl.innerHTML = rows;
   dl.querySelectorAll('dt').forEach((el, i) => { if (pvp.fighters[i]) el.textContent = pvp.fighters[i].tag + ' bonks'; });
+  showAwards();
   const canRematch = why !== 'left' && (pvp.mode === 'couch' || pvp.role === 'host');
   $('pvpRematch').hidden = !canRematch; $('pvpReselect').hidden = !canRematch;
   if (!canRematch && why !== 'left') $('pvpOverLede').textContent += ' Waiting for the host to start again.';
@@ -4234,7 +4298,7 @@ function startPvp(mode, role, r, code, m, chars, map, coop, slots, bots){
   }
 }
 function pvpBegin(m){
-  pvp.m = m; pvp.phase = 'countdown'; pvp.count = 3.6; pvp.winner = -1; pvp.seqInit = false; pvp.lastPr = null; pvp.missing = 0;
+  pvp.m = m; pvp.awards = null; pvp.phase = 'countdown'; pvp.count = 3.6; pvp.winner = -1; pvp.seqInit = false; pvp.lastPr = null; pvp.missing = 0;
   pvp.pk.slice().forEach(k => pvpRemovePickup(k)); pvp.gone.clear();
   pvp.projs.forEach(p => scene.remove(p.m)); pvp.projs.length = 0;
   if (pvp.coop) {
@@ -4243,10 +4307,10 @@ function pvpBegin(m){
     wave = 1; waveState = 'intro'; queue = []; score = 0; combo = 0; comboT = 0; kills = 0; stash = 100; updateStashPile();
     pvp.waveOn = false; pvp.why = null; pvp.seenWave = 0; pvp.seenWs = null;
     const n = pvp.fighters.length;
-    pvp.fighters.forEach((f, i) => { f.deaths = 0; f.kills = 0; f.shotsSeen = undefined; const a = i / n * TAU + 0.4; spawnAt(f, [Math.cos(a) * 6.5, Math.sin(a) * 6.5]); f.inv = 0; });
+    pvp.fighters.forEach((f, i) => { f.deaths = 0; f.kills = 0; f.shotsSeen = undefined; f.st = newStats(); const a = i / n * TAU + 0.4; spawnAt(f, [Math.cos(a) * 6.5, Math.sin(a) * 6.5]); f.inv = 0; });
     if (pvp.mode === 'couch' || pvp.role === 'host') { pvp.pkTimer = 20; ['crate', 'golden'].forEach(k => pvpSpawnRandom(k)); }
   } else {
-    pvp.fighters.forEach((f, i) => { f.deaths = 0; f.bonks = 0; f.shotsSeen = undefined; spawnAt(f, SPAWNS[i]); f.inv = 0; });
+    pvp.fighters.forEach((f, i) => { f.deaths = 0; f.bonks = 0; f.shotsSeen = undefined; f.st = newStats(); spawnAt(f, SPAWNS[i]); f.inv = 0; });
     if (pvp.mode === 'couch' || pvp.role === 'host') {
       pvp.pkTimer = 8;
       ['crate', 'crate', 'power', 'golden', 'golden'].forEach(k => pvpSpawnRandom(k));
@@ -4267,6 +4331,7 @@ function pvpOver(w, reason){
   const dl = $('pvpStats');
   dl.innerHTML = pvp.fighters.map(f => '<div><dt style="color:' + f.pal.css + '"></dt><dd>' + bonksOf(f) + '</dd></div>').join('');
   dl.querySelectorAll('dt').forEach((el, i) => { el.textContent = pvp.fighters[i].tag; });
+  showAwards();
   let title, lede;
   if (reason === 'left') { title = 'Opponent left'; lede = 'The other player disconnected. Head back to the menu to start a new room.'; }
   else if (pvp.mode === 'online') { const won = w === pvp.local.idx; title = won ? 'You win!' : 'You lose'; lede = (won ? 'You' : 'The ' + pvp.fighters[w].name) + ' got to ' + MATCH_KILLS + ' bonks first.'; }
@@ -4776,6 +4841,19 @@ const gpDead = (v) => Math.abs(v) < 0.18 ? 0 : (v - Math.sign(v) * 0.18) / 0.82;
 function gpSlotOf(idx){ for (const k in GP.slots) if (GP.slots[k] === idx) return +k; return 0; }
 // a couch player spot held by a controller (in this room)
 function gpHas(slot, code){ return GP.code === code && GP.slots[slot] !== undefined && !!GP.now[GP.slots[slot]]; }
+// a short rumble on a controller that supports it
+function gpRumble(idx, strength, ms){
+  try {
+    const g = gpList().find(q => q.index === idx), a = g && g.vibrationActuator;
+    if (a && a.playEffect) a.playEffect('dual-rumble', { duration: ms, strongMagnitude: clamp(strength, 0, 1), weakMagnitude: clamp(strength * 0.7, 0, 1) }).catch(() => {});
+  } catch (e) {}
+}
+// the controller(s) steering this fighter: its couch spot, or the local player online
+function gpRumbleFighter(f, strength, ms){
+  if (!pvp) return;
+  if (pvp.mode === 'couch') { const gi = GP.code === pvp.code ? GP.slots[f.idx + 1] : undefined; if (gi !== undefined) gpRumble(gi, strength, ms); }
+  else if (f === pvp.local) for (const k in GP.now) gpRumble(+k, strength, ms);
+}
 function gpNote(text){ const n = $('gpNote'); if (!n) return; n.textContent = text; n.classList.remove('show'); void n.offsetWidth; n.classList.add('show'); }
 window.addEventListener('gamepadconnected', (e) => { gpNote('🎮 Controller ready' + (e.gamepad && e.gamepad.id ? ': ' + e.gamepad.id.replace(/\s*\(.*$/, '').slice(0, 40) : '')); });
 window.addEventListener('gamepaddisconnected', (e) => { const sl = gpSlotOf(e.gamepad.index); if (sl) { delete GP.slots[sl]; delete GP.sel[sl]; } delete GP.now[e.gamepad.index]; gpNote('🎮 Controller disconnected'); });
