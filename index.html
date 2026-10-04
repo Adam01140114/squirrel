@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 </head>
 <body>
 <title>Squirrel Commando</title>
@@ -29,6 +29,9 @@
 }
 [hidden]{display:none!important}
 html,body{height:100%;margin:0;overflow:hidden;background:var(--ink);color:var(--cream);font-family:var(--body)}
+/* no double-tap or pinch zoom anywhere (menus scroll, so they need it too) */
+*{touch-action:manipulation}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 #app{position:fixed;inset:0;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
 #stage{position:absolute;inset:0}
 #stage canvas{display:block;width:100%;height:100%;cursor:crosshair}
@@ -574,6 +577,18 @@ body.pad-mode{background:#1b120b}
 'use strict';
 const $ = (id) => document.getElementById(id);
 
+// iOS Safari zooms on a double tap or a pinch even with user-scalable=no: stop both
+(() => {
+  let lastTouch = 0;
+  document.addEventListener('touchend', (e) => {
+    const now = Date.now();
+    if (now - lastTouch < 350 && !(e.target && e.target.closest && e.target.closest('input,textarea,select'))) e.preventDefault();
+    lastTouch = now;
+  }, { passive: false });
+  ['gesturestart', 'gesturechange'].forEach(t => document.addEventListener(t, (e) => e.preventDefault(), { passive: false }));
+  document.addEventListener('dblclick', (e) => e.preventDefault(), { passive: false });
+})();
+
 // ---------------------------------------------------------------- versus: shared bits + phone controller
 const ART_URL = 'https://claude.ai/artifact/EGiCRX7DBnTHi5LrhiRFy1';
 const HASH = (location.hash || '').replace(/^#/, '');
@@ -874,9 +889,15 @@ function runController(code, slot){
     if (e.pointerId === look.id) look.id = null;
   };
   zone.addEventListener('pointerup', end); zone.addEventListener('pointercancel', end);
-  const fire = $('pbFire');
-  fire.addEventListener('pointerdown', (e) => { e.preventDefault(); I.f = 1; fire.classList.add('on'); try { fire.setPointerCapture(e.pointerId); } catch (_) {} send(); });
-  ['pointerup', 'pointercancel'].forEach(t => fire.addEventListener(t, () => { I.f = 0; fire.classList.remove('on'); send(); }));
+  // FIRE doubles as an aim pad: hold it to shoot and slide the same thumb to aim
+  const fire = $('pbFire'), fireAim = { id: null, x: 0, y: 0 };
+  fire.addEventListener('pointerdown', (e) => { e.preventDefault(); I.f = 1; fire.classList.add('on'); fireAim.id = e.pointerId; fireAim.x = e.clientX; fireAim.y = e.clientY; try { fire.setPointerCapture(e.pointerId); } catch (_) {} send(); });
+  fire.addEventListener('pointermove', (e) => {
+    if (e.pointerId !== fireAim.id) return;
+    I.yaw -= (e.clientX - fireAim.x) * 0.0085; I.pitch = cl(I.pitch - (e.clientY - fireAim.y) * 0.0065, -0.55, 0.8);
+    fireAim.x = e.clientX; fireAim.y = e.clientY; send();
+  });
+  ['pointerup', 'pointercancel'].forEach(t => fire.addEventListener(t, () => { I.f = 0; fireAim.id = null; fire.classList.remove('on'); send(); }));
   const tap = (id, key) => { const b = $(id); b.addEventListener('pointerdown', (e) => { e.preventDefault(); I[key]++; b.classList.add('on'); setTimeout(() => b.classList.remove('on'), 120); send(); }); };
   tap('pbJump', 'j'); tap('pbRel', 'r'); tap('pbSwap', 'w'); tap('pbCam', 'c');
   wrap.addEventListener('contextmenu', (e) => e.preventDefault());
@@ -2773,7 +2794,7 @@ function killEnemy(e, head, dir, shooter){
     if (pvp.mode === 'online') pushEv({ k: 'ekill', id: e.id, h: head ? 1 : 0, by: shooter ? shooter.idx : -1, p: pts });
   } else if (combo >= 3) { els.combo.classList.remove('pop'); void els.combo.offsetWidth; els.combo.classList.add('pop'); }
   // drops: solo pickups, or the shared co-op pickups everyone can grab
-  const drop = (kind) => co ? coopDrop(p, kind) : dropPickup(p, kind === 'crate' && mod('blaster') ? 'golden' : kind);
+  const drop = (kind) => co ? coopDrop(p, kind, shooter) : dropPickup(p, kind === 'crate' && mod('blaster') ? 'golden' : kind);
   if (e.boss) {
     for (let i = 0; i < 8; i++) drop(i < 3 ? 'golden' : 'acorn');
     drop('crate'); drop('power'); drop('power');
@@ -2785,7 +2806,7 @@ function killEnemy(e, head, dir, shooter){
     if (r < crate) drop('crate');
     else if (r < crate + 0.07) drop('power');
     else if (r < crate + (mod('gold') ? 0.45 : 0.17)) drop('golden');
-    else if (r < crate + 0.62) drop('acorn');
+    drop('acorn'); // every kill leaves an acorn, which drifts over to you
     if (!co) addShake(0.12);
   }
   sfx.kill();
@@ -3034,6 +3055,7 @@ function updateCrow(e, dt){
   const f = e.state === 'dive' ? 0.2 + Math.sin(e.flap) * 0.1 : Math.sin(e.flap) * 0.75;
   e.wings[1].rotation.z = f; e.wings[0].rotation.z = -f;
 }
+const pickDir = new V3();
 function updatePickups(dt){
   for (let i = pickups.length - 1; i >= 0; i--) {
     const k = pickups[i], o = k.obj;
@@ -3053,9 +3075,18 @@ function updatePickups(dt){
     } else if (k.kind === 'crate') { if (o.position.y <= k.rest + 0.01) o.rotation.y += dt * 0.6; }
     else o.rotation.y += dt * 2.5;
     tv.set(player.pos.x, player.pos.y + 0.7, player.pos.z);
-    const d = o.position.distanceTo(tv);
-    const magnet = k.kind === 'acorn' || k.kind === 'golden' ? 5 : 2.4;
-    if (d < magnet && state === 'playing' && o.position.y < 3) { o.position.lerp(tv, Math.min(1, dt * 9 / (d + 0.4))); }
+    let d = o.position.distanceTo(tv);
+    const nut = k.kind === 'acorn' || k.kind === 'golden';
+    k.age = (k.age || 0) + dt;
+    if (nut && state === 'playing' && k.age > 0.45) {
+      // magnetic pull from anywhere on the map
+      k.magT = (k.magT || 0) + dt; k.settled = true;
+      const sp = Math.min(16, 1.4 + k.magT * 3.2) * dt;
+      if (d > 0.001) o.position.addScaledVector(pickDir.copy(tv).sub(o.position).normalize(), Math.min(sp, d));
+      o.position.y += Math.sin(k.age * 6) * 0.004;
+      if (Math.random() < dt * 10) emit(o.position, pickDir.set(rand(-0.3, 0.3), rand(0.2, 0.6), rand(-0.3, 0.3)), k.kind === 'golden' ? 0xffd23f : 0xffe7a8, 0.04, 0.35, 0, 2);
+      d = o.position.distanceTo(tv); k.life = Math.max(k.life, 5);
+    } else if (!nut && d < 2.4 && state === 'playing' && o.position.y < 3) { o.position.lerp(tv, Math.min(1, dt * 9 / (d + 0.4))); }
     k.life -= dt;
     o.visible = k.life > 4 || Math.floor(k.life * 8) % 2 === 0;
     if (d < (k.kind === 'crate' ? 1.3 : 0.95) && state === 'playing') {
@@ -3335,8 +3366,13 @@ document.addEventListener('mousemove', (e) => {
 // touch
 const joy = { id: null, ox: 0, oy: 0, x: 0, y: 0, active: false }, look = { id: null, x: 0, y: 0 };
 const tl = $('touchLayer'), joyBase = $('joyBase'), joyKnob = $('joyKnob');
+// turn the camera from a touch drag: your own fighter online, otherwise the solo hero
+function touchLook(dx, dy){
+  if (state === 'pvp' && pvp && pvp.local) { const f = pvp.local; if (f.dead || pvp.phase === 'over') return; f.yaw -= dx * 0.0065; f.pitch = clamp(f.pitch - dy * 0.005, PMIN, PMAX); return; }
+  yaw -= dx * 0.0065; pitch = clamp(pitch - dy * 0.005, PMIN, PMAX);
+}
 tl.addEventListener('pointerdown', (e) => {
-  if (state !== 'playing') return;
+  if (state !== 'playing' && !(state === 'pvp' && pvp && pvp.local)) return;
   if (e.clientX < tl.clientWidth * 0.45 && joy.id === null) {
     joy.id = e.pointerId; joy.ox = e.clientX; joy.oy = e.clientY; joy.active = true; joy.x = joy.y = 0;
     joyBase.style.transform = 'translate(' + (e.clientX - 60) + 'px,' + (e.clientY - 60) + 'px)'; joyBase.hidden = false;
@@ -3350,7 +3386,7 @@ tl.addEventListener('pointermove', (e) => {
     if (m > R) { dx *= R / m; dy *= R / m; }
     joy.x = dx / R; joy.y = dy / R; joyKnob.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
   } else if (e.pointerId === look.id) {
-    yaw -= (e.clientX - look.x) * 0.0065; pitch = clamp(pitch - (e.clientY - look.y) * 0.005, PMIN, PMAX);
+    touchLook(e.clientX - look.x, e.clientY - look.y);
     look.x = e.clientX; look.y = e.clientY;
   }
 });
@@ -3359,9 +3395,15 @@ const endTouch = (e) => {
   if (e.pointerId === look.id) look.id = null;
 };
 tl.addEventListener('pointerup', endTouch); tl.addEventListener('pointercancel', endTouch);
-const tFire = $('tFire');
-tFire.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); initAudio(); firing = true; tFire.classList.add('on'); try { tFire.setPointerCapture(e.pointerId); } catch (_) {} });
-['pointerup', 'pointercancel'].forEach(t => tFire.addEventListener(t, () => { firing = false; tFire.classList.remove('on'); }));
+// FIRE doubles as an aim pad: hold it to shoot and slide the same thumb to aim
+const tFire = $('tFire'), fireAim = { id: null, x: 0, y: 0 };
+tFire.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); initAudio(); firing = true; tFire.classList.add('on'); fireAim.id = e.pointerId; fireAim.x = e.clientX; fireAim.y = e.clientY; try { tFire.setPointerCapture(e.pointerId); } catch (_) {} });
+tFire.addEventListener('pointermove', (e) => {
+  if (e.pointerId !== fireAim.id) return;
+  touchLook(e.clientX - fireAim.x, e.clientY - fireAim.y);
+  fireAim.x = e.clientX; fireAim.y = e.clientY;
+});
+['pointerup', 'pointercancel'].forEach(t => tFire.addEventListener(t, () => { firing = false; fireAim.id = null; tFire.classList.remove('on'); }));
 $('tJump').addEventListener('pointerdown', (e) => { e.preventDefault(); jumpQueued = true; });
 $('tReload').addEventListener('pointerdown', (e) => { e.preventDefault(); startReload(); });
 $('tPause').addEventListener('click', () => pause());
@@ -3954,6 +3996,23 @@ function pvpUpdatePickups(dt){
       k.bob += dt * 3; if (k.landed) o.position.y = k.rest + Math.abs(Math.sin(k.bob)) * 0.15 + 0.001;
       o.userData.core.rotation.y += dt * 2; o.userData.ring.rotation.x = Math.PI / 2 + Math.sin(k.bob) * 0.4; o.userData.ring.rotation.y += dt * 1.5;
     } else o.rotation.y += dt * (k.kind === 'crate' ? 0.6 : 2.5);
+    // magnetic acorns: the TV / host moves them toward their player; the online guest eases to the host's spot
+    k.age = (k.age || 0) + dt;
+    if (k.to !== undefined && auth && pvp.phase === 'play' && k.age > 0.45) {
+      let f = pvp.fighters[k.to];
+      if (!f || f.dead) { let bd = Infinity; for (const g of pvp.fighters) { if (g.dead) continue; const dd = Math.hypot(g.pos.x - o.position.x, g.pos.z - o.position.z); if (dd < bd) { bd = dd; f = g; } } }
+      if (f && !f.dead) {
+        k.magT = (k.magT || 0) + dt;
+        pickDir.set(f.pos.x - o.position.x, f.pos.y + 0.7 - o.position.y, f.pos.z - o.position.z);
+        const d = pickDir.length(), sp = Math.min(16, 1.4 + k.magT * 3.2) * dt;
+        if (d > 0.001) o.position.addScaledVector(pickDir.normalize(), Math.min(sp, d));
+        k.x = o.position.x; k.z = o.position.z; k.landed = true;
+        if (Math.random() < dt * 10) emit(o.position, pickDir.set(rand(-0.3, 0.3), rand(0.2, 0.6), rand(-0.3, 0.3)), k.kind === 'golden' ? 0xffd23f : 0xffe7a8, 0.04, 0.35, 0, 2);
+      }
+    } else if (!auth && k.tx !== undefined) {
+      o.position.x = damp(o.position.x, k.tx, 12, dt); o.position.z = damp(o.position.z, k.tz, 12, dt);
+      if (Math.hypot(k.tx - k.x, k.tz - k.z) > 0.05) { o.position.y = damp(o.position.y, k.rest + 0.3, 6, dt); k.landed = true; }
+    }
     if (pvp.phase !== 'play' || o.position.y > 3) continue;
     for (const f of pvp.fighters) {
       if (f.dead) continue;
@@ -4069,10 +4128,12 @@ function netRead(dt){
   else for (const e of evs) { const s = +(e && e.s) || 0; if (s > pvp.lastSeq) { pvp.lastSeq = s; handleEv(e, remote); } }
   if (pvp.role === 'guest' && Array.isArray(pr.pk)) {
     const ids = new Set();
-    for (const a of pr.pk.slice(0, 16)) {
+    for (const a of pr.pk.slice(0, 32)) {
       if (!Array.isArray(a)) continue;
       const id = +a[0]; ids.add(id);
-      if (!pvp.pk.find(k => k.id === id) && !pvp.gone.has(id)) pvpAddPickup(id, PKINDS[a[1]] || 'acorn', PKEYS[a[4]] || PKEYS[0], +a[2] || 0, +a[3] || 0, false);
+      const have = pvp.pk.find(k => k.id === id);
+      if (have) { have.tx = +a[2] || 0; have.tz = +a[3] || 0; }
+      else if (!pvp.gone.has(id)) pvpAddPickup(id, PKINDS[a[1]] || 'acorn', PKEYS[a[4]] || PKEYS[0], +a[2] || 0, +a[3] || 0, false);
     }
     for (const k of pvp.pk.slice()) if (!ids.has(k.id)) pvpRemovePickup(k);
   }
@@ -4311,11 +4372,13 @@ function coopHurt(f, d, src){
   applyDamage(f, d, src ? { pos: src } : null);
 }
 // Kill drops become shared pickups; the TV or the host decides who grabs them
-function coopDrop(p, kind){
+function coopDrop(p, kind, shooter){
   if (pvp.mode === 'online' && pvp.role !== 'host') return;
   const a = rand(0, TAU), r = rand(0.4, 1.6);
   const lim = ARENA - 2, x = clamp(p.x + Math.cos(a) * r, -lim, lim), z = clamp(p.z + Math.sin(a) * r, -lim, lim);
   pvpAddPickup(pvp.pkId++, kind, kind === 'power' ? pick(PKEYS) : null, x, z, false);
+  // acorns home in on the player who got the kill (or whoever is closest)
+  if (kind === 'acorn' || kind === 'golden') pvp.pk[pvp.pk.length - 1].to = shooter ? shooter.idx : -1;
 }
 // the couch TV / online host: waves and enemies
 function coopTick(dt){
