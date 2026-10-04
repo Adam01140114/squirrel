@@ -203,6 +203,11 @@ body.touch .desk-only{display:none}
 .qr-code img,.qr-code canvas{width:168px;height:168px}
 .qr-label{font-family:var(--display);font-size:19px;color:var(--pc)}
 .qr-status{font-size:14px;color:var(--cream-dim)}
+.seat-list{display:grid;gap:8px;align-content:start}
+.seat{display:flex;justify-content:space-between;align-items:center;gap:10px;background:rgba(0,0,0,.24);border-left:4px solid var(--pc);border-radius:10px;padding:12px 14px}
+.seat b{font-family:var(--display);font-weight:400;font-size:17px;color:var(--pc)}
+.seat span{font-size:14px;color:var(--cream-dim)}
+.seat span.ok{color:var(--leaf);font-weight:600}
 .qr-status.ok{color:var(--leaf);font-weight:600}
 .qr-link{display:flex;gap:6px;align-items:center;width:100%;min-width:0}
 .qr-link code{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;background:rgba(0,0,0,.3);padding:7px 8px;border-radius:6px;user-select:text;-webkit-user-select:text}
@@ -590,7 +595,7 @@ const $ = (id) => document.getElementById(id);
 // ---------------------------------------------------------------- versus: shared bits + phone controller
 const ART_URL = 'https://claude.ai/artifact/EGiCRX7DBnTHi5LrhiRFy1';
 const HASH = (location.hash || '').replace(/^#/, '');
-const VS_LINK = /^vs-([a-z0-9]{4,10})-(p[1-4]|join)$/.exec(HASH);
+const VS_LINK = /^vs-([a-z0-9]{4,10})-(p[1-4]|pad|join)$/.exec(HASH);
 const PALS = [
   { name: 'Red', fur: 0xc8692a, light: 0xe09a55, dark: 0x8a4318, cream: 0xf6e2bf, band: 0xd8342c, css: '#f08a24' },
   { name: 'Gray', fur: 0x8d9099, light: 0xc9ccd3, dark: 0x555861, cream: 0xeef0f2, band: 0x2f6fd0, css: '#6fb7ff' },
@@ -788,17 +793,22 @@ function leaveRoom(r){
 }
 function peersFor(r, code){ try { return r.peers().filter(p => !p.sameTab && p.presence && p.presence.code === code); } catch (e) { return []; } }
 
-if (VS_LINK && VS_LINK[2] !== 'join') { runController(VS_LINK[1], +VS_LINK[2].slice(1)); return; }
+if (VS_LINK && VS_LINK[2] !== 'join') { runController(VS_LINK[1], VS_LINK[2] === 'pad' ? 0 : +VS_LINK[2].slice(1)); return; }
 
+// slot 0: the shared couch link; the TV gives this phone a player number in the order phones join
 function runController(code, slot){
-  const pal = PALS[slot - 1];
+  let pal = PALS[(slot || 1) - 1];
+  // this phone's id for the TV's seating; kept for the tab's life so a reload keeps the same player number
+  let pid = '';
+  try { pid = sessionStorage.getItem('sqc-pid-' + code) || ''; } catch (e) {}
+  if (!/^[a-z0-9]{8,16}$/.test(pid)) { pid = Math.random().toString(36).slice(2, 12).padEnd(10, '0'); try { sessionStorage.setItem('sqc-pid-' + code, pid); } catch (e) {} }
   const cl = (v, a, b) => Math.max(a, Math.min(b, v));
   ['menu', 'hud', 'loading', 'stage', 'touch'].forEach(id => { const e = $(id); if (e) e.remove(); });
   document.body.classList.add('pad-mode');
   const wrap = document.createElement('div'); wrap.id = 'pad'; wrap.style.setProperty('--pc', pal.css);
   wrap.innerHTML =
     '<div class="pad-zone" id="padZone"><span class="pad-lbl l">MOVE</span><span class="pad-lbl r">AIM</span></div>' +
-    '<div class="pad-top"><div class="pad-id"><b>P' + slot + '</b><span>' + pal.name + ' team</span></div>' +
+    '<div class="pad-top"><div class="pad-id"><b id="padNum"></b><span id="padTeam"></span></div>' +
     '<div class="pad-stat" id="padStat">Connecting to the game room…</div><div class="pad-link" id="padLink"></div>' +
     '<div class="pad-hud" id="padHud" hidden><span class="bar"><i id="padHp"></i></span><span id="padHpN">100</span><span id="padAmmo"></span><span id="padScore"></span></div></div>' +
     '<div class="pad-joy" id="padJoy" hidden><div class="pad-knob" id="padKnob"></div></div>' +
@@ -806,18 +816,25 @@ function runController(code, slot){
     '<button class="pad-btn rel" id="pbRel">R</button><button class="pad-btn swap" id="pbSwap">SWAP</button><button class="pad-btn cam" id="pbCam">CAM</button>' +
     '<div class="pad-rot" id="padRot">Turn your phone sideways for the best grip.</div>';
   $('app').appendChild(wrap);
-  const stat = (t) => { $('padStat').textContent = t; };
+  const stat = (t) => { if ($('padStat').textContent !== t) $('padStat').textContent = t; };
+  const paintSeat = () => {
+    wrap.style.setProperty('--pc', pal.css);
+    $('padNum').textContent = slot ? 'P' + slot : 'P?'; $('padTeam').textContent = slot ? pal.name + ' team' : 'Joining…';
+    ps.querySelector('h3').textContent = (slot ? 'P' + slot : 'You') + ': pick your fighter';
+    ps.querySelector('.pad-map button').hidden = slot !== 1;
+  };
   const I = { x: 0, y: 0, yaw: 0, pitch: -0.05, f: 0, s: 0, j: 0, r: 0, w: 0, c: 0, ch: 0, rdy: 0, mp: 0 };
   let room = null, lastHp = 100, lastPhase = '', lastDead = false, lastK = 0;
   const send = () => {
     if (!room) return;
-    room.presence({ role: 'pad', code, slot, i: { x: r2(I.x), y: r2(I.y), yaw: Math.round(I.yaw * 1000) / 1000, pitch: Math.round(I.pitch * 1000) / 1000, f: I.f, s: I.s, j: I.j, r: I.r, w: I.w, c: I.c, ch: I.ch, rdy: I.rdy, mp: I.mp } }).catch(() => {});
+    room.presence({ role: 'pad', code, slot, pid, i: { x: r2(I.x), y: r2(I.y), yaw: Math.round(I.yaw * 1000) / 1000, pitch: Math.round(I.pitch * 1000) / 1000, f: I.f, s: I.s, j: I.j, r: I.r, w: I.w, c: I.c, ch: I.ch, rdy: I.rdy, mp: I.mp } }).catch(() => {});
   };
   // fighter picker, shown while the TV is on the select screen
   const ps = document.createElement('div'); ps.className = 'pad-sel'; ps.hidden = true;
-  ps.innerHTML = '<h3>P' + slot + ': pick your fighter</h3><div class="pad-sel-grid"></div><div class="pad-map"><span></span>' + (slot === 1 ? '<button>Change map</button>' : '') + '</div><button class="pad-ready">Ready</button><div class="pad-other"></div>';
-  if (slot === 1) ps.querySelector('.pad-map button').addEventListener('click', () => { I.mp++; send(); });
+  ps.innerHTML = '<h3></h3><div class="pad-sel-grid"></div><div class="pad-map"><span></span><button>Change map</button></div><button class="pad-ready">Ready</button><div class="pad-other"></div>';
+  ps.querySelector('.pad-map button').addEventListener('click', () => { if (slot === 1) { I.mp++; send(); } });
   wrap.appendChild(ps);
+  paintSeat();
   const chBtns = CHARS.map((c, k) => {
     const b = document.createElement('button'); b.className = 'pad-ch'; b.style.setProperty('--sw', c.sw);
     b.innerHTML = '<i></i><span></span>'; b.querySelector('span').textContent = c.name;
@@ -872,6 +889,18 @@ function runController(code, slot){
     // How this phone reaches the TV: straight over the Wi-Fi, or through the server
     const lk = tv.direct === undefined ? '' : tv.direct ? '⚡ Direct to the TV' : '☁ Via the server';
     if ($('padLink').textContent !== lk) { $('padLink').textContent = lk; $('padLink').classList.toggle('on', !!tv.direct); }
+    // shared link: take the player number the TV gave this phone (or wait for one)
+    if (VS_LINK[2] === 'pad') {
+      const seats = tv.presence.seats && typeof tv.presence.seats === 'object' ? tv.presence.seats : {};
+      const k = Math.round(+seats[pid]) || 0, seat = k >= 1 && k <= 4 ? k : 0;
+      if (seat !== slot) { slot = seat; pal = PALS[(slot || 1) - 1]; lastHp = 100; lastDead = false; lastK = 0; paintSeat(); send(); }
+      if (!slot) {
+        const full = Array.isArray(tv.presence.full) && tv.presence.full.includes(pid);
+        stat(full ? 'This game already has four players. You can join when someone leaves.' : 'Connected. Getting your player number…');
+        $('padHud').hidden = true; ps.hidden = true;
+        return;
+      }
+    }
     const ph = tv.presence.phase, coop = !!tv.presence.coop, hudArr = Array.isArray(tv.presence.hud) ? tv.presence.hud : null;
     // this phone's line of the TV's report (co-op games only have the players who joined)
     const hud = hudArr ? (hudArr.find(h => h && h.slot === slot) || (hudArr[slot - 1] && hudArr[slot - 1].slot === undefined ? hudArr[slot - 1] : null)) : null;
@@ -4107,6 +4136,7 @@ function botThink(f, dt){
   }
 }
 function padRead(){
+  seatTick(pvp.r, pvp.code);
   const peers = peersFor(pvp.r, pvp.code);
   for (const f of pvp.fighters) {
     const slot = f.idx + 1;
@@ -4735,6 +4765,7 @@ function selAbort(msg){
   state = 'menu'; showLobby('Match ended', msg); $('lobbyCancel').textContent = 'Back to menu'; state = 'menu';
 }
 function selTick(dt){
+  if (sel && sel.mode === 'couch') seatTick(sel.r, sel.code);
   const S = sel; S.t += dt;
   const peers = peersFor(S.r, S.code);
   if (S.mode === 'couch') {
@@ -4810,7 +4841,7 @@ function selTick(dt){
     setClass(u.el, 'away', away); u.join.hidden = !away;
     if (away && !u.qrDone && S.base && window.QRCode) {
       u.qrDone = true;
-      try { new QRCode(u.qr, { text: S.base + '#vs-' + S.code + '-p' + (i + 1), width: 120, height: 120, colorDark: '#1b120b', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M }); } catch (e) {}
+      try { new QRCode(u.qr, { text: S.base + '#vs-' + S.code + '-pad', width: 120, height: 120, colorDark: '#1b120b', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M }); } catch (e) {}
     }
     const nm = CHARS[S.picks[i]].name; if (u.name.textContent !== nm) u.name.textContent = nm;
     if (S.mode === 'couch') { const hd = PALS[i].name + ' team · ' + (isBot ? BOT_LV[botLv].toLowerCase() + ' bot' : gpHas(i + 1, S.code) ? 'controller' : 'phone'), he = u.el.querySelector('.sel-head span'); if (he.textContent !== hd) he.textContent = hd; }
@@ -4872,8 +4903,16 @@ async function openLobby(mode, coop){
     $('lobbyLede').textContent = 'Scan the code with your phone. It becomes your controller, and the game starts on this screen as soon as it connects.';
     ticket.status = [qrCard('Your phone', PALS[0].css, base + '#vs-' + code + '-p1')];
   } else if (mode === 'couch') {
-    $('lobbyLede').textContent = 'Up to four players: each scans their own code, or presses A on a game controller. Fighter select opens as soon as someone is in; the others can still join there, and empty spots can be bots.' + (coop ? '' : ' Three or four players is a free-for-all.');
-    ticket.status = PALS.map((P, i) => qrCard('Player ' + (i + 1) + ' · ' + P.name, P.css, base + '#vs-' + code + '-p' + (i + 1)));
+    $('lobbyLede').textContent = 'Up to four players, all scanning the same code (or pressing A on a game controller). Player numbers go in the order people join: the first phone in is Player 1. Fighter select opens as soon as someone is in; the others can still join there, and empty spots can be bots.' + (coop ? '' : ' Three or four players is a free-for-all.');
+    const qs = qrCard('Everyone scans this', PALS[0].css, base + '#vs-' + code + '-pad');
+    qs.textContent = 'First to join is Player 1';
+    const list = document.createElement('div'); list.className = 'seat-list';
+    ticket.status = PALS.map((P, i) => {
+      const row = document.createElement('div'); row.className = 'seat'; row.style.setProperty('--pc', P.css);
+      row.innerHTML = '<b></b><span>Waiting…</span>'; row.querySelector('b').textContent = 'Player ' + (i + 1) + ' · ' + P.name;
+      list.appendChild(row); return row.querySelector('span');
+    });
+    $('lobbyQrs').appendChild(list);
   } else if (coop) {
     $('lobbyLede').textContent = 'Send this link to your teammate, or have them scan the code. You pick fighters as soon as they open it.';
     ticket.status = [qrCard('Join link', PALS[1].css, base + '#vs-' + code + '-join')];
@@ -4904,9 +4943,10 @@ function lobbyTick(dt){
     return;
   }
   if (L.mode === 'couch') {
+    seatTick(L.r, L.code);
     const pads = [1, 2, 3, 4].map(s => peers.find(p => p.presence.role === 'pad' && p.presence.slot === s));
     const has = pads.map((p, i) => !!p || gpHas(i + 1, L.code));
-    pads.forEach((p, i) => { const el = L.status[i]; const t = gpHas(i + 1, L.code) ? '🎮 Controller connected' : p ? (p.direct ? 'Phone connected ⚡ direct' : 'Phone connected') : 'Waiting for phone…'; if (el.textContent !== t) { el.textContent = t; el.classList.toggle('ok', has[i]); } });
+    pads.forEach((p, i) => { const el = L.status[i]; const t = gpHas(i + 1, L.code) ? '🎮 Controller' : p ? (p.direct ? 'Phone ⚡ direct' : 'Phone connected') : 'Waiting…'; if (el.textContent !== t) { el.textContent = t; el.classList.toggle('ok', has[i]); } });
     if (has.filter(Boolean).length >= 1) enterSelect('couch', 'tv', L.r, L.code, undefined, 0, undefined, L.coop, L.base);
   } else if (L.mode === 'online') {
     if (peers.some(p => p.presence.role === 'guest')) { L.status[0].textContent = L.coop ? 'Teammate joined' : 'Opponent joined'; L.status[0].classList.add('ok'); enterSelect('online', 'host', L.r, L.code, undefined, 0, undefined, L.coop); }
@@ -5069,12 +5109,43 @@ function gpHandle(P, dt){
   gpMenu(P);
   return false;
 }
+// Couch seating: phones that open the shared link get the lowest free player number,
+// in the order the TV first sees them. A seat is kept for 20 s if its phone drops out,
+// and a phone that reloads (same tab) gets its old seat back.
+const SEATS = { code: null, map: new Map(), order: 0, sent: '' };
+function seatTick(r, code){
+  if (!r) return;
+  if (SEATS.code !== code) { SEATS.code = code; SEATS.map = new Map(); SEATS.order = 0; SEATS.sent = ''; }
+  const now = performance.now(), peers = peersFor(r, code), HOLD = 20000;
+  const pads = peers.filter(p => p.presence.role === 'pad' && typeof p.presence.pid === 'string' && /^[a-z0-9]{8,16}$/.test(p.presence.pid));
+  pads.sort((a, b) => (a.peer < b.peer ? -1 : 1));
+  for (const p of pads) { const s = SEATS.map.get(p.presence.pid); if (s) s.seen = now; else SEATS.map.set(p.presence.pid, { slot: 0, seen: now, order: SEATS.order++ }); }
+  const held = new Set();
+  for (const s of SEATS.map.values()) {
+    if (s.slot && now - s.seen >= HOLD) s.slot = 0;
+    if (s.slot) { if (held.has(s.slot)) s.slot = 0; else held.add(s.slot); }
+  }
+  // phones on an old numbered link, and game controllers, keep their spots
+  for (const p of peers) if (p.presence.role === 'pad' && !p.presence.pid && p.presence.slot >= 1 && p.presence.slot <= 4) held.add(p.presence.slot);
+  for (let k = 1; k <= 4; k++) if (GP.code === code && GP.slots[k] !== undefined) held.add(k);
+  const full = [];
+  [...SEATS.map.entries()].filter(([, s]) => !s.slot && now - s.seen < 2000).sort((a, b) => a[1].order - b[1].order).forEach(([pid, s]) => {
+    let k = 1; while (k <= 4 && held.has(k)) k++;
+    if (k <= 4) { s.slot = k; held.add(k); } else full.push(pid);
+  });
+  for (const [pid, s] of SEATS.map) if (!s.slot && now - s.seen > 120000) SEATS.map.delete(pid);
+  const seats = {};
+  for (const [pid, s] of SEATS.map) if (s.slot) seats[pid] = s.slot;
+  const msg = JSON.stringify([seats, full]);
+  if (msg !== SEATS.sent) { SEATS.sent = msg; r.presence({ seats, full }).catch(() => {}); }
+}
+function seatTaken(k, code){ if (SEATS.code !== code) return false; for (const s of SEATS.map.values()) if (s.slot === k) return true; return false; }
 // a controller takes the first player spot no phone or controller has
 function gpClaim(idx, r, code){
   if (GP.code !== code) { GP.code = code; GP.slots = {}; GP.sel = {}; }
   const peers = peersFor(r, code);
   for (let k = 1; k <= 4; k++) {
-    if (GP.slots[k] !== undefined || peers.some(p => p.presence.role === 'pad' && p.presence.slot === k)) continue;
+    if (GP.slots[k] !== undefined || seatTaken(k, code) || peers.some(p => p.presence.role === 'pad' && p.presence.slot === k)) continue;
     GP.slots[k] = idx; GP.sel[k] = { ch: sel && sel.picks[k - 1] !== undefined ? sel.picks[k - 1] : 0, rdy: 0 };
     sfx.pickup(true); gpNote('🎮 Controller is P' + k + ' (' + PALS[k - 1].name + ')');
     return k;
