@@ -246,6 +246,8 @@ body.touch .desk-only{display:none}
 .pv-msg{position:absolute;left:16px;right:16px;top:60%;text-align:center;font-family:var(--display);font-size:clamp(18px,3vw,30px);text-shadow:0 3px 0 rgba(0,0,0,.45)}
 .pv-dmg{position:absolute;inset:0;opacity:0;background:radial-gradient(ellipse at center,rgba(255,60,40,0) 45%,rgba(200,20,10,.55) 100%)}
 .pv-shield{position:absolute;inset:0;opacity:0;background:radial-gradient(ellipse at center,rgba(77,184,255,0) 55%,rgba(77,184,255,.35) 100%)}
+.pv-net{position:absolute;right:16px;top:calc(14px + env(safe-area-inset-top,0px));font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;background:var(--panel);color:var(--cream-dim);z-index:2}
+.pv-net.on{color:var(--leaf)}
 .pv-score{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);display:flex;gap:12px;align-items:baseline;background:var(--panel);padding:6px 18px;border-radius:999px;font-family:var(--display);font-size:24px;white-space:nowrap;z-index:2}
 .pv-score small{font-family:var(--body);font-size:12px;color:var(--cream-dim)}
 #pvpHud.online .pv-score{top:calc(60px + env(safe-area-inset-top,0px))}
@@ -529,6 +531,7 @@ body.pad-mode{background:#1b120b}
     <div class="pv" id="pv3"></div>
     <div class="pv-map" id="pvMap"><canvas id="pvMapCv"></canvas><span>Meadow map</span></div>
     <div class="pv-score" id="pvScore"></div>
+    <div class="pv-net" id="pvNet" hidden></div>
     <div class="banner" id="pvBanner"><div class="main" id="pvBannerMain"></div><div class="sub" id="pvBannerSub"></div></div>
   </div>
 
@@ -603,15 +606,19 @@ function useRoom(){
 
 // ---------------------------------------------------------------- versus: rooms on our own server (server.js)
 // The same interface as Claude's room: join(name) -> { presence(patch), peers(), onPeers(cb), leave() }.
-// Presences go through the server. In couch mode each phone also opens a WebRTC link
-// straight to the TV over their Wi-Fi and sends its presence that way; the server copy
-// then only goes out twice a second (for anyone joining later). Every presence carries
-// a counter, so whichever way it arrives, an older one never replaces a newer one.
-const ICE = [{ urls: 'stun:stun.l.google.com:19302' }];
+// Presences go through the server until a direct WebRTC link opens: each couch phone
+// links straight to the TV over the Wi-Fi, and an online guest links straight to the
+// host over the internet. Once every peer is direct, the server copy only goes out twice
+// a second (for anyone joining later). The direct channel is unreliable and unordered, so
+// a lost packet never holds up newer ones; the latest presence is re-sent every 100 ms to
+// cover losses. Every presence carries a counter, so an older one never replaces a newer one.
+// Networks that can't link directly (some carrier or office NATs) stay on the server.
+const ICE = [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }, { urls: 'stun:stun.cloudflare.com:3478' }];
+const DIRECT_TO = { pad: 'tv', guest: 'host' }; // who opens the direct link, and to whom
 let netBase = null;
 function netRooms(){
   if (netBase) return netBase;
-  const socket = window.io({ reconnectionDelayMax: 2000 });
+  const socket = window.io({ reconnectionDelayMax: 2000, transports: ['websocket', 'polling'] });
   const handles = new Map();
   socket.on('room:peer', (m) => { const h = handles.get(m.name); if (h) h._peer(m.peer, m.presence, m.q, 'server'); });
   socket.on('room:gone', (m) => { const h = handles.get(m.name); if (h) h._gone(m.peer); });
@@ -624,7 +631,7 @@ function netRooms(){
 
   function openRoom(name){
     const peers = new Map();     // socket id -> { peer, presence, q, link, retryAt }
-    let mine = {}, q = 0, left = false, lastServer = 0, serverTimer = null;
+    let mine = {}, q = 0, left = false, lastServer = 0, serverTimer = null, lastDirect = 0;
     const listeners = [];
     const notify = () => { for (const cb of listeners) { try { cb(); } catch (e) {} } };
     const entry = (id) => { let p = peers.get(id); if (!p) { p = { peer: id, presence: null, q: 0, link: null, retryAt: 0 }; peers.set(id, p); } return p; };
@@ -635,12 +642,7 @@ function netRooms(){
         if (left || !patch) return Promise.resolve();
         for (const k in patch) { if (patch[k] === null || patch[k] === undefined) delete mine[k]; else mine[k] = patch[k]; }
         q++;
-        const msg = JSON.stringify({ t: 'p', presence: mine, q });
-        let allDirect = peers.size > 0;
-        for (const p of peers.values()) {
-          if (p.link && p.link.open) { try { p.link.ch.send(msg); } catch (e) { allDirect = false; } }
-          else allDirect = false;
-        }
+        const allDirect = sendDirect();
         if (!allDirect) toServer();
         else if (Date.now() - lastServer > 500) toServer();
         else if (!serverTimer) serverTimer = setTimeout(toServer, 500);
@@ -650,7 +652,7 @@ function netRooms(){
       peers(){ return [...peers.values()].filter(p => p.presence).map(p => ({ peer: p.peer, presence: p.presence, sameTab: false, direct: !!(p.link && p.link.open) })); },
       onPeers(cb){ listeners.push(cb); return () => { const i = listeners.indexOf(cb); if (i >= 0) listeners.splice(i, 1); }; },
       leave(){
-        left = true; clearTimeout(serverTimer);
+        left = true; clearTimeout(serverTimer); clearInterval(resendTimer);
         for (const p of peers.values()) closeLink(p);
         peers.clear(); handles.delete(name);
         socket.emit('room:leave', { name });
@@ -689,11 +691,25 @@ function netRooms(){
       }
     };
     const signal = (p, data) => socket.emit('room:signal', { name, to: p.peer, data });
-    // Couch: a phone opens the direct link to the TV
-    function connect(){
-      if (left || mine.role !== 'pad' || !window.RTCPeerConnection) return;
+    // my presence to every peer with an open direct link; true when all of them have one
+    function sendDirect(){
+      const msg = JSON.stringify({ t: 'p', presence: mine, q });
+      let all = peers.size > 0;
       for (const p of peers.values()) {
-        if (p.presence && p.presence.role === 'tv' && !p.link && Date.now() >= p.retryAt) {
+        if (p.link && p.link.open) { try { p.link.ch.send(msg); } catch (e) { all = false; } }
+        else all = false;
+      }
+      lastDirect = Date.now();
+      return all;
+    }
+    // the direct channel can drop packets: repeat the latest presence if nothing went out for 100 ms
+    const resendTimer = setInterval(() => { if (!left && q > 0 && Date.now() - lastDirect > 100) sendDirect(); }, 100);
+    // A couch phone links to the TV; an online guest links to the host
+    function connect(){
+      const want = DIRECT_TO[mine.role];
+      if (left || !want || !window.RTCPeerConnection) return;
+      for (const p of peers.values()) {
+        if (p.presence && p.presence.role === want && !p.link && Date.now() >= p.retryAt) {
           const link = openLink(p, true);
           link.pc.createOffer().then(o => link.pc.setLocalDescription(o))
             .then(() => signal(p, { d: link.pc.localDescription })).catch(() => dropLink(p));
@@ -705,27 +721,32 @@ function netRooms(){
       const link = p.link = { pc, ch: null, open: false, chain: Promise.resolve() };
       pc.onicecandidate = (e) => { if (e.candidate && p.link === link) signal(p, { c: e.candidate }); };
       pc.onconnectionstatechange = () => { if (pc.connectionState === 'failed' && p.link === link) dropLink(p); };
+      // a link that hasn't opened in 8 s isn't going to: carry on through the server
+      setTimeout(() => { if (p.link === link && !link.open) dropLink(p); }, 8000);
       const useChannel = (ch) => {
         link.ch = ch;
         ch.onopen = () => {
           if (p.link !== link) return;
-          link.open = true;
+          link.open = true; p.fails = 0;
           if (Object.keys(mine).length) { try { ch.send(JSON.stringify({ t: 'p', presence: mine, q })); } catch (e) {} }
           notify();
         };
         ch.onmessage = (m) => { try { const d = JSON.parse(m.data); if (d.t === 'p') h._peer(p.peer, d.presence, +d.q || 0, 'direct'); } catch (e) {} };
         ch.onclose = () => { if (p.link === link) dropLink(p); };
       };
-      if (offerer) useChannel(pc.createDataChannel('presence', { ordered: true }));
+      if (offerer) useChannel(pc.createDataChannel('presence', { ordered: false, maxRetransmits: 0 }));
       else pc.ondatachannel = (e) => useChannel(e.channel);
       return link;
     }
-    // Lost or never opened: back to the server, try again in a few seconds
+    // Lost or never opened: back to the server, try again in a few seconds (less often after repeated failures)
     function dropLink(p){
       const was = p.link && p.link.open;
-      closeLink(p); p.retryAt = Date.now() + 4000;
+      closeLink(p);
+      if (!was) p.fails = (p.fails || 0) + 1;
+      const wait = (p.fails || 0) >= 3 ? 30000 : 4000;
+      p.retryAt = Date.now() + wait;
       if (was) { toServer(); notify(); }
-      setTimeout(connect, 4100);
+      setTimeout(connect, wait + 100);
     }
     function closeLink(p){
       if (!p.link) return;
@@ -4019,6 +4040,12 @@ function handleEv(e, from){
 function netRead(dt){
   const want = pvp.role === 'host' ? 'guest' : 'host';
   const p = peersFor(pvp.r, pvp.code).find(q => q.presence.role === want);
+  // ⚡ direct link to the other player, or ☁ through the server (only our own server reports this)
+  const nb = $('pvNet');
+  if (nb) {
+    const t = !p || p.direct === undefined ? '' : p.direct ? '⚡ Direct' : '☁ Via server';
+    if (nb.textContent !== t) { nb.textContent = t; nb.hidden = !t; nb.classList.toggle('on', !!(p && p.direct)); }
+  }
   if (!p) {
     pvp.missing += dt;
     if (pvp.missing > 6 && pvp.phase !== 'over') { if (pvp.coop) coopOver('left'); else pvpOver(pvp.local.idx, 'left'); }
