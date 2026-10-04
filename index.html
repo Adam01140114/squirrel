@@ -123,9 +123,6 @@ body.playing #stage canvas{cursor:none}
 .title span{display:block;color:var(--cream);text-shadow:0 5px 0 #22140a}
 .title span + span{color:var(--acorn);text-shadow:0 5px 0 var(--acorn-deep)}
 .lede{margin:0;font-size:16px;line-height:1.45;color:var(--cream);max-width:42ch}
-.controls{display:grid;grid-template-columns:auto 1fr;gap:7px 12px;align-items:center;font-size:14px;color:var(--cream-dim);margin:0}
-.controls dt{display:flex;gap:4px;justify-content:flex-end}
-.controls dd{margin:0}
 kbd{font-family:var(--body);font-weight:600;font-size:12px;min-width:20px;text-align:center;padding:3px 7px;border-radius:6px;background:var(--cream);color:var(--ink);box-shadow:0 2px 0 #b9a888}
 .touch-only{display:none}
 body.touch .touch-only{display:block}
@@ -419,24 +416,6 @@ body.pad-mode{background:#1b120b}
     <div class="placard">
       <h1 class="title"><span>Squirrel</span><span>Commando</span></h1>
       <p class="lede">Garden gnomes are raiding the Great Oak. Guard the nut stash, bonk every gnome, and keep the crows off your tail. Grab supply crates for new weapons and glowing orbs for power-ups.</p>
-      <dl class="controls desk-only">
-        <dt><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></dt><dd>Move</dd>
-        <dt><kbd>Mouse</kbd></dt><dd>Aim, click or hold to shoot</dd>
-        <dt><kbd>Space</kbd></dt><dd>Jump, press again in the air to double jump</dd>
-        <dt><kbd>Shift</kbd></dt><dd>Sprint</dd>
-        <dt><kbd>R</kbd></dt><dd>Reload</dd>
-        <dt><kbd>1</kbd><kbd>4</kbd><kbd>Q</kbd></dt><dd>Switch weapon (or scroll wheel)</dd>
-        <dt><kbd>Right click</kbd></dt><dd>Change camera: shoulder, wide, first person</dd>
-        <dt><kbd>Esc</kbd></dt><dd>Pause</dd>
-      </dl>
-      <dl class="controls touch-only">
-        <dt><kbd>Left thumb</kbd></dt><dd>Move</dd>
-        <dt><kbd>Right thumb</kbd></dt><dd>Drag to aim</dd>
-        <dt><kbd>FIRE</kbd></dt><dd>Hold to shoot</dd>
-        <dt><kbd>JUMP</kbd></dt><dd>Tap twice to double jump</dd>
-        <dt><kbd>SWAP</kbd></dt><dd>Next weapon</dd>
-        <dt><kbd>CAM</kbd></dt><dd>Change camera</dd>
-      </dl>
       <div class="row">
         <button class="btn" id="playBtn">Solo</button>
         <button class="btn ghost" id="coopBtn">Co-op</button>
