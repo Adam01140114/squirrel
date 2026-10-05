@@ -340,6 +340,21 @@ body.pad-mode{background:#1b120b}
 .pad-btn.jump{width:min(19vmin,84px);height:min(19vmin,84px);right:calc(min(30vmin,132px) + 36px);bottom:calc(18px + env(safe-area-inset-bottom,0px));font-size:14px}
 .pad-btn.rel{width:min(15vmin,62px);height:min(15vmin,62px);right:calc(min(30vmin,132px) + 30px);bottom:calc(min(19vmin,84px) + 34px + env(safe-area-inset-bottom,0px));font-size:16px}
 .pad-btn.swap{width:min(15vmin,62px);height:min(15vmin,62px);right:34px;bottom:calc(min(30vmin,132px) + 38px + env(safe-area-inset-bottom,0px));font-size:12px}
+.pad-btn.pause{width:50px;height:44px;border-radius:10px;right:74px;top:calc(64px + env(safe-area-inset-top,0px));font-size:14px}
+.pad-menu{position:absolute;inset:0;z-index:6;background:rgba(27,18,11,.95);display:grid;align-content:center;justify-items:center;gap:12px;padding:16px;padding-block:calc(16px + env(safe-area-inset-top,0px)) calc(16px + env(safe-area-inset-bottom,0px));overflow:auto;box-sizing:border-box;text-align:center}
+.pad-menu h3{margin:0;font-family:var(--display);font-weight:400;font-size:28px;color:var(--pc)}
+.pad-menu p{margin:0;max-width:46ch;font-size:14px;line-height:1.4;color:var(--cream-dim)}
+.pad-menu-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin:0;width:min(100%,560px)}
+.pad-menu-stats div{background:rgba(0,0,0,.25);border-radius:10px;padding:8px 10px}
+.pad-menu-stats dt{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--cream-dim)}
+.pad-menu-stats dd{margin:2px 0 0;font-family:var(--display);font-size:20px}
+.pad-menu-btns{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;width:min(100%,640px)}
+.pad-menu-btn{display:grid;gap:4px;align-content:center;min-height:56px;padding:12px 14px;border-radius:12px;border:2px solid rgba(255,243,220,.3);background:rgba(255,243,220,.07);color:var(--cream);font-family:var(--body);text-align:center;touch-action:manipulation}
+.pad-menu-btn b{font-family:var(--display);font-weight:400;font-size:18px}
+.pad-menu-btn span{font-size:13px;line-height:1.35;color:var(--cream-dim)}
+.pad-menu-btn.main{border-color:var(--pc)}
+.pad-menu-btn.on{background:var(--pc);color:var(--ink)}
+.pad-menu-btn.on span{color:var(--ink)}
 .pad-btn.cam{width:50px;height:44px;border-radius:10px;right:16px;top:calc(64px + env(safe-area-inset-top,0px));font-size:12px}
 .pad-rot{position:absolute;left:16px;bottom:calc(14px + env(safe-area-inset-bottom,0px));font-size:12px;color:var(--cream-dim);max-width:40%}
 @media (orientation:landscape){.pad-rot{display:none}}
@@ -832,7 +847,7 @@ function runController(code, slot){
     '<div class="pad-hud" id="padHud" hidden><span class="bar"><i id="padHp"></i></span><span id="padHpN">100</span><span id="padAmmo"></span><span id="padScore"></span></div></div>' +
     '<div class="pad-joy" id="padJoy" hidden><div class="pad-knob" id="padKnob"></div></div>' +
     '<button class="pad-btn fire" id="pbFire">FIRE</button><button class="pad-btn jump" id="pbJump">JUMP</button>' +
-    '<button class="pad-btn rel" id="pbRel">R</button><button class="pad-btn swap" id="pbSwap">SWAP</button><button class="pad-btn cam" id="pbCam">CAM</button>' +
+    '<button class="pad-btn rel" id="pbRel">R</button><button class="pad-btn swap" id="pbSwap">SWAP</button><button class="pad-btn cam" id="pbCam">CAM</button><button class="pad-btn pause" id="pbPause" aria-label="Pause">II</button>' +
     '<div class="pad-rot" id="padRot">Turn your phone sideways for the best grip.</div>';
   $('app').appendChild(wrap);
   const stat = (t) => { if ($('padStat').textContent !== t) $('padStat').textContent = t; };
@@ -842,11 +857,11 @@ function runController(code, slot){
     ps.querySelector('h3').textContent = (slot ? 'P' + slot : 'You') + ': pick your fighter';
     ps.querySelector('.pad-map button').hidden = slot !== 1;
   };
-  const I = { x: 0, y: 0, yaw: 0, pitch: -0.05, f: 0, s: 0, j: 0, r: 0, w: 0, c: 0, ch: 0, rdy: 0, mp: 0 };
+  const I = { x: 0, y: 0, yaw: 0, pitch: -0.05, f: 0, s: 0, j: 0, r: 0, w: 0, c: 0, ch: 0, rdy: 0, mp: 0, ps: 0, mn: null };
   let room = null, lastHp = 100, lastPhase = '', lastDead = false, lastK = 0;
   const send = () => {
     if (!room) return;
-    room.presence({ role: 'pad', code, slot, pid, i: { x: r2(I.x), y: r2(I.y), yaw: Math.round(I.yaw * 1000) / 1000, pitch: Math.round(I.pitch * 1000) / 1000, f: I.f, s: I.s, j: I.j, r: I.r, w: I.w, c: I.c, ch: I.ch, rdy: I.rdy, mp: I.mp } }).catch(() => {});
+    room.presence({ role: 'pad', code, slot, pid, i: { x: r2(I.x), y: r2(I.y), yaw: Math.round(I.yaw * 1000) / 1000, pitch: Math.round(I.pitch * 1000) / 1000, f: I.f, s: I.s, j: I.j, r: I.r, w: I.w, c: I.c, ch: I.ch, rdy: I.rdy, mp: I.mp, ps: I.ps, mn: I.mn } }).catch(() => {});
   };
   // fighter picker, shown while the TV is on the select screen
   const ps = document.createElement('div'); ps.className = 'pad-sel'; ps.hidden = true;
@@ -903,7 +918,35 @@ function runController(code, slot){
   });
   ['pointerup', 'pointercancel'].forEach(t => fire.addEventListener(t, () => { I.f = 0; fireAim.id = null; fire.classList.remove('on'); send(); }));
   const tap = (id, key) => { const b = $(id); b.addEventListener('pointerdown', (e) => { e.preventDefault(); I[key]++; b.classList.add('on'); setTimeout(() => b.classList.remove('on'), 120); send(); }); };
-  tap('pbJump', 'j'); tap('pbRel', 'r'); tap('pbSwap', 'w'); tap('pbCam', 'c');
+  tap('pbJump', 'j'); tap('pbRel', 'r'); tap('pbSwap', 'w'); tap('pbCam', 'c'); tap('pbPause', 'ps');
+  // whatever menu is open on the TV, shown here to read and tap
+  const pm = document.createElement('div'); pm.className = 'pad-menu'; pm.hidden = true;
+  pm.innerHTML = '<h3></h3><p></p><dl class="pad-menu-stats"></dl><div class="pad-menu-btns"></div>';
+  wrap.appendChild(pm);
+  let menuSig = '', menuPresses = 0;
+  const paintMenu = (menu) => {
+    const sig = JSON.stringify(menu);
+    if (sig === menuSig) return;
+    menuSig = sig;
+    pm.querySelector('h3').textContent = String(menu.t || 'Menu');
+    pm.querySelector('p').textContent = String(menu.d || ''); pm.querySelector('p').hidden = !menu.d;
+    const dl = pm.querySelector('dl'); dl.innerHTML = '';
+    (Array.isArray(menu.st) ? menu.st : []).slice(0, 8).forEach(row => {
+      if (!Array.isArray(row)) return;
+      const d = document.createElement('div'), dt = document.createElement('dt'), dd = document.createElement('dd');
+      dt.textContent = String(row[0]); dd.textContent = String(row[1]); d.append(dt, dd); dl.appendChild(d);
+    });
+    dl.hidden = !dl.children.length;
+    const box = pm.querySelector('.pad-menu-btns'); box.innerHTML = '';
+    menu.b.slice(0, 8).forEach((x, k) => {
+      const b = document.createElement('button'); b.className = 'pad-menu-btn' + (k === 0 ? ' main' : '');
+      const l = document.createElement('b'); l.textContent = String((x && x.l) || '');
+      b.appendChild(l);
+      if (x && x.s) { const sp = document.createElement('span'); sp.textContent = String(x.s); b.appendChild(sp); }
+      b.addEventListener('click', () => { menuPresses++; I.mn = { k: String(menu.k), b: k, n: menuPresses }; b.classList.add('on'); send(); });
+      box.appendChild(b);
+    });
+  };
   wrap.addEventListener('contextmenu', (e) => e.preventDefault());
 
   const readTv = () => {
@@ -932,6 +975,9 @@ function runController(code, slot){
     if (ph === 'select' && lastPhase !== 'select') { I.rdy = 0; paintSel(); send(); }
     lastPhase = ph;
     ps.hidden = ph !== 'select';
+    const menu = tv.presence.menu;
+    if (ph !== 'select' && menu && typeof menu === 'object' && Array.isArray(menu.b) && menu.b.length) { paintMenu(menu); pm.hidden = false; }
+    else { pm.hidden = true; menuSig = ''; }
     if (ph === 'select') {
       const picks = tv.presence.picks, rd = tv.presence.ready, inn = tv.presence.in;
       const others = Array.isArray(inn) ? inn.map((ok, k) => ok && k !== slot - 1 ? k : -1).filter(k => k >= 0) : [2 - slot];
@@ -944,8 +990,8 @@ function runController(code, slot){
     if (me.length) stat('Another phone is also using P' + slot + '. Close it, or scan the other code.');
     else if (ph === 'select') stat('Pick your fighter.');
     else if (tv.presence.solo && ph === 'lobby') stat('Connected. Starting on the TV…');
-    else if (ph === 'paused') stat('Paused. Tap JUMP to carry on.');
-    else if (ph === 'perk') stat('Wave cleared! WEAPON moves between the upgrades on the TV, JUMP picks one.');
+    else if (ph === 'paused') stat('Paused. Pick an option below.');
+    else if (ph === 'perk') stat('Wave cleared! Tap an upgrade below.');
     else if (tv.presence.solo && ph === 'over') stat('Game over. Tap JUMP to play again.');
     else if (ph === 'lobby') stat(coop ? 'You are in. Waiting for a teammate to scan in.' : 'You are in. Waiting for another player to join.');
     else if (ph === 'countdown') stat('Get ready…');
@@ -4480,7 +4526,11 @@ function padRead(){
     const i = p.presence.i && typeof p.presence.i === 'object' ? p.presence.i : {};
     const n = (v) => (typeof v === 'number' && isFinite(v)) ? v : 0;
     f.in.x = clamp(n(i.x), -1, 1); f.in.y = clamp(n(i.y), -1, 1); f.in.fire = !!i.f; f.in.sprint = !!i.s;
-    if (!f.last || f.last.peer !== p.peer) { f.last = { peer: p.peer, j: n(i.j), r: n(i.r), w: n(i.w), c: n(i.c) }; f.yawOff = f.yaw - n(i.yaw); }
+    const mnN = i.mn && typeof i.mn === 'object' ? n(i.mn.n) : 0;
+    if (!f.last || f.last.peer !== p.peer) { f.last = { peer: p.peer, j: n(i.j), r: n(i.r), w: n(i.w), c: n(i.c), ps: n(i.ps), mn: mnN }; f.yawOff = f.yaw - n(i.yaw); }
+    // a tap on the phone's copy of a TV menu, or its pause button
+    if (mnN !== f.last.mn) { f.last.mn = mnN; tvMenuPress(i.mn); if (!pvp) return; }
+    if (n(i.ps) !== f.last.ps) { f.last.ps = n(i.ps); if ($('pvpPauseScr').hidden) showPvpPause(); }
     if (!f.dead && pvp.phase !== 'over') { f.yaw = f.yawOff + n(i.yaw); f.pitch = clamp(n(i.pitch), PMIN, PMAX); }
     if (n(i.j) !== f.last.j) { f.last.j = n(i.j); if (!f.dead) f.in.jumpQ = true; }
     if (n(i.r) !== f.last.r) { f.last.r = n(i.r); if (!f.dead) fReload(f); }
@@ -4497,7 +4547,7 @@ function tvSend(dt){
     if (pvp.phase === 'over' && pvp.awards) h.aw = pvp.awards.filter(a => a.who === f).map(a => a.icon + ' ' + a.name);
     return h;
   });
-  const msg = { role: 'tv', code: pvp.code, phase: pvp.phase, m: pvp.m, hud, mapName: curMap.name };
+  const msg = { role: 'tv', code: pvp.code, phase: pvp.phase, m: pvp.m, hud, mapName: curMap.name, menu: tvMenu() };
   if (pvp.coop) { msg.coop = 1; msg.co = { w: wave, sd: Math.ceil(stash) }; }
   pvp.r.presence(msg).catch(() => {});
 }
@@ -5330,9 +5380,13 @@ function soloPadTick(dt){
   } else {
     S.lostT = 0;
     const fresh = !S.last || S.last.peer !== p.peer;
-    if (fresh) S.last = { peer: p.peer, j: n(i.j), r: n(i.r), w: n(i.w), c: n(i.c) };
+    const mnN = i.mn && typeof i.mn === 'object' ? n(i.mn.n) : 0;
+    if (fresh) S.last = { peer: p.peer, j: n(i.j), r: n(i.r), w: n(i.w), c: n(i.c), ps: n(i.ps), mn: mnN };
     const edge = (k) => { const v = n(i[k]); if (v !== S.last[k]) { S.last[k] = v; return true; } return false; };
-    const j = edge('j'), r = edge('r'), w = edge('w'), c = edge('c');
+    const j = edge('j'), r = edge('r'), w = edge('w'), c = edge('c'), psd = edge('ps');
+    // a tap on the phone's copy of a TV menu, or its pause button
+    if (mnN !== S.last.mn) { S.last.mn = mnN; tvMenuPress(i.mn); }
+    if (psd && state === 'playing') pause();
     if (state === 'playing') {
       if (fresh) S.yawOff = yaw - n(i.yaw);
       GP.solo.x += clamp(n(i.x), -1, 1); GP.solo.y += clamp(n(i.y), -1, 1); GP.solo.sprint = GP.solo.sprint || !!i.s;
@@ -5358,7 +5412,39 @@ function soloPadTick(dt){
   const sl = inv[cur];
   S.r.presence({ role: 'tv', code: S.code, phase: state === 'over' ? 'over' : state === 'paused' ? 'paused' : state === 'perk' ? 'perk' : 'play', m: 1, solo: 1, coop: 1,
     hud: [{ slot: 1, hp: Math.ceil(player.hp / maxHp() * 100), dead: state === 'over' ? 1 : 0, wn: WEAPONS[cur].name, am: sl.ammo, rs: sl.reserve === Infinity ? -1 : sl.reserve, k: kills, o: 0 }],
-    co: { w: wave, sd: Math.ceil(stash) } }).catch(() => {});
+    co: { w: wave, sd: Math.ceil(stash) }, menu: tvMenu() }).catch(() => {});
+}
+
+// ---------------------------------------------------------------- TV menus on the phones
+// When the game runs on the TV with phones as controllers, whatever menu is open on the TV
+// (upgrades, pause, game over, match over) goes to the phones as text and buttons, and a tap
+// on a phone presses that button on the TV. The key lets the TV ignore a tap on a menu that
+// has since changed.
+const TV_MENUS = ['perkScr', 'pauseScr', 'overScr', 'pvpPauseScr', 'pvpOverScr'];
+const hashStr = (str) => { let h = 0; for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) | 0; return (h >>> 0).toString(36); };
+const shown = (el) => !!el && !el.hidden && !el.closest('[hidden]');
+function tvMenuButtons(scr){ return [...scr.querySelectorAll('button')].filter(b => shown(b) && !b.disabled); }
+function tvMenu(){
+  for (const id of TV_MENUS) {
+    const scr = $(id); if (!shown(scr)) continue;
+    const h = scr.querySelector('h2');
+    const lede = [...scr.querySelectorAll('.lede, .perks-held')].find(x => shown(x) && x.textContent.trim());
+    const b = tvMenuButtons(scr).map(el => el.classList.contains('perk')
+      ? { l: (el.querySelector('b') || el).textContent.trim(), s: (el.querySelector('span') || { textContent: '' }).textContent.trim() }
+      : { l: el.textContent.trim() });
+    if (!b.length) continue;
+    const st = [...scr.querySelectorAll('dl.stats > div')].filter(shown).map(d => [(d.querySelector('dt') || d).textContent.trim(), (d.querySelector('dd') || d).textContent.trim()]);
+    const d = id === 'perkScr' ? 'Pick an upgrade. It lasts for the rest of this run.' : lede ? lede.textContent.trim() : '';
+    const t = h ? h.textContent.trim() : '';
+    return { k: id + ':' + hashStr(t + '|' + b.map(x => x.l + x.s).join('|')), t, d, b, st };
+  }
+  return null;
+}
+function tvMenuPress(mn){
+  if (!mn || typeof mn !== 'object') return;
+  const m = tvMenu(); if (!m || m.k !== mn.k) return;
+  const btn = tvMenuButtons($(m.k.split(':')[0]))[Math.round(+mn.b) || 0];
+  if (btn) { initAudio(); btn.click(); }
 }
 
 // ---------------------------------------------------------------- game controllers
