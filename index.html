@@ -2604,12 +2604,15 @@ function buildMole(){
   };
 }
 // the body an enemy is hit on (gnomes also have a head), and whether it can be hit at all
+// A mole still digging is hit on its mound of dirt (boss moles can't be hit underground)
+const moleDigging = (e) => e.type === 'mole' && e.up < 0.5;
 function enemyBody(e){
   if (e.type === 'gnome') return { y: e.pos.y + e.inner.position.y + 0.65 * e.s, r: 0.6 * e.s };
+  if (moleDigging(e)) return { y: e.pos.y + 0.25 * e.s, r: 0.75 * e.s };
   if (e.type === 'mole') return { y: e.pos.y + (e.inner.position.y + 0.45) * e.s, r: 0.62 * e.s };
   return { y: e.pos.y, r: 0.9 * e.s };
 }
-const enemyUp = (e) => e.type === 'gnome' ? e.spawnT >= 0.6 : e.type === 'mole' ? e.up >= 0.5 : true;
+const enemyUp = (e) => e.type === 'gnome' ? e.spawnT >= 0.6 : e.type === 'mole' ? (e.up >= 0.5 || !e.boss) : true;
 // how a mole looks, from its state (the online guest calls this for the host's moles too)
 function moleLook(e, dt){
   e.inner.position.y = (e.up - 1) * 1.1;
@@ -3066,7 +3069,12 @@ function castRay(dir){
       t = raySphere(o, dir, e.pos.x, y0 + 0.58 * s, e.pos.z, 0.5 * s);
       if (t < r.t) { r.t = t; r.kind = 'enemy'; r.e = e; r.head = false; }
     } else if (e.type === 'mole') {
-      if (e.up < 0.5) continue;
+      if (moleDigging(e)) {
+        if (e.boss) continue;
+        const t = raySphere(o, dir, e.pos.x, e.pos.y + 0.25 * e.s, e.pos.z, 0.75 * e.s);
+        if (t < r.t) { r.t = t; r.kind = 'enemy'; r.e = e; r.head = false; }
+        continue;
+      }
       const sc = e.s, y0 = e.pos.y + e.inner.position.y * sc;
       let t = raySphere(o, dir, e.pos.x, y0 + 0.86 * sc, e.pos.z, 0.28 * sc);
       if (t < r.t) { r.t = t; r.kind = 'enemy'; r.e = e; r.head = true; }
@@ -3139,7 +3147,7 @@ function hurtEnemy(e, dmg, head, point, dir, kbMul, shooter){
   burst(point, head ? 10 : 6, e.colors, 4, 0.06, 0.55, -14, 0.5);
   sfx.hit(head);
   if (isCoop()) { const v = shooter && viewOf(shooter); if (v) floatText(point, String(Math.round(dmg)), head ? 'crit' : '', v); if (shooter) shooter.hitT = 0.12; }
-  else { floatText(point, String(dmg), head ? 'crit' : ''); cross.classList.remove('hit', 'kill'); void cross.offsetWidth; cross.classList.add('hit'); hitT = 0.12; }
+  else { floatText(point, String(Math.round(dmg)), head ? 'crit' : ''); cross.classList.remove('hit', 'kill'); void cross.offsetWidth; cross.classList.add('hit'); hitT = 0.12; }
   if (e.hp <= 0) killEnemy(e, head, dir, shooter);
 }
 function killEnemy(e, head, dir, shooter){
@@ -4171,7 +4179,7 @@ function viewOf(f){
 function dealHit(shooter, victim, dmg, head, pt){
   if (shooter.st) { shooter.st.hits++; if (head) shooter.st.heads++; shooter.st.dmg += dmg; }
   const v = viewOf(shooter);
-  if (v) { floatText(pt, String(dmg), head ? 'crit' : '', v); shooter.hitT = 0.12; }
+  if (v) { floatText(pt, String(Math.round(dmg)), head ? 'crit' : '', v); shooter.hitT = 0.12; }
   sfx.hit(head);
   burst(pt, head ? 10 : 6, victim.colors.slice(0, 2), 4, 0.06, 0.5, -14, 0.5);
   if (pvp.mode === 'couch') applyDamage(victim, dmg, shooter);
@@ -4715,7 +4723,12 @@ function coopCast(o, dir, minT){
       t = raySphere(o, dir, e.pos.x, y0 + 0.58 * sc, e.pos.z, 0.5 * sc * big);
       if (t < r.t) { r.t = t; r.kind = 'enemy'; r.e = e; r.head = false; }
     } else if (e.type === 'mole') {
-      if (e.up < 0.5) continue;
+      if (moleDigging(e)) {
+        if (e.boss) continue;
+        const t = raySphere(o, dir, e.pos.x, e.pos.y + 0.25 * e.s, e.pos.z, 0.75 * e.s * big);
+        if (t < r.t) { r.t = t; r.kind = 'enemy'; r.e = e; r.head = false; }
+        continue;
+      }
       const ms = e.s, y0 = e.pos.y + e.inner.position.y * ms;
       let t = raySphere(o, dir, e.pos.x, y0 + 0.86 * ms, e.pos.z, 0.28 * ms * big);
       if (t < r.t) { r.t = t; r.kind = 'enemy'; r.e = e; r.head = true; }
