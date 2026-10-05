@@ -2599,7 +2599,7 @@ function buildMole(){
   mk(MOG.lamp, mats.lamp, 0, 0.98, -0.28, inner).rotation.x = Math.PI / 2;
   const mound = mk(MOG.mound, mats.dirt, 0, 0, 0, root); mound.scale.set(1, 0.45, 1.2);
   const hb = makeBar(1.5); root.add(hb.bar);
-  const hp = 40 + wave * 2;
+  const hp = Math.round(15 + wave * 0.6); // fragile: a couple of shots, so they can be stopped on the way in
   inner.position.y = -1.1;
   return {
     type: 'mole', boss: false, mesh: root, inner, claws, mound, bar: hb.bar, barFg: hb.fg, mats: Object.values(mats), colors: [0x4a3a35, 0xf29aa8, 0x6b4a2c],
