@@ -1887,11 +1887,12 @@ function buildGnome(boss, look){
   const tunicHex = look.tunic || (boss ? 0x5b2a86 : pick([0x2f6fd0, 0x3a9a4a, 0x7a3fa0, 0x2b8a8a, 0xd06a2a]));
   const hatHex = look.hatHex || (boss ? 0xf2c230 : pick([0xd8352a, 0xc92f3c, 0xe24a2a, 0xd8352a]));
   const mats = {
-    skin: MU(0xf2b894), tunic: MU(tunicHex), hat: MU(hatHex, boss ? { metalness: 0.6, roughness: 0.35 } : undefined), beard: MU(0xf6f2ea),
-    boot: MU(0x3a2618), belt: MU(0x2a1c12), buckle: MU(0xe8c14a, { metalness: 0.6, roughness: 0.35 }), nose: MU(0xe8906e),
+    skin: MU(look.skin || 0xf2b894), tunic: MU(tunicHex), hat: MU(hatHex, boss && !look.hat ? { metalness: 0.6, roughness: 0.35 } : undefined), beard: MU(look.beard || 0xf6f2ea),
+    boot: MU(look.boot || 0x3a2618), belt: MU(0x2a1c12), buckle: MU(0xe8c14a, { metalness: 0.6, roughness: 0.35 }), nose: MU(0xe8906e),
     wood: MU(0x8a5a2b), steel: MU(look.steel || (boss ? 0xe8c14a : 0x7c8590), { metalness: 0.5, roughness: 0.4 })
   };
-  const eyeMat = M(0x111111), browMat = M(0x5a3b22);
+  if (look.eye) mats.eyeGlow = MU(look.eye, { emissive: lin(look.eye), emissiveIntensity: 1.2 });
+  const eyeMat = mats.eyeGlow || M(0x111111), browMat = M(0x5a3b22);
   mk(GG.body, mats.tunic, 0, 0.5, 0, inner);
   mk(GG.belt, mats.belt, 0, 0.38, 0, inner);
   mk(GG.buckle, mats.buckle, 0, 0.38, -0.4, inner);
@@ -1910,6 +1911,25 @@ function buildGnome(boss, look){
     hat = new THREE.Group(); hat.position.y = 0.22; headG.add(hat);
     mk(BG.brim, mats.hat, 0, 0, 0, hat); const cone = mk(BG.cone, mats.hat, 0, 0.45, 0.05, hat); cone.rotation.x = -0.15;
     mk(BG.star, mats.steel, 0, 0.98, 0.18, hat);
+  } else if (look.hat === 'mushroom') {
+    // a huge spotted toadstool cap
+    hat = new THREE.Group(); hat.position.y = 0.12; headG.add(hat);
+    mk(BG.dome, mats.hat, 0, 0, 0, hat).scale.set(2.1, 1.5, 2.1);
+    const spot = M(0xfff6e6);
+    for (let i = 0; i < 7; i++) { const a = i / 7 * TAU, r = i ? 0.45 : 0; mk(BG.dot, spot, Math.cos(a) * r, i ? 0.32 : 0.5, Math.sin(a) * r, hat, false).scale.set(1.6, 0.8, 1.6); }
+  } else if (look.hat === 'cap' || look.hat === 'moss') {
+    // a snug leather cap, or a mossy crown of stone
+    hat = new THREE.Group(); hat.position.y = 0.04; headG.add(hat);
+    mk(BG.dome, mats.hat, 0, 0, 0, hat).scale.set(1.06, look.hat === 'moss' ? 0.8 : 0.9, 1.06);
+  } else if (look.hat === 'tricorn') {
+    hat = new THREE.Group(); hat.position.y = 0.24; headG.add(hat);
+    mk(BG.tri, mats.hat, 0, 0, 0, hat).rotation.y = Math.PI / 6;
+    mk(BG.brim, M(0xf2c230), 0, -0.1, 0, hat).scale.set(0.9, 1, 0.9);
+  } else if (look.hat === 'hood') {
+    hat = new THREE.Group(); hat.position.y = 0.02; headG.add(hat);
+    mk(BG.cone, mats.hat, 0, 0.28, 0.06, hat).scale.set(1.25, 0.95, 1.25);
+  } else if (look.hat === 'pointy') {
+    hat = mk(GG.hat, mats.hat, 0, 0.5, 0.02, headG); hat.rotation.x = 0.18;
   } else if (look.hat === 'helmet') {
     // a riveted steel dome with a glowing visor
     hat = new THREE.Group(); hat.position.y = 0.05; headG.add(hat);
@@ -1960,67 +1980,188 @@ function buildCrow(){
     state: 'enter', t: 0, ang: rand(0, TAU), rad: rand(7, 10), dir: Math.random() < 0.5 ? 1 : -1, wait: rand(2, 4), flap: rand(0, TAU)
   };
 }
-// ---------- bosses: a different one every 5 waves, tougher each time round. Wave 100 is the last.
+// ---------- bosses: a different one every 5 waves, nineteen in all, then the Emperor on wave 100.
+// Each boss is a body (a walking gnome, a flying crow, a digging mole, or a gnome that keeps its
+// distance) plus a look and a set of attacks from the table below. Later bosses get more health,
+// get furious at half health (from wave 30) and call bodyguards (from wave 55).
 const BG = {
   brim: new THREE.CylinderGeometry(0.46, 0.46, 0.04, 16), cone: new THREE.ConeGeometry(0.3, 0.95, 12), star: new THREE.OctahedronGeometry(0.12, 0),
   dome: new THREE.SphereGeometry(0.33, 14, 8, 0, TAU, 0, Math.PI / 2), visor: new THREE.BoxGeometry(0.42, 0.07, 0.04),
-  gem: new THREE.OctahedronGeometry(0.08, 0), cannon: new THREE.CylinderGeometry(0.13, 0.17, 0.7, 10), cape: new THREE.ConeGeometry(0.62, 1.1, 10, 1, true)
+  gem: new THREE.OctahedronGeometry(0.08, 0), cannon: new THREE.CylinderGeometry(0.13, 0.17, 0.7, 10), cape: new THREE.ConeGeometry(0.62, 1.1, 10, 1, true),
+  box: new THREE.BoxGeometry(1, 1, 1), lance: new THREE.ConeGeometry(0.06, 1.7, 8), dot: new THREE.SphereGeometry(0.06, 8, 6),
+  tri: new THREE.ConeGeometry(0.5, 0.26, 3), lens: new THREE.CylinderGeometry(0.075, 0.075, 0.06, 12), spike: new THREE.ConeGeometry(0.05, 0.28, 5),
+  flame: new THREE.ConeGeometry(0.07, 0.34, 6), bolt: new THREE.OctahedronGeometry(0.07, 0), plume: new THREE.ConeGeometry(0.07, 0.42, 8)
 };
 const FINAL_WAVE = 100;
-const BOSS_KINDS = ['king', 'queen', 'overlord', 'wizard', 'mecha', 'emperor'];
+// in the order they arrive: wave 5, 10, 15 ... 95, then the Emperor on wave 100
+const BOSS_KINDS = ['king', 'queen', 'overlord', 'wizard', 'mecha', 'knight', 'storm', 'spore', 'bomber', 'frost', 'golem', 'raven', 'captain', 'molequeen', 'shadow', 'giant', 'phoenix', 'archmage', 'general', 'emperor'];
 const BOSSES = {
-  king: { name: 'Gnome King', hp: 280, tip: 'Jump to dodge his ground slam. Aim for the crown.' },
-  queen: { name: 'Crow Queen', hp: 200, tip: 'She calls her flock, then dives. Shoot her while she circles.' },
-  overlord: { name: 'Mole Overlord', hp: 300, tip: 'He tunnels after you and bursts out of the ground. Keep moving when the dirt shakes.' },
-  wizard: { name: 'Gnome Wizard', hp: 230, tip: 'He blinks around and throws magic. Strafe sideways past the orbs.' },
-  mecha: { name: 'Mecha-Gnome', hp: 380, tip: 'Mortar shells land in the red rings. Get out of them.' },
-  emperor: { name: 'Gnome Emperor', hp: 900, tip: 'The last one. Slams, magic, mortars and an army. Everything at once.' }
+  king: { name: 'Gnome King', hp: 280, base: 'walk', speed: 2.0, slam: { cd: 4.5, r: 5.2, dmg: 18 },
+    tip: 'Jump to dodge his ground slam. Aim for the crown.' },
+  queen: { name: 'Crow Queen', she: true, hp: 200, base: 'fly', summon: { cd: 10, kind: 'crow', n: 2, msg: 'The Crow Queen calls her flock!' },
+    tip: 'She calls her flock, then dives. Shoot her while she circles.' },
+  overlord: { name: 'Mole Overlord', hp: 300, base: 'dig', rocks: 1, digSummon: 0,
+    tip: 'He tunnels after you and bursts out of the ground. Keep moving when the dirt shakes.' },
+  wizard: { name: 'Gnome Wizard', hp: 230, base: 'keep', speed: 2.0, keep: { want: 11, float: true, blink: 7 }, orbs: { cd: 1.7, kind: 'orb', n: 1, spread: 0.35 },
+    tip: 'He blinks around and throws magic. Strafe sideways past the orbs.' },
+  mecha: { name: 'Mecha-Gnome', hp: 380, base: 'walk', speed: 1.7, slam: { cd: 4.5, r: 5.2, dmg: 18 }, mortar: { cd: 3.4, n: 1 },
+    tip: 'Mortar shells land in the red rings. Get out of them.' },
+  knight: { name: 'Gnome Knight', hp: 340, base: 'walk', speed: 2.1, charge: { cd: 4.5, speed: 18, dmg: 24 },
+    tip: 'He lowers his lance and charges. Sidestep at the last moment, then shoot him in the back.' },
+  storm: { name: 'Storm Crow', she: true, hp: 260, base: 'fly', fly: 10, orbs: { cd: 2.4, kind: 'bolt', n: 2, spread: 0.3 }, summon: { cd: 14, kind: 'crow', n: 2, msg: 'The Storm Crow calls the flock!' },
+    tip: 'She throws lightning while she circles, then dives. Keep strafing and shoot her between bolts.' },
+  spore: { name: 'Spore Lord', hp: 360, base: 'walk', speed: 1.5, slam: { cd: 5.5, r: 4.5, dmg: 14 }, orbs: { cd: 3.2, kind: 'spore', n: 10, radial: true },
+    tip: 'Rings of spores spread out in every direction. Find a gap and slip through it.' },
+  bomber: { name: 'Gnome Bomber', hp: 300, base: 'keep', speed: 2.2, keep: { want: 13, float: false, blink: 0 }, mortar: { cd: 2.2, n: 2, j0: 0.5, j1: 3 },
+    tip: 'He runs away and lobs bombs. Chase him down and stay out of the red rings.' },
+  frost: { name: 'Frost Wizard', hp: 320, base: 'keep', speed: 2.0, keep: { want: 12, float: true, blink: 5.5 }, orbs: { cd: 2.2, kind: 'ice', n: 5, spread: 0.22 },
+    tip: 'Big ice orbs in wide fans. Watch for the gaps between them, then close in.' },
+  golem: { name: 'Stone Golem', hp: 520, base: 'walk', speed: 1.4, slam: { cd: 3.6, r: 6, dmg: 22, wave: 16 },
+    tip: 'Every stomp sends a shockwave rolling out across the ground. Jump over the ring.' },
+  raven: { name: 'Raven Lord', hp: 360, base: 'fly', fly: 11, mortar: { cd: 3, n: 2, j0: 1, j1: 4 }, summon: { cd: 9, kind: 'crow', n: 3, msg: 'The Raven Lord calls his flock!' },
+    tip: 'He drops bombs from the sky and calls his flock. Watch for the red rings.' },
+  captain: { name: 'Pirate Captain', hp: 420, base: 'walk', speed: 1.9, orbs: { cd: 2.2, kind: 'ball', n: 3, spread: 0.16 }, mortar: { cd: 6, n: 2, j0: 1, j1: 3 },
+    tip: 'His cannon fires three balls at once. Dodge sideways, then get in close.' },
+  molequeen: { name: 'Mole Queen', she: true, hp: 440, base: 'dig', rocks: 3, digSummon: 2,
+    tip: 'She tunnels after you, and every time she comes up her diggers follow. Keep moving.' },
+  shadow: { name: 'Shadow Gnome', hp: 400, base: 'walk', speed: 2.6, blinkNear: { cd: 4.5 }, orbs: { cd: 3.2, kind: 'orb', n: 3, spread: 0.3 },
+    tip: 'He vanishes and appears right beside you. Never stand still.' },
+  giant: { name: 'Gnome Giant', hp: 700, base: 'walk', speed: 1.4, slam: { cd: 3.0, r: 7, dmg: 26, wave: 18 }, summon: { cd: 12, kind: 'gnome', n: 3, msg: 'The Giant calls his gnomes!' },
+    tip: 'Huge stomps, rolling shockwaves and a crowd of gnomes. Jump the rings and keep your distance.' },
+  phoenix: { name: 'Phoenix', she: true, hp: 480, base: 'fly', fly: 9, orbs: { cd: 1.8, kind: 'fire', n: 3, spread: 0.3 }, trail: [0xffb347, 0xff6a1a, 0xffd23f],
+    tip: 'Fireballs from above and fast dives. Never stop strafing.' },
+  archmage: { name: 'Gnome Archmage', hp: 520, base: 'keep', speed: 2.0, keep: { want: 12, float: true, blink: 5 }, orbs: { cd: 1.5, kind: 'orb', n: 3, spread: 0.3 }, mortar: { cd: 3.5, n: 4, j0: 1, j1: 7 },
+    tip: 'Magic orbs and a rain of meteors. Watch the red rings and keep moving.' },
+  general: { name: 'Gnome General', hp: 600, base: 'walk', speed: 1.9, slam: { cd: 4.5, r: 5.2, dmg: 18 }, summon: { cd: 9, kind: 'gnome', n: 3, msg: 'The General sends in his troops!' }, mortar: { cd: 4.5, n: 3 }, orbs: { cd: 3.5, kind: 'ball', n: 3, spread: 0.2 },
+    tip: 'He brings an army. Thin out his soldiers, then focus him down.' },
+  emperor: { name: 'Gnome Emperor', hp: 900, base: 'walk', speed: 1.9, slam: { cd: 4.5, r: 5.2, dmg: 18 }, orbs: { cd: 2.4, kind: 'orb', n: 3, spread: 0.35 }, mortar: { cd: 3.4, n: 5, below: 0.67 }, escortsBelow: 0.34,
+    tip: 'The last one. Slams, magic, mortars and an army. Everything at once.' }
 };
-const TIER_WORD = ['', 'Mighty ', 'Dread ', 'Legendary '];
+// how tough a boss is: more health and fury from wave 30, bodyguards from wave 55, the toughest from wave 80
+const tierFor = (n) => n >= 80 ? 3 : n >= 55 ? 2 : n >= 30 ? 1 : 0;
 function bossFor(n){
   if (n >= FINAL_WAVE) return { kind: 'emperor', tier: 3 };
-  const i = Math.max(1, Math.floor(n / 5));
-  return { kind: BOSS_KINDS[(i - 1) % 5], tier: Math.min(3, Math.floor((i - 1) / 5)) };
+  const i = clamp(Math.floor(n / 5), 1, BOSS_KINDS.length - 1);
+  return { kind: BOSS_KINDS[i - 1], tier: tierFor(n) };
 }
-const bossTitle = (kind, tier) => 'The ' + (kind === 'emperor' ? '' : TIER_WORD[tier] || '') + BOSSES[kind].name;
+const bossTitle = (kind) => 'The ' + (BOSSES[kind] || BOSSES.king).name;
+// gnome-shaped bosses
+const GNOME_LOOKS = {
+  king: {},
+  wizard: { s: 2.0, tunic: 0x2a3a9a, hatHex: 0x3a2a8a, steel: 0x9be7ff, hat: 'wizard' },
+  mecha: { s: 2.4, tunic: 0x6c747e, hatHex: 0x9aa3ad, steel: 0x50565e, hat: 'helmet', cannon: true },
+  emperor: { s: 3.0, tunic: 0x3a1a5a, hatHex: 0xf2c230, steel: 0xf2c230, hat: 'emperor' },
+  knight: { s: 2.3, tunic: 0x8a8f99, hatHex: 0xb8bec8, steel: 0xc9ced6, hat: 'helmet' },
+  spore: { s: 2.4, tunic: 0x7a5a3a, hatHex: 0xd8352a, skin: 0xe8d8b8, steel: 0x8a6a42, hat: 'mushroom' },
+  bomber: { s: 2.0, tunic: 0x4a5a2a, hatHex: 0x6b4423, steel: 0x3a3f47, hat: 'cap', cannon: true },
+  frost: { s: 2.0, tunic: 0x7fc8f0, hatHex: 0xdff3ff, steel: 0x9be7ff, beard: 0xffffff, hat: 'wizard' },
+  golem: { s: 3.2, tunic: 0x6a6d73, hatHex: 0x4f8a35, skin: 0x8a8d93, beard: 0x5a5d63, boot: 0x4a4d53, steel: 0x5a5d63, hat: 'moss', eye: 0x5af0ff },
+  captain: { s: 2.3, tunic: 0x2a3a6a, hatHex: 0x1a1a22, steel: 0x50565e, hat: 'tricorn', cannon: true },
+  shadow: { s: 2.1, tunic: 0x1c1626, hatHex: 0x2a2238, skin: 0x6a5a7a, beard: 0x2a2238, boot: 0x14101c, steel: 0x7a3fff, hat: 'hood', eye: 0xb05aff },
+  giant: { s: 4.2, tunic: 0x7a3a1a, hatHex: 0xd8352a, steel: 0x7c8590, hat: 'pointy' },
+  archmage: { s: 2.2, tunic: 0x4a1a6a, hatHex: 0x2a1040, steel: 0xffd23f, hat: 'wizard' },
+  general: { s: 2.6, tunic: 0x3a4a2a, hatHex: 0x2a3a1a, steel: 0xf2c230, hat: 'helmet' }
+};
 function buildBoss(kind, tier){
+  const D = BOSSES[kind] || BOSSES.king;
   let e;
-  if (kind === 'queen') {
-    e = buildCrow(); e.mesh.scale.setScalar(3.2); e.s = 2.6; e.rad = rand(12, 15); e.fly = 9.5;
-    e.mats[0].color.set(lin(0x2c1838)); // the body
-    const crown = new THREE.Group(); crown.position.set(0, 0.32, -0.42); e.mesh.add(crown); crown.scale.setScalar(0.45);
-    const gold = MU(0xf2c230, { metalness: 0.6, roughness: 0.35 }); e.mats.push(gold);
-    mk(GG.crown, gold, 0, 0, 0, crown); for (let i = 0; i < 6; i++) { const a = i / 6 * TAU; mk(GG.spike, gold, Math.cos(a) * 0.28, 0.17, Math.sin(a) * 0.28, crown); }
-    e.colors = [0x2c1838, 0xf2c230, 0x5a3a6a];
-  } else if (kind === 'overlord') {
-    e = buildMole(); e.mesh.scale.setScalar(2.4); e.s = 2.4; e.speed = 6.5; e.state = 'dig'; e.t = 1.5;
-    e.mats[3].color.set(lin(0xb8b8c8)); e.mats[3].metalness = 0.7; // a steel helmet instead of the miner's hat
-    e.colors = [0x4a3a35, 0xb8b8c8, 0x6b4a2c];
-  } else if (kind === 'wizard') {
-    e = buildGnome(true, { s: 2.0, tunic: 0x2a3a9a, hatHex: 0x3a2a8a, steel: 0x9be7ff, hat: 'wizard' });
-  } else if (kind === 'mecha') {
-    e = buildGnome(true, { s: 2.4, tunic: 0x6c747e, hatHex: 0x9aa3ad, steel: 0x50565e, hat: 'helmet', cannon: true });
-  } else if (kind === 'emperor') {
-    e = buildGnome(true, { s: 3.0, tunic: 0x3a1a5a, hatHex: 0xf2c230, steel: 0xf2c230, hat: 'emperor' });
-    const cape = mk(BG.cape, MU(0xa01a3a, { side: THREE.DoubleSide }), 0, 0.62, 0.14, e.inner); cape.scale.set(1, 1, 0.55);
-  } else e = buildGnome(true);
+  if (D.base === 'fly') {
+    e = buildCrow(); e.rad = rand(12, 15); e.fly = D.fly || 9.5;
+    const body = e.mats[0], eye = e.mats[2];
+    if (kind === 'queen') {
+      e.mesh.scale.setScalar(3.2); e.s = 2.6; body.color.set(lin(0x2c1838));
+      const crown = new THREE.Group(); crown.position.set(0, 0.32, -0.42); e.mesh.add(crown); crown.scale.setScalar(0.45);
+      const gold = MU(0xf2c230, { metalness: 0.6, roughness: 0.35 }); e.mats.push(gold);
+      mk(GG.crown, gold, 0, 0, 0, crown); for (let i = 0; i < 6; i++) { const a = i / 6 * TAU; mk(GG.spike, gold, Math.cos(a) * 0.28, 0.17, Math.sin(a) * 0.28, crown); }
+      e.colors = [0x2c1838, 0xf2c230, 0x5a3a6a];
+    } else if (kind === 'storm') {
+      e.mesh.scale.setScalar(3.4); e.s = 2.8; body.color.set(lin(0x26355e)); eye.color.set(lin(0xfff27a)); eye.emissive.set(lin(0xffe14a));
+      const zap = MU(0xfff27a, { emissive: lin(0xffd23f), emissiveIntensity: 0.9 }); e.mats.push(zap);
+      for (let i = 0; i < 4; i++) mk(BG.bolt, zap, (i - 1.5) * 0.06, 0.32 + Math.abs(i - 1.5) * -0.03, -0.38 + i * 0.05, e.mesh, false).scale.set(1, 2.2, 1);
+      e.colors = [0x26355e, 0xfff27a, 0x9bb6e8];
+    } else if (kind === 'raven') {
+      e.mesh.scale.setScalar(3.8); e.s = 3.1; body.color.set(lin(0x15121c));
+      const crest = MU(0x7a3fa0); e.mats.push(crest);
+      for (let i = 0; i < 5; i++) { const sp = mk(BG.spike, crest, 0, 0.3, -0.34 + i * 0.07, e.mesh, false); sp.rotation.x = 0.5 + i * 0.12; }
+      e.colors = [0x15121c, 0x7a3fa0, 0x3a2f4a];
+    } else if (kind === 'phoenix') {
+      e.mesh.scale.setScalar(3.2); e.s = 2.6; body.color.set(lin(0xe0521a)); body.emissive.set(lin(0x6a1a00)); eye.color.set(lin(0xfff27a));
+      e.mats[1].color.set(lin(0xffd23f));
+      const fl = MU(0xffb347, { emissive: lin(0xff7a1a), emissiveIntensity: 1 }); e.mats.push(fl);
+      for (let i = 0; i < 5; i++) { const f = mk(BG.flame, fl, (i - 2) * 0.05, 0.32, -0.36 + i * 0.03, e.mesh, false); f.rotation.x = -0.4 + i * 0.12; }
+      e.colors = [0xe0521a, 0xffd23f, 0xff7a1a];
+    }
+  } else if (D.base === 'dig') {
+    e = buildMole(); e.state = 'dig'; e.t = 1.5;
+    if (kind === 'molequeen') {
+      e.mesh.scale.setScalar(2.6); e.s = 2.6; e.speed = 6;
+      e.mats[0].color.set(lin(0x6a4a5a)); e.mats[3].color.set(lin(0xf2c230)); e.mats[3].metalness = 0.6;
+      const gold = MU(0xf2c230, { metalness: 0.6, roughness: 0.35 }); e.mats.push(gold);
+      for (let i = 0; i < 5; i++) { const a = i / 5 * TAU; mk(GG.spike, gold, Math.cos(a) * 0.2, 1.07, -0.05 + Math.sin(a) * 0.2, e.inner, false); }
+      e.colors = [0x6a4a5a, 0xf2c230, 0x6b4a2c];
+    } else {
+      e.mesh.scale.setScalar(2.4); e.s = 2.4; e.speed = 6.5;
+      e.mats[3].color.set(lin(0xb8b8c8)); e.mats[3].metalness = 0.7; // a steel helmet instead of the miner's hat
+      e.colors = [0x4a3a35, 0xb8b8c8, 0x6b4a2c];
+    }
+  } else {
+    e = buildGnome(true, GNOME_LOOKS[kind] || {});
+    gnomeBossDeco(e, kind);
+  }
   const crew = isCoop() ? pvp.fighters.length : 1;
-  e.boss = true; e.bk = kind; e.tier = tier; e.bossName = bossTitle(kind, tier);
-  e.hp = e.maxHp = Math.round((BOSSES[kind].hp + wave * 22) * (1 + 0.6 * tier) * (1 + 0.5 * (crew - 1)));
+  e.boss = true; e.bk = kind; e.def = D; e.tier = tier; e.bossName = bossTitle(kind);
+  e.hp = e.maxHp = Math.round((D.hp + wave * 22) * (1 + 0.6 * tier) * (1 + 0.5 * (crew - 1)));
   e.cdMul = Math.pow(0.85, tier);
-  e.orbT = 2.5; e.blinkT = 6; e.mortarT = 3; e.summonT = 10; e.callT = 5; e.rockT = 1.5; e.enraged = false;
-  if (e.type === 'gnome') e.speed = (kind === 'mecha' ? 1.7 : kind === 'emperor' ? 1.9 : 2.0) * (1 + 0.08 * tier);
+  e.orbT = 2.5; e.blinkT = 6; e.mortarT = 3; e.summonT = 10; e.callT = 5; e.rockT = 1.5; e.chT = 3; e.enraged = false;
+  if (e.type === 'gnome') { e.speed = (D.speed || 2) * (1 + 0.08 * tier); e.slamT = D.slam ? D.slam.cd : Infinity; }
   return e;
+}
+// the extra bits that make each gnome boss look like itself
+function gnomeBossDeco(e, kind){
+  const add = (mat) => { e.mats.push(mat); return mat; };
+  if (kind === 'emperor') { const cape = mk(BG.cape, add(MU(0xa01a3a, { side: THREE.DoubleSide })), 0, 0.62, 0.14, e.inner); cape.scale.set(1, 1, 0.55); }
+  else if (kind === 'knight') {
+    const steel = add(MU(0xc9ced6, { metalness: 0.6, roughness: 0.35 })), red = add(MU(0xc0303a));
+    const sh = mk(BG.box, steel, -0.46, 0.6, -0.12, e.inner); sh.scale.set(0.08, 0.6, 0.48);
+    mk(BG.box, red, -0.51, 0.62, -0.12, e.inner, false).scale.set(0.02, 0.4, 0.1); mk(BG.box, red, -0.51, 0.66, -0.12, e.inner, false).scale.set(0.02, 0.1, 0.32);
+    e.arm.children.forEach((c, i) => { if (i > 0) c.visible = false; }); // the lance replaces the mallet
+    const lance = mk(BG.lance, steel, 0, 0.45, -0.75, e.arm); lance.rotation.x = -Math.PI / 2 + 0.25;
+    const plume = mk(BG.plume, red, 0, 0.42, 0.05, e.hat); plume.rotation.x = 0.3;
+  } else if (kind === 'bomber') {
+    const brass = add(MU(0xc9a227, { metalness: 0.6, roughness: 0.3 })), glass = add(MU(0x9be7ff, { emissive: lin(0x3a8aaa), emissiveIntensity: 0.5 }));
+    for (const s of [-1, 1]) { const l = mk(BG.lens, brass, 0.09 * s, 0.1, -0.23, e.headG, false); l.rotation.x = Math.PI / 2; mk(BG.lens, glass, 0.09 * s, 0.1, -0.26, e.headG, false).rotation.x = Math.PI / 2; }
+    mk(BG.box, add(MU(0x2a2a2a)), 0, 0.1, -0.02, e.headG, false).scale.set(0.56, 0.05, 0.5);
+  } else if (kind === 'captain') {
+    const black = add(MU(0x111111));
+    mk(BG.box, black, 0.09, 0.07, -0.24, e.headG, false).scale.set(0.11, 0.08, 0.02);
+    mk(BG.box, black, 0, 0.12, -0.2, e.headG, false).scale.set(0.5, 0.015, 0.02);
+  } else if (kind === 'general') {
+    const gold = add(MU(0xf2c230, { metalness: 0.6, roughness: 0.35 })), red = add(MU(0xc0303a));
+    for (const s of [-1, 1]) mk(BG.box, gold, 0.33 * s, 0.82, 0, e.inner).scale.set(0.24, 0.06, 0.26);
+    mk(BG.plume, red, 0, 0.4, 0, e.hat).scale.set(1.3, 1.4, 1.3);
+    mk(BG.box, gold, 0, 0.62, -0.4, e.inner, false).scale.set(0.16, 0.1, 0.03);
+  } else if (kind === 'archmage') {
+    const glow = add(MU(0xffd23f, { emissive: lin(0xffb000), emissiveIntensity: 1 }));
+    mk(BG.star, glow, 0, 0.62, 0, e.arm, false).scale.setScalar(1.6);
+    const cape = mk(BG.cape, add(MU(0x2a1040, { side: THREE.DoubleSide })), 0, 0.62, 0.14, e.inner); cape.scale.set(1, 1, 0.55);
+  }
+}
+// gnome bosses' slam: knocks back everyone close, and the big ones send a shockwave rolling out
+function bossSlam(e){
+  const S = e.def && e.def.slam;
+  slam(e, S ? S.r : 5.2, S ? S.dmg : 18);
+  if (S && S.wave) fireWave(e, S.wave, Math.round(S.dmg * 0.7));
 }
 // what every boss does on top of moving: get angry, call for help, and its own attacks
 function bossExtra(e, dt){
-  const T = nearestFoe(e.pos) || STASH_FOE, k = e.bk, cd = e.cdMul * (e.enraged ? 0.75 : 1), up = enemyUp(e);
-  if (!e.enraged && (e.tier >= 1 || k === 'emperor') && e.hp < e.maxHp * 0.5) {
+  const D = e.def || BOSSES.king, T = nearestFoe(e.pos) || STASH_FOE, cd = e.cdMul * (e.enraged ? 0.75 : 1), up = enemyUp(e), frac = e.hp / e.maxHp;
+  const say = (a, b) => (isCoop() ? showPvBanner : showBanner)(a, b);
+  if (!e.enraged && (e.tier >= 1 || e.bk === 'emperor') && frac < 0.5) {
     e.enraged = true; if (e.speed) e.speed *= 1.3;
-    (isCoop() ? showPvBanner : showBanner)(e.bossName + ' is furious!', 'Faster and meaner from here'); sfx.boss();
+    say(e.bossName + ' is furious!', 'Faster and meaner from here'); sfx.boss();
   }
-  // escorts: from the third time round (and the Emperor's last third)
-  if (up && (e.tier >= 2 || (k === 'emperor' && e.hp < e.maxHp * 0.34))) {
+  // bodyguards: from wave 55 (and the Emperor's last third)
+  if (up && (e.tier >= 2 || (D.escortsBelow && frac < D.escortsBelow))) {
     e.summonT -= dt;
     if (e.summonT <= 0 && enemies.length < 30) {
       e.summonT = 14 * cd;
@@ -2028,65 +2169,134 @@ function bossExtra(e, dt){
       burst(e.pos.clone().setY(1), 30, [0x6b4a2c, 0x9b7148], 5, 0.1, 0.8, -10, 0.5);
     }
   }
-  // magic orbs: the Wizard, and the Emperor
-  if ((k === 'wizard' || k === 'emperor') && up && !T.stash) {
+  // flyers only attack while circling, not mid-dive
+  const steady = e.type !== 'crow' || e.state === 'circle' || e.state === 'enter';
+  // orbs, fireballs, ice, lightning, spores, cannonballs
+  if (D.orbs && up && !T.stash && steady && (!D.orbs.below || frac < D.orbs.below)) {
     e.orbT -= dt;
     if (e.orbT <= 0) {
-      e.orbT = (k === 'wizard' ? 1.7 : 2.4) * cd;
-      const n = k === 'wizard' ? 1 + Math.min(2, e.tier) : 3;
-      for (let i = 0; i < n; i++) fireShot('orb', e, T, (i - (n - 1) / 2) * 0.35);
+      const O = D.orbs; e.orbT = O.cd * cd;
+      for (let i = 0; i < O.n; i++) fireShot(O.kind, e, T, O.radial ? i / O.n * TAU : (i - (O.n - 1) / 2) * (O.spread || 0.3));
       e.swing = 1;
     }
   }
-  // mortars: the Mecha-Gnome, and the Emperor from two thirds down
-  if ((k === 'mecha' || (k === 'emperor' && e.hp < e.maxHp * 0.67)) && up) {
+  // mortar shells (or bombs from the sky)
+  if (D.mortar && up && steady && (!D.mortar.below || frac < D.mortar.below)) {
     e.mortarT -= dt;
     if (e.mortarT <= 0) {
-      e.mortarT = 3.4 * cd;
-      const ts = foeTargets(); const n = 1 + Math.min(3, e.tier) + (k === 'emperor' ? 1 : 0);
-      for (let i = 0; i < n; i++) { const t = ts.length ? ts[i % ts.length] : STASH_FOE; fireShot('shell', e, t, i ? rand(2, 5) : 0); }
+      const Mo = D.mortar; e.mortarT = Mo.cd * cd;
+      const ts = foeTargets(), n = Mo.n + (e.bk === 'mecha' ? Math.min(3, e.tier) : 0);
+      for (let i = 0; i < n; i++) { const t = ts.length ? ts[i % ts.length] : STASH_FOE; fireShot('shell', e, t, i ? rand(Mo.j0 || 2, Mo.j1 || 5) : 0); }
     }
   }
-  // the Queen calls her flock
-  if (k === 'queen') {
+  // calling in a flock, a squad or a crew of diggers
+  if (D.summon && up) {
     e.callT -= dt;
     if (e.callT <= 0 && enemies.length < 30) {
-      e.callT = 10 * cd; sfx.caw();
-      for (let i = 0; i < 2 + e.tier; i++) { spawnEnemy('crow'); const c = enemies[enemies.length - 1]; c.pos.copy(e.pos); c.pos.y += rand(-1, 1); c.state = 'circle'; c.wait = rand(1, 3); }
-      (isCoop() ? showPvBanner : toast)('The Crow Queen calls her flock!');
+      const Su = D.summon; e.callT = Su.cd * cd;
+      if (Su.kind === 'crow') sfx.caw();
+      for (let i = 0; i < Su.n + (e.bk === 'queen' ? e.tier : 0); i++) {
+        spawnEnemy(Su.kind); const c = enemies[enemies.length - 1];
+        if (Su.kind === 'crow') { c.pos.copy(e.pos); c.pos.y += rand(-1, 1); c.state = 'circle'; c.wait = rand(1, 3); }
+        else if (Su.kind === 'gnome') { const a = rand(0, TAU); c.pos.set(e.pos.x + Math.cos(a) * 3, 0, e.pos.z + Math.sin(a) * 3); collide(c.pos, 0.5); }
+      }
+      if (Su.msg) (isCoop() ? showPvBanner : toast)(Su.msg);
     }
   }
-  if (!isCoop()) setScaleX('bossFill', clamp(e.hp / e.maxHp, 0, 1));
+  // the Shadow Gnome: gone, then right beside you
+  if (D.blinkNear && up && !T.stash) {
+    e.blinkT -= dt;
+    if (e.blinkT <= 0) {
+      e.blinkT = D.blinkNear.cd * cd;
+      burst(e.pos.clone().setY(1.5), 30, [0x7a3fff, 0x2a2238, 0xb05aff], 6, 0.1, 0.6, 0, 0.3);
+      const a = rand(0, TAU), r = rand(2.6, 4), lim = ARENA - 3;
+      let nx = T.pos.x + Math.cos(a) * r, nz = T.pos.z + Math.sin(a) * r; const nr = Math.hypot(nx, nz); if (nr > lim) { nx *= lim / nr; nz *= lim / nr; }
+      e.pos.x = nx; e.pos.z = nz; collide(e.pos, 0.42 * e.s); e.atk = 0.35;
+      burst(e.pos.clone().setY(1.5), 30, [0x7a3fff, 0x2a2238, 0xb05aff], 6, 0.1, 0.6, 0, 0.3); sfx.power();
+    }
+  }
+  if (D.trail && Math.random() < 0.8) emit(e.pos, new V3(rand(-0.6, 0.6), rand(-0.2, 0.6), rand(-0.6, 0.6)), pick(D.trail), rand(0.12, 0.24), 0.5, 0, 1);
+  if (!isCoop()) setScaleX('bossFill', clamp(frac, 0, 1));
 }
-// the Wizard keeps his distance, floats, and blinks somewhere else every few seconds
-function updateWizard(e, dt){
+// The Gnome Knight lowers his lance, then charges in a straight line. Returns true while charging.
+function bossCharge(e, dt){
+  const C = e.def.charge;
+  if (!e.ch) {
+    e.chT -= dt;
+    const T = nearestFoe(e.pos); if (e.chT > 0 || !T || e.slamWind > 0 || e.spawnT < 1) return false;
+    const d = Math.hypot(T.pos.x - e.pos.x, T.pos.z - e.pos.z);
+    if (d < 4 || d > 24) return false;
+    e.ch = 'wind'; e.chTime = 0.75; e.chDir = new V3(T.pos.x - e.pos.x, 0, T.pos.z - e.pos.z).normalize(); sfx.dig();
+    return true;
+  }
+  const dx = e.chDir.x, dz = e.chDir.z;
+  e.mesh.rotation.y = angLerp(e.mesh.rotation.y, Math.atan2(-dx, -dz), 1 - Math.exp(-14 * dt));
+  if (e.ch === 'wind') {
+    e.chTime -= dt; e.inner.rotation.x = -0.25; e.arm.rotation.x = -1.4;
+    if (Math.random() < 0.6) emit(e.pos, new V3(rand(-1.5, 1.5), rand(1, 3), rand(-1.5, 1.5)), pick([0x9b7148, 0xc8b08a]), 0.12, 0.5, -10);
+    if (e.chTime <= 0) { e.ch = 'go'; e.chTime = 1.1; e.chHit = new Set(); sfx.slam(); }
+    return true;
+  }
+  e.chTime -= dt;
+  const st = C.speed * dt, ox = e.pos.x, oz = e.pos.z;
+  e.pos.x += dx * st; e.pos.z += dz * st; collide(e.pos, 0.42 * e.s);
+  const lim = ARENA - 3, r = Math.hypot(e.pos.x, e.pos.z); if (r > lim) { e.pos.x *= lim / r; e.pos.z *= lim / r; }
+  const blocked = Math.hypot(e.pos.x - ox, e.pos.z - oz) < st * 0.5;
+  e.inner.rotation.x = 0.2; e.phase += dt * 16; e.inner.position.y = Math.abs(Math.sin(e.phase)) * 0.12;
+  e.feet[0].position.z = -0.04 + Math.sin(e.phase) * 0.2; e.feet[1].position.z = -0.04 - Math.sin(e.phase) * 0.2;
+  if (Math.random() < 0.8) emit(e.pos, new V3(rand(-1, 1), rand(0.5, 2), rand(-1, 1)), pick([0x9b7148, 0xc8b08a]), 0.14, 0.5, -8);
+  for (const t of foeTargets()) {
+    if (e.chHit.has(t) || t.pos.y > 1.6) continue;
+    if (Math.hypot(t.pos.x - e.pos.x, t.pos.z - e.pos.z) < 0.55 * e.s + 0.5) {
+      e.chHit.add(t); hurtFoe(t, C.dmg, e.pos);
+      if (t.vel) { t.vel.x += dx * 9; t.vel.z += dz * 9; t.vel.y = 5; t.onGround = false; }
+    }
+  }
+  if (e.chTime <= 0 || blocked) {
+    e.ch = null; e.inner.rotation.x = 0; e.chT = C.cd * e.cdMul * (e.enraged ? 0.75 : 1);
+    if (blocked) { burst(e.pos.clone().setY(1), 20, [0xc9ced6, 0x9b7148], 5, 0.1, 0.5, -10, 0.4); addShake(0.25); }
+  }
+  return true;
+}
+// Bosses that keep their distance: they back off to a set range and circle. The Wizard, the Frost
+// Wizard and the Archmage float and blink; the Bomber walks.
+function updateKeeper(e, dt){
   if (e.spawnT < 1) { e.spawnT = Math.min(1, e.spawnT + dt * 1.5); e.inner.position.y = (e.spawnT - 1) * 2.2; return; }
-  const T = nearestFoe(e.pos) || STASH_FOE;
+  const K = e.def.keep, T = nearestFoe(e.pos) || STASH_FOE;
   const dx = T.pos.x - e.pos.x, dz = T.pos.z - e.pos.z, d = Math.hypot(dx, dz) || 1;
-  const want = 11, sp = e.speed * 1.4;
-  let mx = (d - want) / d * dx, mz = (d - want) / d * dz; const ml = Math.hypot(mx, mz); if (ml > 1) { mx = mx / ml * sp; mz = mz / ml * sp; }
+  const sp = e.speed * 1.4;
+  let mx = (d - K.want) / d * dx, mz = (d - K.want) / d * dz; const ml = Math.hypot(mx, mz); if (ml > 1) { mx = mx / ml * sp; mz = mz / ml * sp; }
   mx += -dz / d * 1.6; mz += dx / d * 1.6; // circle round
   e.vel.x = damp(e.vel.x, mx, 4, dt); e.vel.z = damp(e.vel.z, mz, 4, dt);
   e.pos.x += e.vel.x * dt; e.pos.z += e.vel.z * dt; collide(e.pos, 0.42 * e.s);
   const lim = ARENA - 3, r = Math.hypot(e.pos.x, e.pos.z); if (r > lim) { e.pos.x *= lim / r; e.pos.z *= lim / r; }
-  e.pos.y = 0.6 + Math.sin(time * 2) * 0.25;
   e.mesh.rotation.y = angLerp(e.mesh.rotation.y, Math.atan2(-dx, -dz), 1 - Math.exp(-10 * dt));
-  e.inner.rotation.z = Math.sin(time * 1.3) * 0.06;
+  if (K.float) { e.pos.y = 0.6 + Math.sin(time * 2) * 0.25; e.inner.rotation.z = Math.sin(time * 1.3) * 0.06; }
+  else {
+    e.pos.y = 0;
+    const v = Math.hypot(e.vel.x, e.vel.z), w = Math.min(1, v); e.phase += dt * v * 2.4;
+    e.inner.rotation.z = Math.sin(e.phase) * 0.13 * w; e.inner.position.y = Math.abs(Math.sin(e.phase)) * 0.07 * w;
+    e.feet[0].position.z = -0.04 + Math.sin(e.phase) * 0.14 * w; e.feet[1].position.z = -0.04 - Math.sin(e.phase) * 0.14 * w;
+  }
   e.swing = Math.max(0, e.swing - dt * 2.6);
   e.arm.rotation.x = -0.3 - Math.sin(e.swing * Math.PI) * 1.5;
-  e.blinkT -= dt;
-  if (e.blinkT <= 0) {
-    e.blinkT = 7 * e.cdMul;
-    burst(e.pos.clone().setY(1.5), 30, [0x9be7ff, 0x7a3fff, 0xffffff], 6, 0.1, 0.6, 0, 0.3);
-    const a = rand(0, TAU), rr = rand(9, 13); let nx = T.pos.x + Math.cos(a) * rr, nz = T.pos.z + Math.sin(a) * rr;
-    const nr = Math.hypot(nx, nz); if (nr > lim) { nx *= lim / nr; nz *= lim / nr; }
-    e.pos.x = nx; e.pos.z = nz; collide(e.pos, 0.42 * e.s);
-    burst(e.pos.clone().setY(1.5), 30, [0x9be7ff, 0x7a3fff, 0xffffff], 6, 0.1, 0.6, 0, 0.3); sfx.power();
+  if (K.blink) {
+    e.blinkT -= dt;
+    if (e.blinkT <= 0) {
+      e.blinkT = K.blink * e.cdMul;
+      const fx = e.bk === 'frost' ? [0xdff3ff, 0x9be7ff, 0xffffff] : e.bk === 'archmage' ? [0xffd23f, 0x7a3fff, 0xffffff] : [0x9be7ff, 0x7a3fff, 0xffffff];
+      burst(e.pos.clone().setY(1.5), 30, fx, 6, 0.1, 0.6, 0, 0.3);
+      const a = rand(0, TAU), rr = rand(9, 13); let nx = T.pos.x + Math.cos(a) * rr, nz = T.pos.z + Math.sin(a) * rr;
+      const nr = Math.hypot(nx, nz); if (nr > lim) { nx *= lim / nr; nz *= lim / nr; }
+      e.pos.x = nx; e.pos.z = nz; collide(e.pos, 0.42 * e.s);
+      burst(e.pos.clone().setY(1.5), 30, fx, 6, 0.1, 0.6, 0, 0.3); sfx.power();
+    }
   }
 }
-// the Overlord tunnels to whoever is nearest, bursts up under them, throws rocks, then dives again
+// Diggers (the Mole Overlord and the Mole Queen) tunnel to whoever is nearest, burst up under them,
+// throw rocks, then dive again. The Queen brings diggers with her every time she comes up.
 function updateOverlord(e, dt){
-  const T = nearestFoe(e.pos) || STASH_FOE;
+  const T = nearestFoe(e.pos) || STASH_FOE, D = e.def || BOSSES.overlord;
   if (e.state === 'dig') {
     e.up = Math.max(0, e.up - dt * 2);
     const tx = T.pos.x, tz = T.pos.z, dx = tx - e.pos.x, dz = tz - e.pos.z, d = Math.hypot(dx, dz);
@@ -2097,45 +2307,69 @@ function updateOverlord(e, dt){
     e.t -= dt; e.up = Math.min(1, e.up + dt * 3);
     if (e.t <= 0) {
       e.state = 'steal'; e.t = 5.5 * e.cdMul + 1.5;
-      // the shockwave
-      slam(e);
-      if (e.tier >= 1) for (let i = 0; i < e.tier; i++) if (enemies.length < 30) spawnEnemy('mole');
+      slam(e); // the shockwave
+      const n = (D.digSummon || 0) + e.tier;
+      for (let i = 0; i < n; i++) if (enemies.length < 30) spawnEnemy('mole');
+      if (D.digSummon) (isCoop() ? showPvBanner : toast)('Her diggers are coming!');
     }
   } else if (e.state === 'steal') {
     e.up = 1; e.t -= dt; e.rockT -= dt;
     e.mesh.rotation.y = angLerp(e.mesh.rotation.y, Math.atan2(-(T.pos.x - e.pos.x), -(T.pos.z - e.pos.z)), 1 - Math.exp(-6 * dt));
-    if (e.rockT <= 0 && !T.stash) { e.rockT = 1.4 * e.cdMul; fireShot('rock', e, T, 0); }
+    if (e.rockT <= 0 && !T.stash) { e.rockT = 1.4 * e.cdMul; const n = D.rocks || 1; for (let i = 0; i < n; i++) fireShot('rock', e, T, i ? rand(1.5, 3) : 0); }
     if (e.t <= 0) { e.state = 'dig'; e.t = 2; }
   }
   moleLook(e, dt);
 }
 
 function updateEnemy(e, dt){
-  if (e.bk === 'wizard') updateWizard(e, dt);
-  else if (e.bk === 'overlord') updateOverlord(e, dt);
+  const base = e.def && e.def.base;
+  if (base === 'keep') updateKeeper(e, dt);
+  else if (base === 'dig') updateOverlord(e, dt);
   else if (e.type === 'gnome') updateGnome(e, dt);
   else if (e.type === 'mole') updateMole(e, dt);
   else updateCrow(e, dt);
   if (e.boss && enemies.includes(e)) bossExtra(e, dt);
 }
-// ---------- shots the bosses throw: magic orbs (they home in a little), mortar shells and rocks
+// ---------- shots the bosses throw. Orb-like shots fly (some home in a little); shells and rocks are
+// lobbed onto a spot; a shockwave is a ring that rolls out along the ground (jump over it).
 const eshots = [];
 let eshotSeq = 0;
-const ESG = { orb: new THREE.IcosahedronGeometry(0.3, 1), shell: new THREE.SphereGeometry(0.32, 10, 8), rock: new THREE.DodecahedronGeometry(0.4, 0), ring: new THREE.RingGeometry(0.85, 1, 36) };
-const ESM = {
-  orb: new THREE.MeshBasicMaterial({ color: 0xc77dff }), shell: MU(0x3a3f47, { metalness: 0.6, roughness: 0.4 }), rock: MU(0x7a6a5a),
-  ring: new THREE.MeshBasicMaterial({ color: 0xff3b30, transparent: true, opacity: 0.7, side: THREE.DoubleSide, depthWrite: false })
+const ESG = {
+  orb: new THREE.IcosahedronGeometry(0.3, 1), spore: new THREE.IcosahedronGeometry(0.28, 1), fire: new THREE.IcosahedronGeometry(0.32, 1),
+  ice: new THREE.IcosahedronGeometry(0.42, 0), bolt: new THREE.OctahedronGeometry(0.28, 0), ball: new THREE.SphereGeometry(0.26, 12, 10),
+  shell: new THREE.SphereGeometry(0.32, 10, 8), rock: new THREE.DodecahedronGeometry(0.4, 0), ring: new THREE.RingGeometry(0.85, 1, 36), wave: new THREE.RingGeometry(0.9, 1, 64)
 };
-const ES_KINDS = ['orb', 'shell', 'rock'];
-function makeShotMesh(kind){ const m = new THREE.Mesh(ESG[kind], ESM[kind]); m.castShadow = kind !== 'orb'; scene.add(m); return m; }
+const ESM = {
+  orb: new THREE.MeshBasicMaterial({ color: 0xc77dff }), spore: new THREE.MeshBasicMaterial({ color: 0x9be05a }), fire: new THREE.MeshBasicMaterial({ color: 0xff7a1a }),
+  ice: new THREE.MeshBasicMaterial({ color: 0xbfeaff }), bolt: new THREE.MeshBasicMaterial({ color: 0xfff27a }), ball: MU(0x2c2f36, { metalness: 0.7, roughness: 0.3 }),
+  shell: MU(0x3a3f47, { metalness: 0.6, roughness: 0.4 }), rock: MU(0x7a6a5a),
+  ring: new THREE.MeshBasicMaterial({ color: 0xff3b30, transparent: true, opacity: 0.7, side: THREE.DoubleSide, depthWrite: false }),
+  wave: new THREE.MeshBasicMaterial({ color: 0xffa040, transparent: true, opacity: 0.85, side: THREE.DoubleSide, depthWrite: false })
+};
+// flying shots: speed, how hard they steer toward you, damage, sparkle colours
+const ORB = {
+  orb: { sp: 9, home: 0.9, dmg: 12, col: [0xc77dff, 0x9be7ff] },
+  spore: { sp: 6, home: 0, dmg: 10, col: [0x9be05a, 0xd8f0a0] },
+  fire: { sp: 10, home: 1.1, dmg: 14, col: [0xff7a1a, 0xffd23f] },
+  ice: { sp: 7, home: 0.6, dmg: 16, col: [0xbfeaff, 0xffffff] },
+  bolt: { sp: 14, home: 0.5, dmg: 12, col: [0xfff27a, 0xffffff] },
+  ball: { sp: 15, home: 0, dmg: 16, col: [0x5a5f66, 0xff9a3a] }
+};
+const ES_KINDS = ['orb', 'shell', 'rock', 'spore', 'fire', 'ice', 'bolt', 'ball', 'wave'];
+function makeShotMesh(kind){
+  if (kind === 'wave') { const g = new THREE.Mesh(ESG.wave, ESM.wave); g.rotation.x = -Math.PI / 2; scene.add(g); return g; }
+  const m = new THREE.Mesh(ESG[kind], ESM[kind]); m.castShadow = !ORB[kind] || kind === 'ball'; scene.add(m); return m;
+}
 function makeRing(r){ const g = new THREE.Mesh(ESG.ring, ESM.ring); g.rotation.x = -Math.PI / 2; g.scale.setScalar(r); scene.add(g); return g; }
 function fireShot(kind, e, T, spread){
+  const O = ORB[kind];
   const from = new V3(e.pos.x, (e.pos.y || 0) + (kind === 'shell' ? 2.6 : 1.3) * e.s, e.pos.z);
   const sh = { id: ++eshotSeq, kind, m: makeShotMesh(kind), vel: new V3(), life: 6, ring: null, r: 0, dmg: 0, tgt: T };
   sh.m.position.copy(from);
-  if (kind === 'orb') {
+  if (O) {
     const a = Math.atan2(T.pos.x - from.x, T.pos.z - from.z) + (spread || 0);
-    sh.vel.set(Math.sin(a) * 9, 0, Math.cos(a) * 9); sh.vel.y = clamp((T.pos.y + 1 - from.y) / 2, -3, 3); sh.dmg = 12; sh.life = 4.5;
+    sh.vel.set(Math.sin(a) * O.sp, 0, Math.cos(a) * O.sp); sh.vel.y = clamp((T.pos.y + 1 - from.y) / 2, -3, 3);
+    sh.dmg = O.dmg; sh.home = O.home; sh.life = kind === 'ball' ? 3.5 : 4.5;
   } else {
     // a lob that lands on (or near) where the target stands now
     const flight = kind === 'shell' ? 1.7 : 1.0, g = 16;
@@ -2146,25 +2380,44 @@ function fireShot(kind, e, T, spread){
     if (kind === 'shell') { sh.ring = makeRing(sh.r); sh.ring.position.set(tx, 0.06, tz); }
   }
   eshots.push(sh);
-  if (kind === 'shell') sfx.shoot('launcher'); else if (kind === 'orb') sfx.spin();
+  if (kind === 'shell') sfx.shoot('launcher'); else if (kind === 'ball') sfx.shoot('shotgun'); else if (O) sfx.spin();
+}
+// a shockwave rolling out from a stomp: hits anyone on the ground as the ring passes them
+function fireWave(e, maxR, dmg){
+  const sh = { id: ++eshotSeq, kind: 'wave', m: makeShotMesh('wave'), vel: new V3(), life: 6, ring: null, r: 0, dmg, rad: 1, max: maxR, hit: new Set() };
+  sh.m.position.set(e.pos.x, 0.08, e.pos.z); sh.m.scale.setScalar(1); sh.tx = 1; sh.tz = 0;
+  eshots.push(sh);
 }
 function removeShot(i){ const sh = eshots[i]; scene.remove(sh.m); if (sh.ring) scene.remove(sh.ring); eshots.splice(i, 1); }
 function clearShots(){ while (eshots.length) removeShot(eshots.length - 1); }
 function updateEshots(dt){
   for (let i = eshots.length - 1; i >= 0; i--) {
     const sh = eshots[i], m = sh.m; sh.life -= dt;
-    if (sh.kind === 'orb') {
-      // steer a little toward the nearest target
-      const T = nearestFoe(m.position);
-      if (T) { pvA.set(T.pos.x - m.position.x, T.pos.y + 0.9 - m.position.y, T.pos.z - m.position.z).normalize().multiplyScalar(9); sh.vel.lerp(pvA, 1 - Math.exp(-0.9 * dt)); }
+    if (sh.kind === 'wave') {
+      sh.rad += 10 * dt; sh.tx = sh.rad; m.scale.setScalar(sh.rad);
+      m.material.opacity = 0.85 * clamp(1.2 - sh.rad / sh.max, 0.2, 1);
+      for (const t of foeTargets()) {
+        if (sh.hit.has(t)) continue;
+        const d = Math.hypot(t.pos.x - m.position.x, t.pos.z - m.position.z);
+        if (Math.abs(d - sh.rad) < 0.75 && t.pos.y < 0.35) { sh.hit.add(t); hurtFoe(t, sh.dmg, m.position.clone()); if (t.vel) { t.vel.y = 4; t.onGround = false; } }
+      }
+      if (Math.random() < 0.9) { const a = rand(0, TAU); emit(pvA.set(m.position.x + Math.cos(a) * sh.rad, 0.2, m.position.z + Math.sin(a) * sh.rad), pvB.set(0, rand(1, 3), 0), pick([0x9b7148, 0xffa040]), 0.12, 0.4, -10); }
+      if (sh.rad >= sh.max) removeShot(i);
+      continue;
+    }
+    const O = ORB[sh.kind];
+    if (O) {
+      // some steer a little toward the nearest target
+      const T = sh.home > 0 ? nearestFoe(m.position) : null;
+      if (T) { pvA.set(T.pos.x - m.position.x, T.pos.y + 0.9 - m.position.y, T.pos.z - m.position.z).normalize().multiplyScalar(O.sp); sh.vel.lerp(pvA, 1 - Math.exp(-sh.home * dt)); }
       m.position.addScaledVector(sh.vel, dt); m.rotation.y += dt * 6;
-      if (Math.random() < 0.8) emit(m.position, new V3(rand(-0.4, 0.4), rand(-0.2, 0.4), rand(-0.4, 0.4)), pick([0xc77dff, 0x9be7ff]), rand(0.08, 0.14), 0.4, 0, 0);
+      if (sh.kind !== 'ball' && Math.random() < 0.8) emit(m.position, new V3(rand(-0.4, 0.4), rand(-0.2, 0.4), rand(-0.4, 0.4)), pick(O.col), rand(0.08, 0.14), 0.4, 0, 0);
       let hit = null;
       for (const t of foeTargets()) if (Math.hypot(m.position.x - t.pos.x, m.position.y - (t.pos.y + 0.8), m.position.z - t.pos.z) < 0.9) { hit = t; break; }
       let wall = m.position.y < 0.1;
       if (!wall) for (const c of colliders) if (m.position.y < c.h && Math.hypot(m.position.x - c.x, m.position.z - c.z) < c.r) { wall = true; break; }
       if (hit) hurtFoe(hit, sh.dmg, m.position.clone());
-      if (hit || wall || sh.life <= 0) { burst(m.position, 14, [0xc77dff, 0x9be7ff, 0xffffff], 4, 0.07, 0.4, 0, 0.2); removeShot(i); }
+      if (hit || wall || sh.life <= 0) { burst(m.position, 14, O.col.concat([0xffffff]), 4, 0.07, 0.4, 0, 0.2); removeShot(i); }
       continue;
     }
     sh.vel.y -= 16 * dt; m.position.addScaledVector(sh.vel, dt); m.rotation.x += dt * 5;
@@ -2189,19 +2442,24 @@ function unpackShots(list){
       const kind = ES_KINDS[+a[1]] || 'orb';
       sh = { id, kind, m: makeShotMesh(kind), vel: new V3(), net: new V3(), ring: null, life: 99 };
       if (kind === 'shell') { sh.ring = makeRing(3.4); sh.ring.position.set(+a[5] || 0, 0.06, +a[6] || 0); }
-      sh.m.position.set(+a[2] || 0, +a[3] || 0, +a[4] || 0); eshots.push(sh);
+      sh.m.position.set(+a[2] || 0, kind === 'wave' ? 0.08 : +a[3] || 0, +a[4] || 0); eshots.push(sh);
     }
-    sh.net.set(+a[2] || 0, +a[3] || 0, +a[4] || 0);
+    sh.net.set(+a[2] || 0, sh.kind === 'wave' ? 0.08 : +a[3] || 0, +a[4] || 0);
+    if (sh.kind === 'wave') sh.netR = clamp(+a[5] || 1, 0.5, 30);
   }
   for (let i = eshots.length - 1; i >= 0; i--) if (!seen.has(eshots[i].id)) {
-    const sh = eshots[i];
+    const sh = eshots[i], O = ORB[sh.kind];
     if (sh.kind === 'shell') explodeFx(sh.m.position.clone().setY(0.2), 3.4);
-    else burst(sh.m.position, 12, sh.kind === 'orb' ? [0xc77dff, 0x9be7ff] : [0x7a6a5a], 4, 0.07, 0.4, -6, 0.2);
+    else if (sh.kind !== 'wave') burst(sh.m.position, 12, O ? O.col : [0x7a6a5a], 4, 0.07, 0.4, -6, 0.2);
     removeShot(i);
   }
 }
 function replicaShots(dt){
-  for (const sh of eshots) if (sh.net) { sh.m.position.lerp(sh.net, 1 - Math.exp(-14 * dt)); sh.m.rotation.y += dt * 5; if (sh.ring) sh.ring.material.opacity = 0.45 + Math.sin(time * 14) * 0.25; }
+  for (const sh of eshots) if (sh.net) {
+    sh.m.position.lerp(sh.net, 1 - Math.exp(-14 * dt));
+    if (sh.kind === 'wave') { const r = damp(sh.m.scale.x, sh.netR || 1, 12, dt); sh.m.scale.setScalar(r); continue; }
+    sh.m.rotation.y += dt * 5; if (sh.ring) sh.ring.material.opacity = 0.45 + Math.sin(time * 14) * 0.25;
+  }
 }
 
 // ---------- the Mole: tunnels under the meadow straight to the stash, pops up beside it and
@@ -2299,7 +2557,7 @@ function spawnEnemy(kind){
     if (e.type === 'crow') { e.pos.set(Math.cos(a) * (ARENA + 6), 16, Math.sin(a) * (ARENA + 6)); e.tgt = nearestFoe(e.pos) || STASH_FOE; e.ang = Math.atan2(e.pos.z - e.tgt.pos.z, e.pos.x - e.tgt.pos.x); }
     else { e.pos.set(Math.cos(a) * r, 0, Math.sin(a) * r); if (nearAny(e.pos.x, e.pos.z)) e.pos.set(-e.pos.x, 0, -e.pos.z); e.mesh.rotation.y = Math.atan2(e.pos.x, e.pos.z); }
     if (e.type === 'gnome') e.inner.position.y = -2;
-    const tip = BOSSES[B.kind].tip + (B.tier ? ' He has come back stronger.'.replace('He', B.kind === 'queen' ? 'She' : 'He') : '');
+    const tip = BOSSES[B.kind].tip;
     if (isCoop()) showPvBanner(e.bossName, tip);
     else { showBanner(e.bossName, tip); bossBox.hidden = false; $('bossName').textContent = e.bossName.toUpperCase(); }
     sfx.boss();
@@ -2612,7 +2870,7 @@ function startWave(n){
   for (let i = 0; i < ml; i++) queue.splice(Math.floor(rand(1, queue.length + 1)), 0, 'mole');
   const isBoss = n % 5 === 0;
   if (isBoss) queue.push('boss');
-  (co ? showPvBanner : showBanner)(n >= FINAL_WAVE ? 'Wave 100: the last stand' : 'Wave ' + n, isBoss ? bossTitle(bossFor(n).kind, bossFor(n).tier) + ' is coming' : (cc ? g + ' gnomes and ' + cc + ' crows' : g + ' gnomes incoming') + (ml ? (ml === 1 ? ', and a mole' : ', and ' + ml + ' moles') : ''));
+  (co ? showPvBanner : showBanner)(n >= FINAL_WAVE ? 'Wave 100: the last stand' : 'Wave ' + n, isBoss ? bossTitle(bossFor(n).kind) + ' is coming' : (cc ? g + ' gnomes and ' + cc + ' crows' : g + ' gnomes incoming') + (ml ? (ml === 1 ? ', and a mole' : ', and ' + ml + ' moles') : ''));
   sfx.wave();
   if (co) {
     // a crate per player from wave 2, so everyone can find a new weapon
@@ -2838,13 +3096,14 @@ function damageStash(d, from){
   if (stash <= 0) { stash = 0; if (isCoop()) coopOver('stash'); else gameOver('stash'); }
 }
 function addShake(v){ if (!reduceMotion) shake = Math.min(1.2, shake + v); }
-function slam(e){
+function slam(e, r, dmg){
+  r = r || 5.2; dmg = dmg || 18;
   sfx.slam();
-  for (let i = 0; i < 46; i++) { const a = i / 46 * TAU; tv.set(Math.cos(a) * 9, rand(1, 3), Math.sin(a) * 9); emit(new V3(e.pos.x, 0.2, e.pos.z), tv, pick([0x9b7148, 0x6aa83b, 0x7a5a36]), rand(0.08, 0.16), 0.6, -10, 2); }
+  for (let i = 0; i < 46; i++) { const a = i / 46 * TAU; tv.set(Math.cos(a) * 9 * r / 5.2, rand(1, 3), Math.sin(a) * 9 * r / 5.2); emit(new V3(e.pos.x, 0.2, e.pos.z), tv, pick([0x9b7148, 0x6aa83b, 0x7a5a36]), rand(0.08, 0.16), 0.6, -10, 2); }
   for (const t of foeTargets()) {
     const d = Math.hypot(e.pos.x - t.pos.x, e.pos.z - t.pos.z);
     if (isCoop()) t.shake = Math.min(1.2, (t.shake || 0) + clamp(0.9 - d * 0.04, 0.15, 0.7)); else addShake(0.7);
-    if (d < 5.2 && t.pos.y < 0.6) { hurtFoe(t, 18, e.pos); t.vel.y = 6; t.onGround = false; }
+    if (d < r && t.pos.y < 0.6) { hurtFoe(t, dmg, e.pos); t.vel.y = 6; t.onGround = false; }
   }
 }
 
@@ -2981,6 +3240,7 @@ function updateGnome(e, dt){
     if (Math.random() < 0.6) emit(e.pos, new V3(rand(-2, 2), rand(2, 5), rand(-2, 2)), pick([0x7a5a36, 0x9b7148]), rand(0.06, 0.12) * e.s, 0.6, -14);
     return;
   }
+  if (e.boss && e.def && e.def.charge && bossCharge(e, dt)) return;
   const T = nearestFoe(e.pos);
   const toP = T ? Math.hypot(T.pos.x - e.pos.x, T.pos.z - e.pos.z) : Infinity;
   let tx, tz, reach, onPlayer;
@@ -3019,8 +3279,8 @@ function updateGnome(e, dt){
     e.slamT -= dt;
     if (e.slamWind > 0) {
       e.slamWind -= dt; e.inner.scale.set(1.08, 0.86, 1.08);
-      if (e.slamWind <= 0) { e.inner.scale.set(1, 1, 1); slam(e); }
-    } else if (e.slamT <= 0 && toP < 7) { e.slamWind = 0.75; e.slamT = 4.5; }
+      if (e.slamWind <= 0) { e.inner.scale.set(1, 1, 1); bossSlam(e); }
+    } else if (e.def && e.def.slam && e.slamT <= 0 && toP < e.def.slam.r + 1.8) { e.slamWind = 0.75; e.slamT = e.def.slam.cd * (e.enraged ? 0.75 : 1); }
     els.bossFill && setScaleX('bossFill', clamp(e.hp / e.maxHp, 0, 1));
   }
 }

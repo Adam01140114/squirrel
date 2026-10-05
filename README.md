@@ -35,11 +35,33 @@ your best score for the day kept on this device.
 
 ## Bosses
 
-A boss comes every 5 waves, in turn: the Gnome King (ground slam), the Crow Queen (calls her flock, then dives),
-the Mole Overlord (tunnels to you and bursts out of the ground, throws rocks), the Gnome Wizard (teleports, throws
-homing magic) and the Mecha-Gnome (mortar shells that land in red rings). Each time round they come back tougher:
-Mighty, then Dread, then Legendary, with more health, faster attacks, fury at half health and escorts. Wave 100 is
-the Gnome Emperor, who uses everything at once.
+A different boss comes every 5 waves, nineteen in all, and then the Gnome Emperor on wave 100:
+
+| Wave | Boss | How it fights |
+|---|---|---|
+| 5 | Gnome King | Ground slam: jump it |
+| 10 | Crow Queen | Calls her flock, then dives |
+| 15 | Mole Overlord | Tunnels to you, bursts out of the ground, throws rocks |
+| 20 | Gnome Wizard | Teleports and throws homing magic |
+| 25 | Mecha-Gnome | Mortar shells that land in red rings |
+| 30 | Gnome Knight | Lowers his lance and charges in a straight line |
+| 35 | Storm Crow | Throws lightning while circling, calls crows |
+| 40 | Spore Lord | Rings of spores in every direction |
+| 45 | Gnome Bomber | Runs away and lobs bombs |
+| 50 | Frost Wizard | Wide fans of big ice orbs, teleports |
+| 55 | Stone Golem | Every stomp sends a shockwave rolling out: jump the ring |
+| 60 | Raven Lord | Drops bombs from the sky, calls his flock |
+| 65 | Pirate Captain | Cannon fires three balls at once, plus mortars |
+| 70 | Mole Queen | Tunnels to you; her diggers follow every time she surfaces |
+| 75 | Shadow Gnome | Vanishes and reappears right beside you |
+| 80 | Gnome Giant | Huge stomps, shockwaves and a crowd of gnomes |
+| 85 | Phoenix | Fireballs from above and fast dives |
+| 90 | Gnome Archmage | Magic orbs and a rain of meteors |
+| 95 | Gnome General | Brings an army, mortars and cannon fire |
+| 100 | Gnome Emperor | Slams, magic, mortars and an army, all at once |
+
+Later bosses have more health. From wave 30 they get furious at half health (faster, attacking more
+often), and from wave 55 they also call gnome bodyguards.
 
 ## Weapons and power-ups
 
