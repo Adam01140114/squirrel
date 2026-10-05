@@ -182,6 +182,8 @@ body.touch .desk-only{display:none}
 .choice button:hover{border-color:var(--acorn)}
 .choice button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 .placard.wide{max-width:780px}
+.auto-pick{display:inline-flex;align-items:center;gap:10px;font-size:15px;font-weight:600;color:var(--cream);cursor:pointer;user-select:none;-webkit-user-select:none}
+.auto-pick input{width:20px;height:20px;accent-color:var(--acorn);cursor:pointer;margin:0}
 .perk-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
 .perk{display:grid;align-content:start;gap:8px;text-align:left;padding:16px 14px;border-radius:14px;background:rgba(0,0,0,.25);border:3px solid transparent;color:var(--cream);font-family:var(--body);font-size:14px;line-height:1.35;cursor:pointer}
 .perk:hover,.perk:focus-visible{border-color:var(--gold);background:rgba(255,243,220,.1);outline:none}
@@ -467,6 +469,7 @@ body.pad-mode{background:#1b120b}
       <h2 class="h2" id="perkTitle">Wave cleared! Pick an upgrade</h2>
       <p class="lede">Pick an upgrade. It lasts for the rest of this run. Click a card, press 1, 2 or 3, or use a controller.</p>
       <div class="perk-row" id="perkRow"></div>
+      <label class="auto-pick"><input type="checkbox" id="perkAuto"> Auto Choose</label>
     </div>
   </div>
   <div class="screen" id="pauseScr" hidden>
@@ -479,6 +482,7 @@ body.pad-mode{background:#1b120b}
         <button class="btn ghost" id="ctrlBtn">Controls</button>
         <button class="btn ghost" id="soundBtn">Sound: on</button>
       </div>
+      <label class="auto-pick"><input type="checkbox" id="pauseAuto"> Auto Choose upgrades</label>
     </div>
   </div>
 
@@ -2938,10 +2942,24 @@ const perk = {};
 const perkLv = (id) => perk[id] | 0;
 const maxHp = () => 100 + 25 * perkLv('fur');
 let perkChoices = [];
+// Auto Choose: remembered on this device; ticking it on the upgrade screen picks one of the three cards now
+let perkAuto = false;
+try { perkAuto = localStorage.getItem('squirrel-commando-autoperk') === '1'; } catch (e) {}
+function setPerkAuto(on){
+  perkAuto = !!on; $('perkAuto').checked = perkAuto; $('pauseAuto').checked = perkAuto;
+  try { localStorage.setItem('squirrel-commando-autoperk', perkAuto ? '1' : '0'); } catch (e) {}
+  if (perkAuto && state === 'perk' && perkChoices.length) takePerk(Math.floor(Math.random() * perkChoices.length));
+}
 function openPerks(){
   const open = PERKS.filter(P => perkLv(P.id) < P.max);
   if (!open.length) return false;
   perkChoices = open.slice().sort(() => Math.random() - 0.5).slice(0, 3);
+  if (perkAuto) {
+    // no screen, no pause: take one of the three at random and keep playing
+    const P = pick(perkChoices); applyPerk(P); sfx.pickup(true);
+    toast('Auto upgrade: ' + P.name + (P.max > 1 ? ' ' + perk[P.id] : ''));
+    return false;
+  }
   state = 'perk'; firing = false; for (const k in keys) delete keys[k];
   document.body.classList.remove('playing'); showTouch(false);
   if (document.pointerLockElement) document.exitPointerLock();
@@ -2960,11 +2978,14 @@ function openPerks(){
   row.firstChild.focus({ preventScroll: true });
   return true;
 }
-function takePerk(i){
-  const P = perkChoices[i]; if (state !== 'perk' || !P) return;
+function applyPerk(P){
   perk[P.id] = perkLv(P.id) + 1;
   if (P.id === 'fur') player.hp = maxHp();
   if (P.id === 'walls') { stash = Math.min(100, stash + 40); updateStashPile(); }
+}
+function takePerk(i){
+  const P = perkChoices[i]; if (state !== 'perk' || !P) return;
+  applyPerk(P);
   $('perkScr').hidden = true;
   initAudio(); sfx.pickup(true);
   state = 'playing'; document.body.classList.add('playing'); showTouch(true); lockPointer(); clock.getDelta();
@@ -5460,6 +5481,9 @@ $('pvpLeave').addEventListener('click', leavePvp);
 $('ctrlBtn').addEventListener('click', () => { $('ctrlScr').hidden = false; $('ctrlBack').focus({ preventScroll: true }); });
 $('pvpCtrlBtn').addEventListener('click', () => { $('ctrlScr').hidden = false; $('ctrlBack').focus({ preventScroll: true }); });
 $('ctrlBack').addEventListener('click', () => { $('ctrlScr').hidden = true; });
+$('perkAuto').addEventListener('change', (e) => setPerkAuto(e.target.checked));
+$('pauseAuto').addEventListener('change', (e) => setPerkAuto(e.target.checked));
+$('perkAuto').checked = perkAuto; $('pauseAuto').checked = perkAuto;
 $('pvpOverLeave').addEventListener('click', leavePvp);
 $('pvpReselect').addEventListener('click', backToSelect);
 $('pvpRematch').addEventListener('click', () => { if (!pvp) return; pvpBegin(pvp.m + 1); if (pvp.mode === 'online') { document.body.classList.add('playing'); lockPointer(); } });
@@ -5547,13 +5571,15 @@ function aimAssist(o, yawNow, pitchNow, pts, dt, fire){
 const TV_MENUS = ['ctrlScr', 'perkScr', 'pauseScr', 'overScr', 'pvpPauseScr', 'pvpOverScr'];
 const hashStr = (str) => { let h = 0; for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) | 0; return (h >>> 0).toString(36); };
 const shown = (el) => !!el && !el.hidden && !el.closest('[hidden]');
-function tvMenuButtons(scr){ return [...scr.querySelectorAll('button')].filter(b => shown(b) && !b.disabled); }
+function tvMenuButtons(scr){ return [...scr.querySelectorAll('button, input[type=checkbox]')].filter(b => shown(b) && !b.disabled); }
 function tvMenu(){
   for (const id of TV_MENUS) {
     const scr = $(id); if (!shown(scr)) continue;
     const h = scr.querySelector('h2');
     const lede = [...scr.querySelectorAll('.lede, .perks-held')].find(x => shown(x) && x.textContent.trim());
-    const b = tvMenuButtons(scr).map(el => el.classList.contains('perk')
+    const b = tvMenuButtons(scr).map(el => el.type === 'checkbox'
+      ? { l: (el.closest('label') || el).textContent.trim() + ': ' + (el.checked ? 'on' : 'off') }
+      : el.classList.contains('perk')
       ? { l: (el.querySelector('b') || el).textContent.trim(), s: (el.querySelector('span') || { textContent: '' }).textContent.trim() }
       : { l: el.textContent.trim() });
     if (!b.length) continue;
