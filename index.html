@@ -707,15 +707,19 @@ function netRooms(){
     };
     const signal = (p, data) => socket.emit('room:signal', { name, to: p.peer, data });
     // my presence to every peer with an open direct link; true when all of them have one
+    // true when every peer we link with (phone <-> TV, guest <-> host) got it directly; the others
+    // (say, the other phones) only need the twice-a-second server copy
     function sendDirect(){
       const msg = JSON.stringify({ t: 'p', presence: mine, q });
-      let all = peers.size > 0;
+      let all = true, linked = 0;
       for (const p of peers.values()) {
-        if (p.link && p.link.open) { try { p.link.ch.send(msg); } catch (e) { all = false; } }
-        else all = false;
+        const role = p.presence && p.presence.role;
+        const mustLink = !!role && (DIRECT_TO[mine.role] === role || DIRECT_TO[role] === mine.role);
+        if (p.link && p.link.open) { try { p.link.ch.send(msg); linked++; } catch (e) { if (mustLink) all = false; } }
+        else if (mustLink) all = false;
       }
       lastDirect = Date.now();
-      return all;
+      return all && linked > 0;
     }
     // the direct channel can drop packets: repeat the latest presence if nothing went out for 100 ms
     const resendTimer = setInterval(() => { if (!left && q > 0 && Date.now() - lastDirect > 100) sendDirect(); }, 100);
@@ -4678,6 +4682,8 @@ function pvpRender(){
   if (pvp.mode === 'couch') {
     renderer.setScissorTest(true);
     const rects = viewRects(pvp.humans.length, W, H);
+    // the shadows are the same for every player's view: draw them once a frame, not once per view
+    renderer.shadowMap.autoUpdate = false; renderer.shadowMap.needsUpdate = true;
     pvp.humans.forEach((f, i) => {
       const [x, y, w, h] = rects[i];
       f.cam.aspect = w / h; f.cam.updateProjectionMatrix();
@@ -4688,6 +4694,7 @@ function pvpRender(){
       renderer.render(scene, f.cam);
     });
     renderer.setScissorTest(false); renderer.setViewport(0, 0, W, H);
+    renderer.shadowMap.autoUpdate = true;
     // the spare quarter with three players: a map of the meadow (drawn flat, so it costs nothing)
     if (pvp.humans.length === 3) drawMap();
   } else {
@@ -5337,9 +5344,23 @@ function update(dt){
   updateWave(dt);
   updateHUD(dt);
 }
+// Split screen draws the meadow up to four times a frame. If the TV can't keep up, render at a
+// lower resolution (never below 0.75x) and raise it again once there is headroom.
+const RES = { base: renderer.getPixelRatio(), cur: renderer.getPixelRatio(), acc: 0, n: 0 };
+function adaptRes(dt, on){
+  if (!on) { if (RES.cur !== RES.base) { RES.cur = RES.base; renderer.setPixelRatio(RES.cur); resize(); } RES.acc = RES.n = 0; return; }
+  RES.acc += dt; RES.n++;
+  if (RES.acc < 2) return;
+  const avg = RES.acc / RES.n; RES.acc = RES.n = 0;
+  let next = RES.cur;
+  if (avg > 1 / 50) next = Math.max(0.75, RES.cur - 0.25);
+  else if (avg < 1 / 58) next = Math.min(RES.base, RES.cur + 0.25);
+  if (next !== RES.cur) { RES.cur = next; renderer.setPixelRatio(next); resize(); }
+}
 function frame(){
   requestAnimationFrame(frame);
   const dt = Math.min(clock.getDelta(), 0.05);
+  adaptRes(dt, state === 'pvp' && !!pvp && pvp.mode === 'couch');
   gpPoll(dt);
   soloPadTick(dt);
   if (state === 'paused') { renderer.render(scene, camera); return; }
