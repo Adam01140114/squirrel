@@ -204,6 +204,14 @@ body.touch .desk-only{display:none}
 .perks-held{font-size:13px;color:var(--cream-dim)}
 #pauseScr .placard,#pvpPauseScr .placard{text-align:center;justify-items:center}
 #pauseScr .row,#pvpPauseScr .row{justify-content:center}
+#ctrlScr .placard{max-width:960px}
+.ctrl-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+@media (max-width:700px){.ctrl-grid{grid-template-columns:minmax(0,1fr)}}
+.ctrl-grid section{background:rgba(0,0,0,.22);border-radius:12px;padding:12px 14px;min-width:0}
+.ctrl-grid h3{margin:0 0 8px;font-family:var(--display);font-weight:400;font-size:18px;color:var(--acorn)}
+.ctrl-grid dl{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;margin:0;font-size:13.5px;line-height:1.35}
+.ctrl-grid dt{font-weight:600;color:var(--cream);white-space:nowrap}
+.ctrl-grid dd{margin:0;color:var(--cream-dim)}
 @media (max-width:640px){.perk-row{grid-template-columns:minmax(0,1fr)}.perk{padding:10px 12px}}
 .qrs{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
 .qrs:empty{display:none}
@@ -468,6 +476,7 @@ body.pad-mode{background:#1b120b}
       <div class="row">
         <button class="btn" id="resumeBtn">Resume</button>
         <button class="btn ghost" id="restartBtn">Restart</button>
+        <button class="btn ghost" id="ctrlBtn">Controls</button>
         <button class="btn ghost" id="soundBtn">Sound: on</button>
       </div>
     </div>
@@ -568,6 +577,7 @@ body.pad-mode{background:#1b120b}
       <p class="lede" id="pvpPauseLede">The match is still running. Click Resume to grab your mouse again.</p>
       <div class="row">
         <button class="btn" id="pvpResume">Resume</button>
+        <button class="btn ghost" id="pvpCtrlBtn">Controls</button>
         <button class="btn ghost" id="pvpLeave">Leave match</button>
       </div>
     </div>
@@ -586,6 +596,54 @@ body.pad-mode{background:#1b120b}
         <button class="btn ghost" id="pvpReselect">Change fighters</button>
         <button class="btn ghost" id="pvpOverLeave">Leave</button>
       </div>
+    </div>
+  </div>
+
+  <div class="screen" id="ctrlScr" hidden>
+    <div class="placard wide">
+      <h2 class="h2">Controls</h2>
+      <div class="ctrl-grid">
+        <section><h3>Keyboard and mouse</h3><dl>
+          <dt>W A S D</dt><dd>Move</dd>
+          <dt>Mouse</dt><dd>Aim</dd>
+          <dt>Click</dt><dd>Shoot (hold for auto)</dd>
+          <dt>Space</dt><dd>Jump, again in the air to double jump</dd>
+          <dt>Shift</dt><dd>Sprint</dd>
+          <dt>R</dt><dd>Reload</dd>
+          <dt>1–4, Q, wheel</dt><dd>Switch weapon</dd>
+          <dt>Right click, V</dt><dd>Change camera</dd>
+          <dt>M</dt><dd>Sound on or off</dd>
+          <dt>Esc</dt><dd>Pause</dd>
+        </dl></section>
+        <section><h3>Phone (touch)</h3><dl>
+          <dt>Left thumb</dt><dd>Drag to move, to the edge to sprint</dd>
+          <dt>Right thumb</dt><dd>Drag to aim</dd>
+          <dt>FIRE</dt><dd>Hold to shoot, slide on it to aim</dd>
+          <dt>JUMP</dt><dd>Tap, tap again to double jump</dd>
+          <dt>R</dt><dd>Reload</dd>
+          <dt>SWAP</dt><dd>Next weapon</dd>
+          <dt>CAM</dt><dd>Change camera</dd>
+          <dt>II</dt><dd>Pause</dd>
+          <dt>Aim help</dt><dd>Your aim drifts toward enemies close to the crosshair</dd>
+        </dl></section>
+        <section><h3>Phone as a controller</h3><dl>
+          <dt>Same buttons</dt><dd>As playing on the phone; the game is on the TV</dd>
+          <dt>Menus</dt><dd>Every menu on the TV also shows on your phone: tap to choose</dd>
+          <dt>Joining</dt><dd>Scan the code; the first phone in is Player 1</dd>
+        </dl></section>
+        <section><h3>Game controller</h3><dl>
+          <dt>Left stick</dt><dd>Move</dd>
+          <dt>Right stick</dt><dd>Aim</dd>
+          <dt>RT</dt><dd>Shoot</dd>
+          <dt>A</dt><dd>Jump (and press on menus)</dd>
+          <dt>X</dt><dd>Reload</dd>
+          <dt>LB / RB</dt><dd>Switch weapon</dd>
+          <dt>Y</dt><dd>Change camera</dd>
+          <dt>B or L3</dt><dd>Sprint</dd>
+          <dt>Start</dt><dd>Pause</dd>
+        </dl></section>
+      </div>
+      <div class="row"><button class="btn" id="ctrlBack">Back</button></div>
     </div>
   </div>
 
@@ -2871,7 +2929,6 @@ const PERKS = [
   { id: 'walls', name: 'Stash Walls', max: 2, text: () => 'Repair the stash by 40, and raiders steal 25% less.' },
   { id: 'lucky', name: 'Lucky Charm', max: 2, text: () => 'Power-ups last 50% longer.' },
   { id: 'snack', name: 'Nut Snack', max: 2, text: () => 'Heal 4 health for every enemy you bonk.' },
-  { id: 'spring', name: 'Spring Tail', max: 1, text: () => 'One more jump in the air.' },
   { id: 'show', name: 'Show-off', max: 2, text: () => '25% more points for everything.' }
 ];
 const perk = {};
@@ -3193,7 +3250,7 @@ function updatePlayer(dt){
   if (jumpQueued) {
     jumpQueued = false;
     if (player.onGround) { player.vel.y = 9.2; player.onGround = false; player.jumps = 1; sfx.jump(); burst(player.pos, 6, [0x9b7148, 0xc8b08a], 2, 0.07, 0.4, -6, 0.2); }
-    else if (player.jumps < (pw.speed > 0 ? 3 : 2) + perkLv('spring')) { player.vel.y = 8.4; player.jumps++; sfx.jump(); tv.copy(player.pos); tv.y += 0.3; burst(tv, 8, 0xfff6e6, 2.5, 0.08, 0.35, 0, 0); }
+    else if (player.jumps < (pw.speed > 0 ? 3 : 2)) { player.vel.y = 8.4; player.jumps++; sfx.jump(); tv.copy(player.pos); tv.y += 0.3; burst(tv, 8, 0xfff6e6, 2.5, 0.08, 0.35, 0, 0); }
   }
   player.pos.addScaledVector(player.vel, dt);
   if (player.pos.y <= 0) {
@@ -3386,6 +3443,7 @@ function updatePickups(dt){
         if (k.kind === 'crate' && k.vel.y < -6) burst(o.position, 10, [0x9b7148, 0xc8b08a], 3, 0.08, 0.5, -8, 0.3);
         o.position.y = k.rest; k.vel.y = Math.abs(k.vel.y) > 2 ? -k.vel.y * 0.35 : 0; k.vel.x *= 0.8; k.vel.z *= 0.8;
         if (k.vel.y === 0 && k.kind === 'power') { k.settled = true; k.bob = 0; }
+        if (k.vel.y === 0) k.grounded = true;
       }
     }
     if (k.kind === 'power') {
@@ -3397,12 +3455,14 @@ function updatePickups(dt){
     let d = o.position.distanceTo(tv);
     const nut = k.kind === 'acorn' || k.kind === 'golden';
     k.age = (k.age || 0) + dt;
-    if (nut && state === 'playing' && k.age > 0.45) {
-      // magnetic pull from anywhere on the map
+    if (nut && state === 'playing' && k.grounded) {
+      // once it has landed: a magnetic pull along the ground from anywhere on the map
       k.magT = (k.magT || 0) + dt; k.settled = true;
       const sp = Math.min(16, 1.4 + k.magT * 3.2) * dt;
-      if (d > 0.001) o.position.addScaledVector(pickDir.copy(tv).sub(o.position).normalize(), Math.min(sp, d));
-      o.position.y += Math.sin(k.age * 6) * 0.004;
+      pickDir.set(tv.x - o.position.x, 0, tv.z - o.position.z);
+      const hd = pickDir.length();
+      if (hd > 0.001) o.position.addScaledVector(pickDir.normalize(), Math.min(sp, hd));
+      o.position.y = k.rest + Math.abs(Math.sin(k.magT * 9)) * 0.12; // a little hop as it rolls
       if (Math.random() < dt * 10) emit(o.position, pickDir.set(rand(-0.3, 0.3), rand(0.2, 0.6), rand(-0.3, 0.3)), k.kind === 'golden' ? 0xffd23f : 0xffe7a8, 0.04, 0.35, 0, 2);
       d = o.position.distanceTo(tv); k.life = Math.max(k.life, 5);
     } else if (!nut && d < 2.4 && state === 'playing' && o.position.y < 3) { o.position.lerp(tv, Math.min(1, dt * 9 / (d + 0.4))); }
@@ -3564,6 +3624,7 @@ function pause(){
   $('resumeBtn').focus({ preventScroll: true });
 }
 function resume(){
+  $('ctrlScr').hidden = true;
   if (state !== 'paused') return;
   initAudio();
   state = 'playing'; document.body.classList.add('playing');
@@ -4318,20 +4379,21 @@ function pvpUpdatePickups(dt){
     } else o.rotation.y += dt * (k.kind === 'crate' ? 0.6 : 2.5);
     // magnetic acorns: the TV / host moves them toward their player; the online guest eases to the host's spot
     k.age = (k.age || 0) + dt;
-    if (k.to !== undefined && auth && pvp.phase === 'play' && k.age > 0.45) {
+    if (k.to !== undefined && auth && pvp.phase === 'play' && k.landed && o.position.y <= k.rest + 0.2) {
       let f = pvp.fighters[k.to];
       if (!f || f.dead) { let bd = Infinity; for (const g of pvp.fighters) { if (g.dead) continue; const dd = Math.hypot(g.pos.x - o.position.x, g.pos.z - o.position.z); if (dd < bd) { bd = dd; f = g; } } }
       if (f && !f.dead) {
         k.magT = (k.magT || 0) + dt;
-        pickDir.set(f.pos.x - o.position.x, f.pos.y + 0.7 - o.position.y, f.pos.z - o.position.z);
+        pickDir.set(f.pos.x - o.position.x, 0, f.pos.z - o.position.z);
         const d = pickDir.length(), sp = Math.min(16, 1.4 + k.magT * 3.2) * dt;
         if (d > 0.001) o.position.addScaledVector(pickDir.normalize(), Math.min(sp, d));
-        k.x = o.position.x; k.z = o.position.z; k.landed = true;
+        o.position.y = k.rest + Math.abs(Math.sin(k.magT * 9)) * 0.12; // rolling along the ground
+        k.x = o.position.x; k.z = o.position.z;
         if (Math.random() < dt * 10) emit(o.position, pickDir.set(rand(-0.3, 0.3), rand(0.2, 0.6), rand(-0.3, 0.3)), k.kind === 'golden' ? 0xffd23f : 0xffe7a8, 0.04, 0.35, 0, 2);
       }
     } else if (!auth && k.tx !== undefined) {
       o.position.x = damp(o.position.x, k.tx, 12, dt); o.position.z = damp(o.position.z, k.tz, 12, dt);
-      if (Math.hypot(k.tx - k.x, k.tz - k.z) > 0.05) { o.position.y = damp(o.position.y, k.rest + 0.3, 6, dt); k.landed = true; }
+      if (Math.hypot(k.tx - k.x, k.tz - k.z) > 0.05 && o.position.y <= k.rest + 0.2) { o.position.y = k.rest + Math.abs(Math.sin(k.age * 9)) * 0.12; k.landed = true; }
     }
     if (pvp.phase !== 'play' || o.position.y > 3) continue;
     for (const f of pvp.fighters) {
@@ -4707,8 +4769,9 @@ function coopDrop(p, kind, shooter){
   const a = rand(0, TAU), r = rand(0.4, 1.6);
   const lim = ARENA - 2, x = clamp(p.x + Math.cos(a) * r, -lim, lim), z = clamp(p.z + Math.sin(a) * r, -lim, lim);
   pvpAddPickup(pvp.pkId++, kind, kind === 'power' ? pick(PKEYS) : null, x, z, false);
-  // acorns home in on the player who got the kill (or whoever is closest)
-  if (kind === 'acorn' || kind === 'golden') pvp.pk[pvp.pk.length - 1].to = shooter ? shooter.idx : -1;
+  // acorns fall from where the enemy was (a crow is up in the air), then home in on the player
+  // who got the kill (or whoever is closest)
+  if (kind === 'acorn' || kind === 'golden') { const k = pvp.pk[pvp.pk.length - 1]; k.to = shooter ? shooter.idx : -1; k.obj.position.y = Math.max(k.obj.position.y, p.y); }
 }
 // the couch TV / online host: waves and enemies
 function coopTick(dt){
@@ -5379,8 +5442,11 @@ $('vsBack').addEventListener('click', () => { $('vsScr').hidden = true; $('menu'
 $('couchBtn').addEventListener('click', () => openLobby('couch'));
 $('onlineBtn').addEventListener('click', () => openLobby('online'));
 $('lobbyCancel').addEventListener('click', cancelLobby);
-$('pvpResume').addEventListener('click', () => { initAudio(); $('pvpPauseScr').hidden = true; if (pvp && pvp.mode === 'online') { document.body.classList.add('playing'); lockPointer(); } });
+$('pvpResume').addEventListener('click', () => { $('ctrlScr').hidden = true; initAudio(); $('pvpPauseScr').hidden = true; if (pvp && pvp.mode === 'online') { document.body.classList.add('playing'); lockPointer(); } });
 $('pvpLeave').addEventListener('click', leavePvp);
+$('ctrlBtn').addEventListener('click', () => { $('ctrlScr').hidden = false; $('ctrlBack').focus({ preventScroll: true }); });
+$('pvpCtrlBtn').addEventListener('click', () => { $('ctrlScr').hidden = false; $('ctrlBack').focus({ preventScroll: true }); });
+$('ctrlBack').addEventListener('click', () => { $('ctrlScr').hidden = true; });
 $('pvpOverLeave').addEventListener('click', leavePvp);
 $('pvpReselect').addEventListener('click', backToSelect);
 $('pvpRematch').addEventListener('click', () => { if (!pvp) return; pvpBegin(pvp.m + 1); if (pvp.mode === 'online') { document.body.classList.add('playing'); lockPointer(); } });
@@ -5465,7 +5531,7 @@ function aimAssist(o, yawNow, pitchNow, pts, dt, fire){
 // (upgrades, pause, game over, match over) goes to the phones as text and buttons, and a tap
 // on a phone presses that button on the TV. The key lets the TV ignore a tap on a menu that
 // has since changed.
-const TV_MENUS = ['perkScr', 'pauseScr', 'overScr', 'pvpPauseScr', 'pvpOverScr'];
+const TV_MENUS = ['ctrlScr', 'perkScr', 'pauseScr', 'overScr', 'pvpPauseScr', 'pvpOverScr'];
 const hashStr = (str) => { let h = 0; for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) | 0; return (h >>> 0).toString(36); };
 const shown = (el) => !!el && !el.hidden && !el.closest('[hidden]');
 function tvMenuButtons(scr){ return [...scr.querySelectorAll('button')].filter(b => shown(b) && !b.disabled); }
@@ -5479,7 +5545,7 @@ function tvMenu(){
       : { l: el.textContent.trim() });
     if (!b.length) continue;
     const st = [...scr.querySelectorAll('dl.stats > div')].filter(shown).map(d => [(d.querySelector('dt') || d).textContent.trim(), (d.querySelector('dd') || d).textContent.trim()]);
-    const d = id === 'perkScr' ? 'Pick an upgrade. It lasts for the rest of this run.' : lede ? lede.textContent.trim() : '';
+    const d = id === 'perkScr' ? 'Pick an upgrade. It lasts for the rest of this run.' : id === 'ctrlScr' ? 'The full list is on the TV.' : lede ? lede.textContent.trim() : '';
     const t = h ? h.textContent.trim() : '';
     return { k: id + ':' + hashStr(t + '|' + b.map(x => x.l + x.s).join('|')), t, d, b, st };
   }
