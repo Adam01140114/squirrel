@@ -58,7 +58,7 @@ const misses = { count: 0, since: 0 };
 const CODE_PAGE = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Squirrel Commando</title><style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#1d2b1a;color:#fbf0cf;font:16px system-ui,sans-serif}
 form{display:grid;gap:12px;padding:24px;width:min(300px,calc(100vw - 32px));background:rgba(0,0,0,.3);border-radius:14px;text-align:center}
-h1{margin:0;font-size:22px}input,button{font:inherit;padding:12px;border-radius:10px;border:0}input{text-align:center;font-size:22px;letter-spacing:.2em}
+h1{margin:0;font-size:22px}*{box-sizing:border-box}input,button{font:inherit;padding:12px;border-radius:10px;border:0;width:100%;min-width:0;margin:0}input{text-align:center;font-size:22px;letter-spacing:.2em}
 button{background:#e0a81c;color:#1d2b1a;font-weight:700}p{margin:0;color:#ff8a7a;min-height:1.2em}</style></head>
 <body><form method="post" action="/code"><h1>Squirrel Commando</h1><input name="code" inputmode="numeric" autocomplete="off" placeholder="Code" autofocus>
 <button>Play</button><p>%MSG%</p></form></body></html>`;
