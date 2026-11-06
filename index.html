@@ -280,7 +280,7 @@ body.touch .desk-only{display:none}
 #soloScr .placard{max-width:620px}
 .pick-sec{display:grid;gap:8px}
 .pick-h{margin:0;font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--cream-dim)}
-.pick-row{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;--pc:var(--acorn)}
+.pick-row{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;--pc:var(--acorn)}
 .map-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
 .map-card{display:grid;grid-template-columns:44px 1fr;gap:4px 10px;align-items:center;text-align:left;padding:8px;border-radius:12px;background:rgba(0,0,0,.25);border:2px solid transparent;color:var(--cream);font-family:var(--body);cursor:pointer;min-width:0}
 .map-card i{grid-row:span 2;width:44px;height:44px;border-radius:10px;background:var(--sw);box-shadow:inset 0 0 0 2px rgba(0,0,0,.2)}
@@ -305,7 +305,7 @@ body.touch .desk-only{display:none}
 #selScr.quad .sel-panels{grid-template-columns:repeat(4,minmax(0,1fr));justify-content:stretch}
 #selScr.quad .sel-panel{padding:10px;align-content:start;gap:8px}
 #selScr.quad .sel-panels{align-items:end}
-#selScr.quad .sel-list{grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
+#selScr.quad .sel-list{grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}
 #selScr.quad .sel-ch{padding:5px 1px;font-size:10px}
 #selScr.quad .sel-ch i{width:24px;height:24px}
 #selScr.quad .sel-name{font-size:22px}
@@ -321,7 +321,7 @@ body.touch .desk-only{display:none}
 .sel-head b{font-size:22px;font-weight:400}
 .sel-head span{font-size:14px;color:var(--cream-dim);font-family:var(--body)}
 .sel-name{font-family:var(--display);font-size:30px;line-height:1}
-.sel-list{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.sel-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
 .sel-ch{display:grid;justify-items:center;align-content:start;gap:5px;padding:8px 3px;border-radius:10px;background:rgba(0,0,0,.25);border:2px solid transparent;color:var(--cream);font-family:var(--body);font-size:11px;line-height:1.15;cursor:pointer;text-align:center;min-width:0}
 .sel-ch i{width:30px;height:30px;border-radius:50%;background:var(--sw);box-shadow:inset 0 0 0 2px rgba(0,0,0,.25)}
 .sel-ch.on{border-color:var(--pc);background:rgba(255,243,220,.1)}
@@ -707,7 +707,8 @@ const CHARS = [
   { id: 'panda', name: 'Panda', sw: 'linear-gradient(135deg,#f4f4f0 55%,#222326 55%)' },
   { id: 'shepherd', name: 'German Shepherd', sw: 'linear-gradient(135deg,#c48a48 55%,#2a2420 55%)' },
   { id: 'jack', name: 'Jack Russell', sw: 'linear-gradient(135deg,#f6f3ee 55%,#c8803c 55%)' },
-  { id: 'bear', name: 'Bear', sw: 'linear-gradient(135deg,#7a4a2a 55%,#c8955e 55%)' }
+  { id: 'bear', name: 'Bear', sw: 'linear-gradient(135deg,#7a4a2a 55%,#c8955e 55%)' },
+  { id: 'cat', name: 'Orange Cat', sw: 'linear-gradient(135deg,#e8862e 55%,#fbe6c8 55%)' }
 ];
 const r2 = (v) => Math.round((+v || 0) * 100) / 100;
 let roomP = null;
@@ -1739,7 +1740,7 @@ function buildSquirrel(pal){
   return { group: g, body, head, feet, gunRig, tail, segs, tailMats, guns, muzzles, wag: 1, colors: [pal.fur, pal.light, pal.cream, pal.band] };
 }
 
-// Panda, German Shepherd, Jack Russell and Bear share the squirrel's skeleton:
+// Panda, German Shepherd, Jack Russell, Bear and Orange Cat share the squirrel's skeleton:
 // body group, head at y 1.16, two feet, the gun rig and a tail made of segments.
 function buildCritter(kind, pal){
   if (kind === 'squirrel' || !kind) return buildSquirrel(pal);
@@ -1829,6 +1830,30 @@ function buildCritter(kind, pal){
     const tw = tailMat(0xf6f3ee), tt = tailMat(0xc8803c);
     for (let i = 0; i < 5; i++) { const t = i / 4; addSeg(0.065, i === 4 ? tt : tw, 0, t * 0.5, 0.05 + t * 0.15, t); }
     colors = [0xf6f3ee, 0xc8803c, 0x8a5426, pal.band]; wag = 3; scale = 0.94;
+  } else if (kind === 'cat') {
+    // an orange tabby: darker stripes on the back and head, cream chest and muzzle, green eyes,
+    // pointed ears and a long striped tail that curls up at the tip
+    const orange = M(0xe8862e), stripe = M(0xb4561a), cream = M(0xfbe6c8);
+    blob(0.42, orange, 0, 0.64, 0, 0.88, 1.06, 0.9);
+    blob(0.28, cream, 0, 0.62, -0.2, 0.8, 1, 0.5);
+    for (let i = 0; i < 3; i++) blob(0.2, stripe, 0, 0.98 - i * 0.17, 0.3 - i * 0.02, 1.8, 0.22, 0.6);
+    for (const s of [-1, 1]) blob(0.2, orange, 0.2 * s, 0.37, 0.07, 0.7, 0.9, 1);
+    mk(S(0.3), orange, 0, 0, 0, head);
+    blob(0.14, cream, 0, -0.1, -0.24, 1.2, 0.75, 0.9, head);
+    for (let i = 0; i < 3; i++) blob(0.05, stripe, (i - 1) * 0.08, 0.26 - Math.abs(i - 1) * 0.02, -0.18, 0.6, 1.4, 0.5, head);
+    const nose = mk(new THREE.ConeGeometry(0.035, 0.04, 3), pink, 0, -0.05, -0.37, head); nose.rotation.x = Math.PI / 2 + Math.PI;
+    for (const s of [-1, 1]) {
+      const ear = mk(new THREE.ConeGeometry(0.1, 0.22, 4), orange, 0.17 * s, 0.28, 0, head); ear.rotation.z = -0.3 * s;
+      const inn = mk(new THREE.ConeGeometry(0.055, 0.13, 4), pink, 0.165 * s, 0.26, -0.035, head); inn.rotation.z = -0.3 * s;
+      for (const k of [-1, 1]) {
+        const w = mk(new THREE.BoxGeometry(0.2, 0.006, 0.006), white, 0.17 * s, -0.08 + k * 0.025, -0.3, head, false); w.rotation.z = k * 0.12 * s;
+      }
+    }
+    eyes(0.12, 0.06, -0.22, 0.06, M(0x6fbf3a));
+    feet = feetOf(cream); rig = buildGunRig(body, cream, orange);
+    const to = tailMat(0xe8862e), ts = tailMat(0xb4561a);
+    for (let i = 0; i < 9; i++) { const t = i / 8; addSeg(0.07 - t * 0.012, i % 2 ? ts : to, 0, t * 0.75 + Math.max(0, t - 0.6) * 0.4, 0.1 + Math.sin(t * Math.PI * 0.6) * 0.45 - Math.max(0, t - 0.75) * 0.5, t); }
+    colors = [0xe8862e, 0xb4561a, 0xfbe6c8, pal.band]; wag = 1.2; scale = 0.92;
   }
   g.scale.setScalar(scale);
   return { group: g, body, head, feet, gunRig: rig.gunRig, tail, segs, tailMats, guns: rig.guns, muzzles: rig.muzzles, wag, colors };

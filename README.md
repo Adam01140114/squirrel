@@ -2,7 +2,7 @@
 
 A third-person 3D shooter built with three.js, in a single `index.html`.
 
-Play as a squirrel, panda, German Shepherd, Jack Russell or bear across five maps:
+Play as a squirrel, panda, German Shepherd, Jack Russell, bear or orange cat across five maps:
 Sunny Meadow, Frosty Pines, Canyon Dunes, Spooky Hollow and Blossom Garden.
 
 ## Modes
@@ -120,3 +120,10 @@ real-time `room` capability instead of `server.js`.
 New > Blueprint and pick this repository; Render installs it, runs
 `node server.js`, and redeploys on every push to `main`. Anyone can then open
 the game at its onrender.com address and play couch or online versus.
+
+## Hosting
+
+The game runs on this Mac (launchd: `com.squirrel-commando`, logs in ~/Library/Logs/Squirrel). At home it's
+http://10.0.0.122:6868. The public link is https://platnms-mac-mini.tail7f705f.ts.net:8443 through Tailscale
+Funnel (`tailscale funnel --bg --https=8443 http://127.0.0.1:6869`), and it asks for the code 6767 once per device.
+Render (render.yaml) is no longer used.

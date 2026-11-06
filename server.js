@@ -14,9 +14,15 @@
  *   only passes the set-up messages ("room:signal"). If that link can't open,
  *   the phone's input keeps coming through here.
  *
- * Run: npm start  (PORT, default 6868). Render: see render.yaml.
+ * Run: npm start  (PORT, default 6868, for this computer and its Wi-Fi).
+ *
+ * The public link: a second entrance on 127.0.0.1:PUBLIC_PORT (default 6869), which
+ * Tailscale Funnel passes https://<this Mac>.ts.net:8443 to. Everything there, the
+ * game's own connection included, needs the code (PUBLIC_CODE, default 6767) once;
+ * after that a cookie remembers it.
  */
 
+const crypto = require('crypto');
 const express = require('express');
 const http = require('http');
 const os = require('os');
@@ -27,10 +33,64 @@ const PORT = process.env.PORT || 6868;
 const MAX_PEERS = 8;            // per room: a TV, two phones, and some slack for reconnects
 const MAX_PRESENCE = 16 * 1024; // bytes of JSON per presence update
 const NAME_RE = /^[a-z0-9-]{1,40}$/;
+const PUBLIC_PORT = +process.env.PUBLIC_PORT || 6869;
+const PUBLIC_CODE = process.env.PUBLIC_CODE || '6767';
+const COOKIE = 'sc_code';
+// The cookie's value: changes if the code does, and can't be made up without the code
+const SECRET = crypto.createHash('sha256').update(__dirname + os.hostname()).digest('hex');
+const pass = crypto.createHmac('sha256', SECRET).update('code:' + PUBLIC_CODE).digest('hex');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { maxHttpBufferSize: 64 * 1024 });
+const publicServer = http.createServer(app);
+const io = new Server(server, {
+    maxHttpBufferSize: 64 * 1024,
+    allowRequest: (req, cb) => cb(null, !viaPublic(req) || hasPass(req)), // the code first, on the public link
+});
+io.attach(publicServer);
+
+function viaPublic(req) { return req.socket.localPort === PUBLIC_PORT; }
+function hasPass(req) {
+    const m = /(?:^|;\s*)sc_code=([a-f0-9]{64})/.exec(req.headers.cookie || '');
+    return !!m && crypto.timingSafeEqual(Buffer.from(m[1]), Buffer.from(pass));
+}
+const misses = { count: 0, since: 0 };
+const CODE_PAGE = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Squirrel Commando</title><style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#1d2b1a;color:#fbf0cf;font:16px system-ui,sans-serif}
+form{display:grid;gap:12px;padding:24px;width:min(300px,calc(100vw - 32px));background:rgba(0,0,0,.3);border-radius:14px;text-align:center}
+h1{margin:0;font-size:22px}input,button{font:inherit;padding:12px;border-radius:10px;border:0}input{text-align:center;font-size:22px;letter-spacing:.2em}
+button{background:#e0a81c;color:#1d2b1a;font-weight:700}p{margin:0;color:#ff8a7a;min-height:1.2em}</style></head>
+<body><form method="post" action="/code"><h1>Squirrel Commando</h1><input name="code" inputmode="numeric" autocomplete="off" placeholder="Code" autofocus>
+<button>Play</button><p>%MSG%</p></form></body></html>`;
+// The public entrance's door: the code form, until the code's been given
+app.use((req, res, next) => {
+    if (!viaPublic(req) || req.path === '/health') return next();
+    if (req.method === 'POST' && req.path === '/code') {
+        let body = '';
+        req.on('data', (c) => { if (body.length < 1000) body += c; });
+        req.on('end', () => {
+            if (misses.count >= 10 && Date.now() - misses.since < 10 * 60_000) {
+                return res.status(429).type('html').send(CODE_PAGE.replace('%MSG%', 'Too many tries. Wait a few minutes.'));
+            }
+            const code = new URLSearchParams(body).get('code') || '';
+            const ok = code.length === PUBLIC_CODE.length && crypto.timingSafeEqual(Buffer.from(code), Buffer.from(PUBLIC_CODE));
+            if (!ok) {
+                if (Date.now() - misses.since > 10 * 60_000) Object.assign(misses, { count: 0, since: Date.now() });
+                misses.count++;
+                return res.status(403).type('html').send(CODE_PAGE.replace('%MSG%', 'That code isn\'t right.'));
+            }
+            res.setHeader('Set-Cookie', `${COOKIE}=${pass}; Path=/; Max-Age=31536000; HttpOnly; Secure; SameSite=Lax`);
+            res.redirect(303, '/');
+        });
+        return;
+    }
+    if (hasPass(req)) return next();
+    if (req.method === 'GET' && (req.path === '/' || req.path === '/index.html')) {
+        res.setHeader('Cache-Control', 'no-store');
+        return res.type('html').send(CODE_PAGE.replace('%MSG%', ''));
+    }
+    res.status(403).send('Enter the code first.');
+});
 
 // The game is one page; serve it and nothing else from this folder
 const page = path.join(__dirname, 'index.html');
@@ -120,3 +180,4 @@ io.on('connection', (socket) => {
 });
 
 server.listen(PORT, () => console.log(`Squirrel Commando running on http://localhost:${PORT}`));
+publicServer.listen(PUBLIC_PORT, '127.0.0.1', () => console.log(`Public entrance (Tailscale Funnel :8443): http://127.0.0.1:${PUBLIC_PORT}`));
