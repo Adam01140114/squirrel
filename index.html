@@ -31,6 +31,7 @@
 /* playing on a phone: the ammo panel moves to the bottom middle, out of the way of the big FIRE button */
 body.touch .br{right:auto;left:50%;transform:translateX(-50%);bottom:calc(8px + env(safe-area-inset-bottom,0px));padding:6px 12px;min-width:0}
 body.touch .br .hint,body.touch .br .slots{display:none}
+@media (orientation:portrait){body.touch .br{left:auto;right:16px;transform:none;bottom:calc(232px + env(safe-area-inset-bottom,0px))}}
 body.touch #pvpHud.online .pv-ammo{right:auto;left:50%;transform:translateX(-50%);bottom:calc(8px + env(safe-area-inset-bottom,0px));padding:6px 12px;min-width:0}
 html,body{height:100%;margin:0;overflow:hidden;background:var(--ink);color:var(--cream);font-family:var(--body)}
 /* no double-tap or pinch zoom anywhere (menus scroll, so they need it too) */
@@ -281,6 +282,34 @@ body.touch .desk-only{display:none}
 /* solo setup + map pickers */
 #soloScr .placard{max-width:620px}
 .pick-sec{display:grid;gap:8px}
+/* Starting gun */
+.gun-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.gun-card{display:grid;justify-items:center;align-content:start;gap:4px;min-height:44px;padding:9px 4px 8px;border-radius:10px;background:rgba(0,0,0,.25);border:2px solid transparent;color:var(--cream);font-family:var(--body);font-size:12px;line-height:1.15;cursor:pointer;text-align:center;min-width:0}
+.gun-card b{font-size:22px;line-height:1}.gun-card small{color:var(--cream-dim);font-size:10.5px}
+.gun-card.on{border-color:var(--acorn);background:rgba(240,138,36,.18)}
+.gun-card:focus-visible{outline:3px solid var(--cream);outline-offset:2px}
+.peek-hint{display:none}
+/* buttons in a card sit in the middle on phones and tablets */
+@media (max-width:899px){
+  .placard .row{justify-content:center}
+  .placard .row .btn{min-height:48px}
+  .placard .h2,.placard > .lede{text-align:center;justify-self:center}
+}
+/* Solo setup on a phone: the fighter turns at the top, the setup is a sheet below it */
+@media (max-width:899px){
+  #soloScr{display:flex;flex-direction:column;justify-content:flex-end;align-items:stretch;padding:0;overflow:hidden;background:linear-gradient(180deg,rgba(27,18,11,0) 0%,rgba(27,18,11,0) 30%,rgba(27,18,11,.55) 100%)}
+  #soloScr .placard{max-width:none;max-height:64vh;max-height:64dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;border-radius:20px 20px 0 0;border-bottom:0;padding:18px 16px 0;gap:14px;box-shadow:0 -10px 40px rgba(0,0,0,.45)}
+  #soloScr .h2{font-size:28px}
+  #soloScr .peek-hint{display:block;position:fixed;left:0;right:0;top:calc(10px + env(safe-area-inset-top,0px));margin:0;text-align:center;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,243,220,.75);text-shadow:0 1px 4px rgba(0,0,0,.6);pointer-events:none}
+  #soloScr .sheet-foot{position:sticky;bottom:0;margin:0 -16px;padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));background:linear-gradient(180deg,rgba(60,38,20,0),var(--bark) 30%);flex-wrap:wrap}
+  #soloScr .sheet-foot #soloStart{flex:1 1 100%}
+  #soloScr .sheet-foot{gap:8px}
+  #soloScr .sheet-foot .btn.ghost{flex:1 1 0;min-height:44px;padding:8px 10px;font-size:15px;white-space:nowrap}
+  #soloScr .solo-drag{text-align:center}
+  #soloScr .hats .sel-ch{min-height:44px}
+}
+@media (max-width:899px) and (min-width:600px){#soloScr .placard{max-width:640px;margin:0 auto;width:100%}}
+
 .pick-h{margin:0;font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--cream-dim)}
 .pick-row{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;--pc:var(--acorn)}
 .map-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
@@ -335,6 +364,36 @@ body.touch .desk-only{display:none}
 .sel-status.ok{color:var(--leaf)}
 .btn.ready-on{background:var(--leaf);box-shadow:0 5px 0 #4f8a2a}
 @media (max-width:760px){.sel-panels{grid-template-columns:minmax(0,1fr)}.sel-name{font-size:24px}}
+/* fighter select, your own starting gun */
+.sel-guns{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
+.sel-gun{min-height:40px;padding:4px 2px;border-radius:9px;background:rgba(0,0,0,.25);border:2px solid transparent;color:var(--cream);font-family:var(--body);font-size:10.5px;line-height:1.1;display:grid;justify-items:center;gap:2px;cursor:pointer;min-width:0}
+.sel-gun b{font-size:16px;line-height:1}
+.sel-gun.on{border-color:var(--pc);background:rgba(255,243,220,.1)}
+.sel-gunlbl{font-size:12px;color:var(--cream-dim);margin:0}
+.sel-invite{display:none}
+/* a phone held upright, online: your own panel first and full size, everyone else as a slim card */
+@media (max-width:760px) and (min-height:501px){
+  #selScr.net{grid-template-rows:auto auto;align-content:start;gap:10px;padding-inline:12px}
+  #selScr.net .sel-title{padding:10px 14px;max-width:none;width:100%;box-sizing:border-box}
+  #selScr.net .sel-title .h2{font-size:24px}
+  #selScr.net .sel-maps{flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;width:100%;padding-bottom:2px;scrollbar-width:none}
+  #selScr.net .sel-maps .map-card{flex:0 0 auto;min-height:40px}
+  #selScr.net .sel-panels{grid-row:auto;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;align-items:stretch}
+  #selScr.net .sel-panel.mine{grid-column:1 / -1;order:-1;padding:12px;gap:10px}
+  #selScr.net .sel-panel.mine .sel-list{grid-template-columns:repeat(6,minmax(0,1fr));gap:4px}
+  #selScr.net .sel-panel.mine .sel-ch{padding:6px 1px;font-size:10px;min-height:52px}
+  #selScr.net .sel-panel.mine .sel-ch i{width:26px;height:26px}
+  #selScr.net .sel-panel.mine .sel-foot .btn{flex:1;min-height:48px;font-size:18px}
+  #selScr.net .sel-panel:not(.mine){padding:8px;gap:4px;align-content:start}
+  #selScr.net .sel-panel:not(.mine) .sel-list,#selScr.net .sel-panel:not(.mine) .sel-guns,#selScr.net .sel-panel:not(.mine) .sel-gunlbl{display:none}
+  #selScr.net .sel-panel:not(.mine) .sel-head span{display:none}
+  #selScr.net .sel-panel:not(.mine) .sel-name{font-size:15px}
+  #selScr.net .sel-panel:not(.mine) .sel-status{font-size:13px}
+  #selScr.net .sel-panel:not(.mine) .sel-foot{min-height:0}
+  #selScr.net .sel-join .qr-code,#selScr.net .sel-join > span{display:none}
+  #selScr.net .sel-invite{display:block;min-height:40px;padding:6px 8px;font-size:13px;width:100%}
+  #selScr.net .sel-panel.away .sel-name{display:none}
+}
 /* a phone on its side: a slim title and the two players side by side */
 @media (max-height:500px){
   #selScr{gap:6px;padding:8px;padding-block:calc(6px + env(safe-area-inset-top,0px)) calc(6px + env(safe-area-inset-bottom,0px))}
@@ -405,6 +464,7 @@ body.pad-mode{background:#1b120b}
 .pad-ready{font-family:var(--display);font-size:22px;border:0;border-radius:12px;padding:14px 40px;background:var(--pc);color:var(--ink);box-shadow:0 5px 0 rgba(0,0,0,.35);touch-action:manipulation}
 .pad-ready.on{background:var(--leaf)}
 .pad-other{font-size:13px;color:var(--cream-dim);text-align:center}
+.pad-guns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;width:min(100%,640px)}.pad-gun{min-height:48px;padding:10px 8px;border-radius:12px;background:rgba(255,243,220,.06);border:3px solid transparent;color:var(--cream);font-family:var(--display);font-size:14px;touch-action:manipulation}.pad-gun.on{border-color:var(--pc);background:rgba(255,243,220,.14)}
 .pad-map{display:flex;gap:10px;align-items:center;font-family:var(--display);font-size:16px;color:var(--cream)}
 .pad-map button{font-family:var(--display);font-size:14px;border:2px solid rgba(255,243,220,.4);background:rgba(255,243,220,.08);color:var(--cream);border-radius:10px;padding:8px 12px;touch-action:manipulation}
 .loading{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--display);font-size:20px;color:var(--cream-dim);background:var(--ink)}
@@ -524,12 +584,14 @@ body.pad-mode{background:#1b120b}
   <div class="screen" id="soloScr" hidden>
     <div class="placard wide">
       <h2 class="h2">Solo setup</h2>
+      <p class="peek-hint" aria-hidden="true">Drag to turn</p>
       <section class="pick-sec"><h3 class="pick-h">Fighter</h3><div class="pick-row" id="soloChars"></div></section>
+      <section class="pick-sec"><h3 class="pick-h">Starting gun</h3><div class="gun-row" id="soloGuns"></div><p class="hat-tip" id="gunTip"></p></section>
       <section class="pick-sec"><h3 class="pick-h">Hat <span class="hat-count" id="hatCount"></span></h3><div class="pick-row hats" id="soloHats"></div><p class="hat-tip" id="hatTip"></p></section>
       <section class="pick-sec"><h3 class="pick-h">Map</h3><div class="map-grid" id="soloMaps"></div></section>
       <div class="daily" id="dailyBox"><div><b>Daily challenge</b> <span id="dailyDate"></span><p id="dailyText"></p></div><button class="btn sm" id="dailyBtn">Play today's</button></div>
-      <div class="row"><button class="btn" id="soloStart">Start</button><button class="btn ghost" id="soloPhone">Phone controller</button><button class="btn ghost" id="soloBack">Back</button></div>
-      <p class="solo-drag">Phone controller: the game plays on this screen (your TV) and your phone steers. Drag your fighter to turn it around.</p>
+      <p class="solo-drag">Drag your fighter to turn it around. Phone controller plays on this screen (your TV) and your phone steers.</p>
+      <div class="row sheet-foot"><button class="btn" id="soloStart">Start</button><button class="btn ghost" id="soloPhone">Phone controller</button><button class="btn ghost" id="soloBack">Back</button></div>
     </div>
   </div>
 
@@ -951,7 +1013,8 @@ function runController(code, slot){
     ps.querySelector('h3').textContent = (slot ? 'P' + slot : 'You') + ': pick your fighter';
     ps.querySelector('.pad-map button').hidden = slot !== 1;
   };
-  const I = { x: 0, y: 0, yaw: 0, pitch: -0.05, f: 0, s: 0, j: 0, r: 0, w: 0, c: 0, ch: 0, rdy: 0, mp: 0, ps: 0, mn: null };
+  const I = { x: 0, y: 0, yaw: 0, pitch: -0.05, f: 0, s: 0, j: 0, r: 0, w: 0, c: 0, ch: 0, gn: 0, rdy: 0, mp: 0, ps: 0, mn: null };
+  try { I.gn = Math.max(0, Math.min(3, parseInt(localStorage.getItem('squirrel-commando-gun') || '0', 10) || 0)); } catch (e) {}
   let room = null, lastHp = 100, lastPhase = '', lastDead = false, lastK = 0;
   const send = () => {
     if (!room) return;
@@ -959,7 +1022,7 @@ function runController(code, slot){
   };
   // fighter picker, shown while the TV is on the select screen
   const ps = document.createElement('div'); ps.className = 'pad-sel'; ps.hidden = true;
-  ps.innerHTML = '<h3></h3><div class="pad-sel-grid"></div><div class="pad-map"><span></span><button>Change map</button></div><button class="pad-ready">Ready</button><div class="pad-other"></div>';
+  ps.innerHTML = '<h3></h3><div class="pad-sel-grid"></div><div class="pad-guns" role="group" aria-label="Starting gun"></div><div class="pad-map"><span></span><button>Change map</button></div><button class="pad-ready">Ready</button><div class="pad-other"></div>';
   ps.querySelector('.pad-map button').addEventListener('click', () => { if (slot === 1) { I.mp++; send(); } });
   wrap.appendChild(ps);
   paintSeat();
@@ -969,10 +1032,17 @@ function runController(code, slot){
     b.addEventListener('click', () => { I.ch = k; I.rdy = 0; paintSel(); send(); });
     ps.querySelector('.pad-sel-grid').appendChild(b); return b;
   });
+  // the gun this player starts with (the Acorn Blaster always comes along)
+  const gnBtns = ['🌰 Acorn Blaster', '💥 Nutshot', '🌲 Pinecone Launcher', '🌀 Seed Spitter'].map((t, k) => {
+    const b = document.createElement('button'); b.className = 'pad-gun'; b.textContent = t;
+    b.addEventListener('click', () => { I.gn = k; I.rdy = 0; try { localStorage.setItem('squirrel-commando-gun', String(k)); } catch (e) {} paintSel(); send(); });
+    ps.querySelector('.pad-guns').appendChild(b); return b;
+  });
   const readyBtn = ps.querySelector('.pad-ready');
   readyBtn.addEventListener('click', () => { I.rdy = I.rdy ? 0 : 1; paintSel(); send(); });
   const paintSel = () => {
     chBtns.forEach((b, k) => b.classList.toggle('on', k === I.ch));
+    gnBtns.forEach((b, k) => b.classList.toggle('on', k === I.gn));
     readyBtn.classList.toggle('on', !!I.rdy); readyBtn.textContent = I.rdy ? 'Ready! Tap to change' : 'Ready';
   };
   paintSel();
@@ -3380,6 +3450,7 @@ function animateSquirrel(dt){
   sq.group.visible = !(player.inv > 0 && pw.shield <= 0 && Math.floor(player.inv * 20) % 2 === 0 && state === 'playing');
 }
 const pivot = new V3(), camPos = new V3(), lookAt = new V3();
+const sideFit = (aspect) => clamp((aspect || 1) / 1.1, 0.4, 1);
 function updateCamera(dt, sprint){
   const cp = Math.cos(pitch), sp = Math.sin(pitch), sy = Math.sin(yaw), cy = Math.cos(yaw);
   aim.set(-sy * cp, sp, -cy * cp);
@@ -3388,7 +3459,8 @@ function updateCamera(dt, sprint){
   const cm = CAMS[camMode];
   setFps(!!cm.fps);
   camDist = cm.fps ? 0 : damp(camDist, cm.dist + (sprint ? 0.6 : 0), 6, dt);
-  camSide = damp(camSide, cm.side, 6, dt); camH = damp(camH, cm.h, 6, dt);
+  // on a tall phone screen the shoulder offset shrinks, or the fighter ends up at the edge
+  camSide = damp(camSide, cm.side * sideFit(camera.aspect), 6, dt); camH = damp(camH, cm.h, 6, dt);
   if (cm.fps) {
     pivot.set(player.pos.x, player.pos.y + cm.h + sq.body.position.y, player.pos.z);
     camPos.copy(pivot).addScaledVector(aim, 0.12);
@@ -3670,7 +3742,9 @@ function resetGame(){
   player.pos.set(0, 0, 9); player.vel.set(0, 0, 0); player.hp = 100; player.inv = 0; player.onGround = true; player.jumps = 0;
   yaw = Math.PI; pitch = -0.06; sq.group.rotation.y = yaw;
   WEAPONS.forEach((w, i) => { inv[i].owned = i === 0; inv[i].ammo = w.mag; inv[i].reserve = i === 0 ? Infinity : 0; });
-  cur = 1; switchWeapon(0); gun.switchT = 0; gun.cd = 0;
+  const g0 = DAILY && mod('blaster') ? 0 : startGun;
+  if (g0) { inv[g0].owned = true; inv[g0].reserve = startReserve(g0); }
+  cur = g0 ? 0 : 1; switchWeapon(g0); gun.switchT = 0; gun.cd = 0;
   gun.reload = 0; gun.bloom = 0; gun.spin = 0; gun.recoil = 0;
   for (const k in pw) pw[k] = 0;
   for (const k in perk) delete perk[k]; perkOffered = 0;
@@ -3893,6 +3967,27 @@ function charBtn(k, onPick){
 }
 const soloCharBtns = CHARS.map((c, k) => $('soloChars').appendChild(charBtn(k, pickSoloChar)));
 
+// ---------- starting gun: the Acorn Blaster always comes along; pick another to start with it in hand
+const GUN_ICONS = ['🌰', '💥', '🌲', '🌀'];
+const GUN_BLURB = ['Steady, never runs out', 'Close-range spread', 'Splash damage', 'Fast spray'];
+let startGun = 0;
+try { startGun = clamp(parseInt(localStorage.getItem('squirrel-commando-gun') || '0', 10) || 0, 0, WEAPONS.length - 1); } catch (e) {}
+const soloGunBtns = WEAPONS.map((w, k) => {
+  const b = document.createElement('button'); b.className = 'gun-card'; b.type = 'button';
+  b.innerHTML = '<b aria-hidden="true"></b><span></span><small></small>';
+  b.querySelector('b').textContent = GUN_ICONS[k]; b.querySelector('span').textContent = w.name; b.querySelector('small').textContent = GUN_BLURB[k];
+  b.addEventListener('click', () => { startGun = k; try { localStorage.setItem('squirrel-commando-gun', String(k)); } catch (e) {} paintGuns(); sfx.swap(); });
+  $('soloGuns').appendChild(b); return b;
+});
+// starting ammo for a picked gun: two crates' worth
+const startReserve = (k) => WEAPONS[k].give * 2;
+function paintGuns(){
+  soloGunBtns.forEach((b, k) => { setClass(b, 'on', k === startGun); b.setAttribute('aria-pressed', k === startGun ? 'true' : 'false'); });
+  $('gunTip').textContent = startGun ? 'Start with the ' + WEAPONS[startGun].name + ' (' + (WEAPONS[startGun].mag + startReserve(startGun)) + ' shots) and the Acorn Blaster as a backup.' : 'The Acorn Blaster never runs out. Crates bring the others.';
+  // the preview holds the picked gun
+  if (state === 'menu' && sq) sq.guns.forEach((g, k) => { g.visible = k === startGun; });
+}
+
 // ---------- hats: unlocked by milestones, kept on this device, worn in solo and online
 let prog = { games: 0, bestWave: 0, bestScore: 0, kills: 0, bosses: {}, revives: 0, vsGames: 0, won: 0 };
 try { Object.assign(prog, JSON.parse(localStorage.getItem('squirrel-commando-progress') || '{}')); } catch (e) {}
@@ -4016,7 +4111,7 @@ function paintHats(){
   $('hatCount').textContent = '· ' + HATS.filter(h => h.ok() && h.id !== 'none').length + ' of ' + (HATS.length - 1) + ' unlocked';
 }
 const soloMapBtns = MAPS.map((D, i) => $('soloMaps').appendChild(mapCard(i, pickSoloMap)));
-function paintSolo(){ paintHats(); paintDaily(); $('hatTip').textContent = 'Wearing: ' + HATS.find(q => q.id === hatId).name + '. Hover a hat to see how to unlock it.'; wearHat(sq, hatId); paintSolo0(); }
+function paintSolo(){ paintHats(); paintDaily(); $('hatTip').textContent = 'Wearing: ' + HATS.find(q => q.id === hatId).name + '. ' + (isTouch ? 'Tap' : 'Hover') + ' a locked hat to see how to unlock it.'; paintGuns(); wearHat(sq, hatId); paintSolo0(); }
 function paintSolo0(){ soloCharBtns.forEach((b, k) => setClass(b, 'on', k === soloChar)); soloMapBtns.forEach((b, i) => setClass(b, 'on', i === mapIdx)); }
 function pickSoloChar(k){ setSoloChar(k); try { localStorage.setItem('squirrel-commando-char', String(k)); } catch (e) {} paintSolo(); sfx.swap(); }
 function pickSoloMap(i){ buildMap(i); try { localStorage.setItem('squirrel-commando-map', String(i)); } catch (e) {} paintSolo(); sfx.swap(); }
@@ -4050,7 +4145,9 @@ function resetLoadout(f){
   f.w = WEAPONS.map((w, i) => ({ owned: i === 0, ammo: w.mag, reserve: i === 0 ? Infinity : 0 }));
   f.gun = { cd: 0, reload: 0, reloadTotal: 1, recoil: 0, bloom: 0, switchT: 0, spin: 0 };
   f.pw = { rapid: 0, dmg: 0, shield: 0, speed: 0 };
-  showGun(f, 0);
+  const g0 = f.gun0 | 0;
+  if (g0 > 0 && WEAPONS[g0]) { f.w[g0].owned = true; f.w[g0].reserve = startReserve(g0); }
+  showGun(f, WEAPONS[g0] ? g0 : 0);
 }
 function showGun(f, i){ f.cur = i; f.model.guns.forEach((g, k) => { g.visible = k === i; }); f.model.muzzles[i].add(f.fl); }
 function spawnAt(f, s){
@@ -4160,7 +4257,7 @@ function fCamera(f, dt){
   f.aim.set(-sy * cp, sp, -cy * cp); f.right.set(cy, 0, -sy); f.up.crossVectors(f.right, f.aim).normalize();
   const cm = CAMS[f.camMode];
   f.camDist = damp(f.camDist, cm.dist + (f.sprinting ? 0.6 : 0) + (f.dead ? 3 : 0), 6, dt);
-  f.camSide = damp(f.camSide, cm.side, 6, dt); f.camH = damp(f.camH, cm.h + (f.dead ? 2 : 0), 6, dt);
+  f.camSide = damp(f.camSide, cm.side * sideFit(f.cam.aspect), 6, dt); f.camH = damp(f.camH, cm.h + (f.dead ? 2 : 0), 6, dt);
   pvA.set(f.pos.x, f.pos.y * 0.85 + f.camH, f.pos.z);
   f.cam.position.copy(pvA).addScaledVector(f.aim, -f.camDist).addScaledVector(f.right, f.camSide);
   if (f.cam.position.y < 0.45) f.cam.position.y = 0.45;
@@ -5018,7 +5115,7 @@ function viewRects(n, W, H){
 
 // ---------- match flow
 // coop: true for co-op; slots: each fighter's phone slot (1-4) in a couch co-op game
-function startPvp(mode, role, r, code, m, chars, map, coop, slots, bots){
+function startPvp(mode, role, r, code, m, chars, map, coop, slots, bots, guns){
   DAILY = null;
   if (map !== undefined) buildMap(mapOf(map));
   lobby = null;
@@ -5039,6 +5136,8 @@ function startPvp(mode, role, r, code, m, chars, map, coop, slots, bots){
     projs: [], phase: 'countdown', count: 3.6, winner: -1, missing: 0, tvT: 0, lastPr: null, gone: new Set(), scoreHtml: '', coop: !!coop,
     humans, bots: fighters.filter(f => f.bot).map(f => f.idx + 1) };
   if (mode === 'online') { pvp.local = fighters.find(f => f.idx === me) || fighters[0]; pvp.remotes = fighters.filter(f => f !== pvp.local); }
+  if (mode === 'online') pvp.local.gun0 = startGun;
+  if (mode === 'couch' && Array.isArray(guns)) fighters.forEach((f, i) => { f.gun0 = clamp(Math.round(+guns[i]) || 0, 0, WEAPONS.length - 1); });
   const H = $('pvpHud'); H.hidden = false; H.className = mode + (coop ? ' coop' : '') + ' n' + humans.length;
   const quad = mode === 'couch' && humans.length > 2;
   humans.forEach((f, i) => {
@@ -5309,11 +5408,12 @@ function enterSelect(mode, role, r, code, picks, prevM, map, coop, base, bots){
   for (const k in GP.sel) { GP.sel[k].rdy = 0; if (picks && picks[k - 1] !== undefined) GP.sel[k].ch = picks[k - 1]; }
   if (mode === 'online') base = null; // (online, base carries the guest's seat)
   sel = { mode, role, r, code, local, n, coop: !!coop, picks: p0, ready: Array(n).fill(false), padOk: Array(n).fill(false), seats: mode === 'online' && role === 'host' ? (pvpSeats || {}) : {},
-    previews: Array(n).fill(null), shown: Array(n).fill(-1), missing: 0, go: 0, t: 0, prevM: prevM || 0, sendT: 0, ui: [], base: base || null,
+    previews: Array(n).fill(null), guns: Array(n).fill(0), shown: Array(n).fill(-1), missing: 0, go: 0, t: 0, prevM: prevM || 0, sendT: 0, ui: [], base: base || null,
     bots: new Set(mode === 'couch' && Array.isArray(bots) ? bots : []) };
   $('selBotLv').hidden = mode !== 'couch'; $('selBotLv').textContent = 'Bots: ' + BOT_LV[botLv];
   if (!sel.base) gameUrl().then(b => { if (sel) sel.base = b; });
   $('selScr').classList.toggle('quad', n === 4);
+  $('selScr').classList.toggle('net', mode === 'online');
   for (let i = 2; i < 4; i++) $('sel' + i).hidden = i >= n;
   sel.map = map === undefined ? mapIdx : mapOf(map); sel.lastMp = null; buildMap(sel.map);
   const canMap = mode === 'couch' || role === 'host';
@@ -5332,7 +5432,10 @@ function buildSelPanel(i){
   const el = $('sel' + i), isLocal = sel.local === i;
   el.style.setProperty('--pc', PALS[i].css);
   const who = sel.mode === 'couch' ? PALS[i].name + ' team · phone' : (isLocal ? 'You · ' + PALS[i].name + ' team' : (i === 0 ? 'Host · ' : sel.coop ? 'Teammate · ' : 'Opponent · ') + PALS[i].name + ' team');
-  el.innerHTML = '<div class="sel-head"><b>P' + (i + 1) + '</b><span></span></div><div class="sel-name"></div><div class="sel-list"></div><div class="sel-join" hidden><div class="qr-code"></div><span>Scan to join</span></div><div class="sel-foot"><span class="sel-status"></span></div>'
+  el.classList.toggle('mine', isLocal);
+  el.innerHTML = '<div class="sel-head"><b>P' + (i + 1) + '</b><span></span></div><div class="sel-name"></div><div class="sel-list"></div>'
+    + (isLocal ? '<p class="sel-gunlbl">Starting gun</p><div class="sel-guns"></div>' : '')
+    + '<div class="sel-join" hidden><div class="qr-code"></div><span>Scan to join</span>' + (sel.mode === 'online' ? '<button class="btn ghost sm sel-invite">Copy invite link</button>' : '') + '</div><div class="sel-foot"><span class="sel-status"></span></div>'
     + (sel.mode === 'couch' ? '<button class="btn ghost sm sel-bot"></button>' : '');
   const botBtn = el.querySelector('.sel-bot');
   if (botBtn) botBtn.addEventListener('click', () => selToggleBot(i));
@@ -5343,6 +5446,25 @@ function buildSelPanel(i){
     b.innerHTML = '<i></i><span></span>'; b.querySelector('span').textContent = c.name;
     if (isLocal) b.addEventListener('click', () => selPick(k)); else { b.disabled = true; b.tabIndex = -1; }
     list.appendChild(b); return b;
+  });
+  if (isLocal) {
+    const gl = el.querySelector('.sel-guns');
+    const paint = () => [...gl.children].forEach((b, k) => { setClass(b, 'on', k === startGun); b.setAttribute('aria-pressed', k === startGun ? 'true' : 'false'); });
+    WEAPONS.forEach((w, k) => {
+      const b = document.createElement('button'); b.className = 'sel-gun'; b.type = 'button';
+      b.innerHTML = '<b aria-hidden="true"></b><span></span>'; b.querySelector('b').textContent = GUN_ICONS[k]; b.querySelector('span').textContent = w.name.split(' ').pop();
+      b.title = w.name + ': ' + GUN_BLURB[k];
+      b.addEventListener('click', () => { startGun = k; try { localStorage.setItem('squirrel-commando-gun', String(k)); } catch (e) {} paint(); sfx.swap(); });
+      gl.appendChild(b);
+    });
+    paint();
+  }
+  const inv = el.querySelector('.sel-invite');
+  if (inv) inv.addEventListener('click', () => {
+    const link = (sel.base || location.origin + location.pathname) + '#vs-' + sel.code + '-join';
+    const done = (t) => { inv.textContent = t; setTimeout(() => { inv.textContent = 'Copy invite link'; }, 1600); };
+    if (navigator.share && isTouch) navigator.share({ title: 'Squirrel Commando', text: 'Join my game', url: link }).catch(() => {});
+    else try { navigator.clipboard.writeText(link).then(() => done('Copied'), () => done(link)); } catch (e) { done(link); }
   });
   let ready = null;
   if (isLocal) {
@@ -5393,10 +5515,10 @@ function selTick(dt){
       const ps = peers.filter(p => p.presence.role === 'pad' && p.presence.slot === i + 1), p = ps[ps.length - 1];
       S.padOk[i] = !!p;
       const inp = p && p.presence.i && typeof p.presence.i === 'object' ? p.presence.i : null;
-      if (inp) { S.picks[i] = chIdx(inp.ch); S.ready[i] = S.t > 1 && !!inp.rdy; } else S.ready[i] = false;
+      if (inp) { S.picks[i] = chIdx(inp.ch); S.guns[i] = clamp(Math.round(+inp.gn) || 0, 0, WEAPONS.length - 1); S.ready[i] = S.t > 1 && !!inp.rdy; } else S.ready[i] = false;
       if (i === 0 && inp) { const mp = +inp.mp || 0; if (S.lastMp !== null && mp !== S.lastMp) selMap((S.map + 1) % MAPS.length); S.lastMp = mp; }
       // a controller holding this spot
-      if (gpHas(i + 1, S.code)) { const st = GP.sel[i + 1]; S.padOk[i] = true; S.picks[i] = st.ch; S.ready[i] = S.t > 1 && !!st.rdy; }
+      if (gpHas(i + 1, S.code)) { const st = GP.sel[i + 1]; S.padOk[i] = true; S.picks[i] = st.ch; S.guns[i] = startGun; S.ready[i] = S.t > 1 && !!st.rdy; }
       if (S.bots.has(i)) { if (S.padOk[i]) S.bots.delete(i); else S.ready[i] = true; }
     }
     S.sendT -= dt;
@@ -5445,7 +5567,7 @@ function selTick(dt){
       const bots = inSlots.filter(i => S.bots.has(i)).map(i => i + 1);
       if (mode === 'online') pvpSeats = { ...S.seats };
       clearPreviews(); sel = null; $('selScr').hidden = true; $('selScr').classList.remove('quad');
-      startPvp(mode, role, r, code, m, chars, map, coop, slots, bots); return;
+      startPvp(mode, role, r, code, m, chars, map, coop, slots, bots, inSlots.map(i => S.bots.has(i) ? Math.floor(Math.random() * WEAPONS.length) : S.guns[i])); return;
     }
   } else S.go = 0;
   if (S.mapBtns) S.mapBtns.forEach((b, i) => setClass(b, 'on', i === S.map));
@@ -5939,10 +6061,25 @@ function attract(dt){
   tv.set(sx - camera.position.x, 0, sz - camera.position.z).normalize();
   const off = window.innerWidth >= 900 ? -2.2 : 0;
   lookAt.set(sx + -tv.z * off, 1.2, sz + tv.x * off);
+  const setup = !$('soloScr').hidden, sheet = setup && window.innerWidth < 900;
+  // Solo setup on a phone: closer in, and the picture moved up into the space above the sheet
+  if (sheet) {
+    const W = window.innerWidth, H = window.innerHeight, card = $('soloScr').querySelector('.placard');
+    const top = card ? Math.max(120, card.getBoundingClientRect().top) : H * 0.36;
+    camera.position.set(sx + Math.sin(attractAng) * 4.2, 1.9, sz + Math.cos(attractAng) * 4.2);
+    lookAt.set(sx, 0.95, sz);
+    // the fighter's middle goes halfway down the open space
+    const shift = Math.round(H / 2 - top / 2);
+    if (!camera.view || camera.view.offsetY !== shift || camera.view.fullHeight !== H || camera.view.fullWidth !== W) camera.setViewOffset(W, H, 0, shift, W, H);
+  } else if (camera.view && camera.view.enabled) camera.clearViewOffset();
   camera.lookAt(lookAt);
-  if (Math.abs(camera.fov - 55) > 0.05) { camera.fov = 55; camera.updateProjectionMatrix(); }
-  // Solo setup: the fighter turns when dragged (and holds still otherwise)
-  if (!$('soloScr').hidden) { yaw = Math.PI + soloSpin.a; soloSpin.a += soloSpin.v * dt; soloSpin.v *= Math.exp(-4 * dt); attractAng -= dt * 0.12; }
+  const fov = sheet ? Math.min(70, 50 + Math.max(0, 1 - window.innerWidth / window.innerHeight) * 30) : 55;
+  if (Math.abs(camera.fov - fov) > 0.05) { camera.fov = fov; camera.updateProjectionMatrix(); }
+  // Solo setup: the fighter turns slowly by itself, and faster when dragged
+  if (setup) {
+    if (!soloSpin.drag && Math.abs(soloSpin.v) < 0.7) soloSpin.a += dt * 0.7;
+    yaw = Math.PI + soloSpin.a; soloSpin.a += soloSpin.v * dt; soloSpin.v *= Math.exp(-4 * dt); attractAng -= dt * 0.12;
+  }
   else yaw = Math.PI + Math.sin(time * 0.4) * 0.3;
   pitch = Math.sin(time * 0.7) * 0.08;
   player.vel.set(0, 0, 0);
@@ -6022,6 +6159,8 @@ function frame(){
   if (state === 'playing') update(dt);
   else if (state === 'select' && sel) selTick(dt);
   else if (state === 'menu' || state === 'lobby') { attract(dt); if (state === 'lobby') lobbyTick(dt); }
+  // the Solo setup's shifted picture is only for that screen
+  if (state !== 'menu' && camera.view && camera.view.enabled) camera.clearViewOffset();
   else if (state === 'perk') { updateFloats(dt); renderer.render(scene, camera); return; }
   else { updatePickups(dt); updateProps(dt); }
   updateParticles(dt);
