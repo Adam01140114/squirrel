@@ -282,6 +282,13 @@ body.touch .desk-only{display:none}
 /* solo setup + map pickers */
 #soloScr .placard{max-width:620px}
 .pick-sec{display:grid;gap:8px}
+.hat-sec summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:6px;min-height:44px;padding:0 12px;margin:0 -2px;border-radius:10px;background:rgba(0,0,0,.2)}
+.hat-sec summary::-webkit-details-marker{display:none}
+.hat-sec summary::after{content:"▾";margin-left:auto;font-size:14px;letter-spacing:0;transition:transform .2s}
+.hat-sec[open] summary::after{transform:rotate(180deg)}
+.hat-sec[open]{gap:8px}.hat-sec:not([open]){gap:0}
+.hat-now{color:var(--cream);letter-spacing:.04em;text-transform:none;font-size:13px}
+.hat-sec summary:focus-visible{outline:3px solid var(--cream);outline-offset:2px}
 /* Starting gun */
 .gun-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
 .gun-card{display:grid;justify-items:center;align-content:start;gap:4px;min-height:44px;padding:9px 4px 8px;border-radius:10px;background:rgba(0,0,0,.25);border:2px solid transparent;color:var(--cream);font-family:var(--body);font-size:12px;line-height:1.15;cursor:pointer;text-align:center;min-width:0}
@@ -587,7 +594,7 @@ body.pad-mode{background:#1b120b}
       <p class="peek-hint" aria-hidden="true">Drag to turn</p>
       <section class="pick-sec"><h3 class="pick-h">Fighter</h3><div class="pick-row" id="soloChars"></div></section>
       <section class="pick-sec"><h3 class="pick-h">Starting gun</h3><div class="gun-row" id="soloGuns"></div><p class="hat-tip" id="gunTip"></p></section>
-      <section class="pick-sec"><h3 class="pick-h">Hat <span class="hat-count" id="hatCount"></span></h3><div class="pick-row hats" id="soloHats"></div><p class="hat-tip" id="hatTip"></p></section>
+      <details class="pick-sec hat-sec"><summary class="pick-h">Hat <span class="hat-now" id="hatNow"></span> <span class="hat-count" id="hatCount"></span></summary><div class="pick-row hats" id="soloHats"></div><p class="hat-tip" id="hatTip"></p></details>
       <section class="pick-sec"><h3 class="pick-h">Map</h3><div class="map-grid" id="soloMaps"></div></section>
       <div class="daily" id="dailyBox"><div><b>Daily challenge</b> <span id="dailyDate"></span><p id="dailyText"></p></div><button class="btn sm" id="dailyBtn">Play today's</button></div>
       <p class="solo-drag">Drag your fighter to turn it around. Phone controller plays on this screen (your TV) and your phone steers.</p>
@@ -3943,7 +3950,7 @@ $('tPause').addEventListener('click', () => { if (touchFighter()) showPvpPause()
 $('tWeap').addEventListener('pointerdown', (e) => { e.preventDefault(); const f = touchFighter(); if (f) { if (!f.dead) fCycle(f, 1); } else cycleWeapon(1); });
 $('tCam').addEventListener('pointerdown', (e) => { e.preventDefault(); const f = touchFighter(); if (f) { f.camMode = (f.camMode + 1) % 2; pvpToast(f, 'Camera: ' + CAMS[f.camMode].name); } else cycleCam(); });
 
-$('playBtn').addEventListener('click', () => { initAudio(); paintSolo(); $('menu').hidden = true; $('soloScr').hidden = false; $('soloStart').focus({ preventScroll: true }); });
+$('playBtn').addEventListener('click', () => { initAudio(); paintSolo(); faceFront(); $('menu').hidden = true; $('soloScr').hidden = false; $('soloStart').focus({ preventScroll: true }); });
 $('soloStart').addEventListener('click', () => { endSoloPad(); DAILY = null; startGame(); });
 $('soloPhone').addEventListener('click', () => { $('soloScr').hidden = true; openLobby('solo'); });
 $('soloBack').addEventListener('click', () => { $('soloScr').hidden = true; $('menu').hidden = false; });
@@ -4109,11 +4116,12 @@ $('dailyBtn').addEventListener('click', () => {
 function paintHats(){
   soloHatBtns.forEach((b, k) => { const H = HATS[k]; setClass(b, 'on', H.id === hatId); setClass(b, 'locked', !H.ok()); b.title = H.name + (H.ok() ? '' : ' (locked: ' + H.need + ')'); });
   $('hatCount').textContent = '· ' + HATS.filter(h => h.ok() && h.id !== 'none').length + ' of ' + (HATS.length - 1) + ' unlocked';
+  const H = HATS.find(q => q.id === hatId); $('hatNow').textContent = '· ' + (H ? (H.icon ? H.icon + ' ' : '') + H.name : 'None');
 }
 const soloMapBtns = MAPS.map((D, i) => $('soloMaps').appendChild(mapCard(i, pickSoloMap)));
 function paintSolo(){ paintHats(); paintDaily(); $('hatTip').textContent = 'Wearing: ' + HATS.find(q => q.id === hatId).name + '. ' + (isTouch ? 'Tap' : 'Hover') + ' a locked hat to see how to unlock it.'; paintGuns(); wearHat(sq, hatId); paintSolo0(); }
 function paintSolo0(){ soloCharBtns.forEach((b, k) => setClass(b, 'on', k === soloChar)); soloMapBtns.forEach((b, i) => setClass(b, 'on', i === mapIdx)); }
-function pickSoloChar(k){ setSoloChar(k); try { localStorage.setItem('squirrel-commando-char', String(k)); } catch (e) {} paintSolo(); sfx.swap(); }
+function pickSoloChar(k){ setSoloChar(k); faceFront(); try { localStorage.setItem('squirrel-commando-char', String(k)); } catch (e) {} paintSolo(); sfx.swap(); }
 function pickSoloMap(i){ buildMap(i); try { localStorage.setItem('squirrel-commando-map', String(i)); } catch (e) {} paintSolo(); sfx.swap(); }
 try { setSoloChar(clamp(parseInt(localStorage.getItem('squirrel-commando-char') || '0', 10) || 0, 0, CHARS.length - 1)); } catch (e) {}
 
@@ -6038,6 +6046,8 @@ function gpMenu(P){
 // ---------------------------------------------------------------- loop
 const clock = new THREE.Clock();
 const soloSpin = { a: 0, v: 0, drag: null };
+// turn the Solo setup fighter to face the camera
+function faceFront(){ soloSpin.a = attractAng; soloSpin.v = 0; soloSpin.drag = null; }
 (() => {
   const scr = $('soloScr');
   scr.addEventListener('pointerdown', (e) => {
@@ -6070,7 +6080,7 @@ function attract(dt){
     lookAt.set(sx, 0.95, sz);
     // the fighter's middle goes halfway down the open space
     const shift = Math.round(H / 2 - top / 2);
-    if (!camera.view || camera.view.offsetY !== shift || camera.view.fullHeight !== H || camera.view.fullWidth !== W) camera.setViewOffset(W, H, 0, shift, W, H);
+    if (!camera.view || !camera.view.enabled || camera.view.offsetY !== shift || camera.view.fullHeight !== H || camera.view.fullWidth !== W) camera.setViewOffset(W, H, 0, shift, W, H);
   } else if (camera.view && camera.view.enabled) camera.clearViewOffset();
   camera.lookAt(lookAt);
   const fov = sheet ? Math.min(70, 50 + Math.max(0, 1 - window.innerWidth / window.innerHeight) * 30) : 55;
