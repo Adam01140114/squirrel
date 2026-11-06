@@ -33,6 +33,7 @@ body.touch .br{right:auto;left:50%;transform:translateX(-50%);bottom:calc(8px + 
 body.touch .br .hint,body.touch .br .slots{display:none}
 @media (orientation:portrait){body.touch .br{left:auto;right:16px;transform:none;bottom:calc(232px + env(safe-area-inset-bottom,0px))}}
 body.touch #pvpHud.online .pv-ammo{right:auto;left:50%;transform:translateX(-50%);bottom:calc(8px + env(safe-area-inset-bottom,0px));padding:6px 12px;min-width:0}
+@media (orientation:portrait){body.touch #pvpHud.online .pv-ammo{left:auto;right:16px;transform:none;bottom:calc(232px + env(safe-area-inset-bottom,0px))}}
 html,body{height:100%;margin:0;overflow:hidden;background:var(--ink);color:var(--cream);font-family:var(--body)}
 /* no double-tap or pinch zoom anywhere (menus scroll, so they need it too) */
 *{touch-action:manipulation}
@@ -282,6 +283,19 @@ body.touch .desk-only{display:none}
 /* solo setup + map pickers */
 #soloScr .placard{max-width:620px}
 .pick-sec{display:grid;gap:8px}
+/* rooms: create / join, the code, how you play */
+.join-form{display:grid;gap:8px}
+.join-form label{font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--cream-dim)}
+.join-row{display:flex;gap:8px}
+.code-in{flex:1;min-width:0;min-height:52px;box-sizing:border-box;border-radius:12px;border:2px solid #6e4628;background:rgba(0,0,0,.3);color:var(--cream);font-family:var(--display);font-size:28px;letter-spacing:.3em;text-align:center;text-transform:uppercase;padding:6px 10px}
+.code-in:focus{outline:none;border-color:var(--acorn)}
+.join-err{margin:0;min-height:1.2em;font-size:14px;color:#ff8a7a}
+.room-tag{display:flex;align-items:center;gap:10px;padding:6px 8px 6px 14px;border-radius:12px;background:rgba(0,0,0,.3);pointer-events:auto}
+.room-tag span{font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--cream-dim)}
+.room-tag b{font-family:var(--display);font-size:26px;letter-spacing:.18em;color:var(--gold)}
+.style-choice button.rec{border-color:var(--acorn)}
+.style-choice button.rec b::after{content:"Recommended";margin-left:8px;font-family:var(--body);font-size:11px;letter-spacing:.06em;padding:2px 8px;border-radius:999px;background:var(--acorn);color:var(--ink);vertical-align:middle}
+
 .hat-sec summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:6px;min-height:44px;padding:0 12px;margin:0 -2px;border-radius:10px;background:rgba(0,0,0,.2)}
 .hat-sec summary::-webkit-details-marker{display:none}
 .hat-sec summary::after{content:"▾";margin-left:auto;font-size:14px;letter-spacing:0;transition:transform .2s}
@@ -605,12 +619,13 @@ body.pad-mode{background:#1b120b}
   <div class="screen" id="vsScr" hidden>
     <div class="placard">
       <h2 class="h2">Versus</h2>
-      <p class="lede">Two squirrels, one meadow. First to 7 bonks wins. Crates and power-ups drop all match long.</p>
+      <p class="lede">Up to four fighters, one meadow. First to 7 bonks wins; three or four is a free-for-all. Crates and power-ups drop all match long.</p>
       <div class="choice">
-        <button id="couchBtn"><b>Couch · 2 to 4</b><span>Play on this screen (hook it up to the TV). Each player scans a code with their phone and uses it as a controller.</span></button>
-        <button id="onlineBtn"><b>Online · 2 to 4</b><span>Play against up to three friends on their phones or computers, from anywhere. Three or four is a free-for-all. Each of you sees your own view; phones use on-screen controls. Send a link or let them scan a code.</span></button>
+        <button id="vsCreate"><b>🏠 Create a room</b><span>Get a 4-letter code to share. Friends join from anywhere on a phone or computer, and you can fill open spots with CPUs.</span></button>
+        <button id="vsJoin"><b>🚪 Join a room</b><span>Type the code a friend gives you.</span></button>
       </div>
-      <div class="row"><button class="btn ghost" id="vsBack">Back</button></div>
+      <form class="join-form" id="vsJoinForm" hidden autocomplete="off"><label for="vsCode">Room code</label><div class="join-row"><input id="vsCode" class="code-in" inputmode="text" autocapitalize="characters" autocorrect="off" spellcheck="false" maxlength="10" placeholder="ABCD" aria-label="Room code"><button class="btn" type="submit">Join</button></div><p class="join-err" id="vsJoinErr" role="alert"></p></form>
+      <div class="row"><button class="btn ghost" id="vsBack">Back</button><button class="btn ghost sm" id="couchBtn">Split screen on one TV</button></div>
     </div>
   </div>
 
@@ -619,10 +634,25 @@ body.pad-mode{background:#1b120b}
       <h2 class="h2">Multiplayer</h2>
       <p class="lede">Team up to defend the stash. The waves of gnomes and crows grow with every player, and the Gnome King still shows up every fifth wave.</p>
       <div class="choice">
-        <button id="coCouchBtn"><b>Couch · 2 to 4</b><span>Play on this screen (hook it up to the TV). Everyone scans a code with their phone and uses it as a controller.</span></button>
-        <button id="coOnlineBtn"><b>Online · 2 to 4</b><span>Team up with up to three friends on their phones or computers, from anywhere. Each of you sees your own view; phones use on-screen controls. Send a link or let them scan a code.</span></button>
+        <button id="coCreate"><b>🏠 Create a room</b><span>Get a 4-letter code to share. Friends join from anywhere on a phone or computer, and you can fill open spots with CPUs.</span></button>
+        <button id="coJoin"><b>🚪 Join a room</b><span>Type the code a friend gives you.</span></button>
       </div>
-      <div class="row"><button class="btn ghost" id="coBack">Back</button></div>
+      <form class="join-form" id="coJoinForm" hidden autocomplete="off"><label for="coCode">Room code</label><div class="join-row"><input id="coCode" class="code-in" inputmode="text" autocapitalize="characters" autocorrect="off" spellcheck="false" maxlength="10" placeholder="ABCD" aria-label="Room code"><button class="btn" type="submit">Join</button></div><p class="join-err" id="coJoinErr" role="alert"></p></form>
+      <div class="row"><button class="btn ghost" id="coBack">Back</button><button class="btn ghost sm" id="coCouchBtn">Split screen on one TV</button></div>
+    </div>
+  </div>
+
+  <div class="screen" id="styleScr" hidden>
+    <div class="placard">
+      <h2 class="h2">How do you want to play?</h2>
+      <p class="lede" id="styleLede"></p>
+      <div class="choice style-choice">
+        <button data-style="touch"><b>👆 Touch</b><span>See-through controls on this screen: move on the left, aim and FIRE on the right.</span></button>
+        <button data-style="pad"><b>🎮 Controller</b><span id="stylePadTxt">A Pro Controller, Xbox or PlayStation controller paired with this device.</span></button>
+        <button data-style="phone"><b>📱 Phone controller</b><span>The game shows on this screen (a TV or computer) and your phone is the controller. You scan a code next.</span></button>
+        <button data-style="keys"><b>⌨️ Keyboard and mouse</b><span>WASD to move, the mouse to aim, click to shoot.</span></button>
+      </div>
+      <div class="row"><button class="btn ghost" id="styleBack">Back</button></div>
     </div>
   </div>
 
@@ -642,6 +672,7 @@ body.pad-mode{background:#1b120b}
       <h2 class="h2">Pick your fighter</h2>
       <p id="selLede"></p>
       <div class="sel-maps" id="selMaps"></div>
+      <div class="room-tag" id="selRoom" hidden><span>Room</span><b id="selRoomCode"></b><button class="btn ghost sm" id="selShare" type="button">Share</button></div>
       <div class="row sel-btns"><button class="btn ghost sm" id="selBotLv" hidden>Bots: Normal</button><button class="btn ghost sm" id="selLeave">Leave</button></div>
     </div>
     <div class="sel-panels">
@@ -1153,7 +1184,8 @@ function runController(code, slot){
       const picks = tv.presence.picks, rd = tv.presence.ready, inn = tv.presence.in;
       const others = Array.isArray(inn) ? inn.map((ok, k) => ok && k !== slot - 1 ? k : -1).filter(k => k >= 0) : [2 - slot];
       ps.querySelector('.pad-map span').textContent = 'Map: ' + String(tv.presence.mapName || '…');
-      ps.querySelector('.pad-other').textContent = others.map(o => {
+      if (typeof tv.presence.otxt === 'string') ps.querySelector('.pad-other').textContent = tv.presence.otxt.slice(0, 160);
+      else ps.querySelector('.pad-other').textContent = others.map(o => {
         const on = Array.isArray(picks) && CHARS[picks[o]] ? CHARS[picks[o]].name : '…';
         return 'P' + (o + 1) + (Array.isArray(rd) && rd[o] ? ' ready as the ' + on : ' picking (' + on + ')');
       }).join(' · ') || 'Waiting for teammates to scan in.';
@@ -3758,9 +3790,10 @@ function resetGame(){
   score = 0; combo = 0; comboT = 0; kills = 0; stash = 100; shake = 0; dmgFlash = 0;
   bossBox.hidden = true; updateStashPile();
 }
-function showTouch(on){ $('touch').hidden = !(on && isTouch); }
+// online, the see-through controls only for Touch (a controller or a phone controller needs none)
+function showTouch(on){ $('touch').hidden = !(on && isTouch && !(pvp && pvp.mode === 'online' && playStyle !== 'touch')); }
 function lockPointer(){
-  if (isTouch || SOLOPAD) return;
+  if (isTouch || SOLOPAD || (NETPAD && pvp && pvp.mode === 'online')) return;
   try { const p = canvas.requestPointerLock && canvas.requestPointerLock(); if (p && p.catch) p.catch(() => {}); } catch (e) {}
 }
 function startGame(){
@@ -4014,9 +4047,9 @@ const HATS = [
   { id: 'crown', name: 'Golden Crown', icon: '👑', need: 'Beat all 100 waves', ok: () => prog.won >= 1 }
 ];
 const hatOk = (id) => { const H = HATS.find(h => h.id === id); return !!(H && H.ok()); };
-let hatId = 'acorn';
+let hatId = 'none';
 try { const h = localStorage.getItem('squirrel-commando-hat'); if (h && HATS.some(q => q.id === h)) hatId = h; } catch (e) {}
-if (!hatOk(hatId)) hatId = 'acorn';
+if (!hatOk(hatId)) hatId = 'none';
 let hatsHad = new Set(HATS.filter(h => h.ok()).map(h => h.id));
 // after any progress: say which hats just unlocked
 function progUpdate(fn){
@@ -4358,8 +4391,8 @@ function dealHit(shooter, victim, dmg, head, pt){
   if (v) { floatText(pt, String(Math.round(dmg)), head ? 'crit' : '', v); shooter.hitT = 0.12; }
   sfx.hit(head);
   burst(pt, head ? 10 : 6, victim.colors.slice(0, 2), 4, 0.06, 0.5, -14, 0.5);
-  if (pvp.mode === 'couch') applyDamage(victim, dmg, shooter);
-  else pushEv({ k: 'hit', to: victim.idx, d: Math.round(dmg), h: head ? 1 : 0 });
+  if (pvp.mode === 'couch' || victim === pvp.local || victim.bot) applyDamage(victim, dmg, shooter);
+  else pushEv({ k: 'hit', to: victim.idx, by: shooter.idx, d: Math.round(dmg), h: head ? 1 : 0 });
 }
 function applyDamage(v, d, attacker){
   if (v.dead || v.inv > 0 || pvp.phase !== 'play') return;
@@ -4471,7 +4504,7 @@ function pvpToast(f, text){
 function pvpLaunch(owner, p, vel, dmg, r, real){
   const m = mk(pineGeo, pineMat, p.x, p.y, p.z, scene);
   pvp.projs.push({ m, vel: vel.clone(), dmg, r, owner, real, life: 4 });
-  if (real && pvp.mode === 'online') pushEv({ k: 'pine', x: r2(p.x), y: r2(p.y), z: r2(p.z), vx: r2(vel.x), vy: r2(vel.y), vz: r2(vel.z) });
+  if (real && pvp.mode === 'online') pushEv({ k: 'pine', by: owner.idx, x: r2(p.x), y: r2(p.y), z: r2(p.z), vx: r2(vel.x), vy: r2(vel.y), vz: r2(vel.z) });
 }
 function pvpUpdateProjs(dt){
   for (let i = pvp.projs.length - 1; i >= 0; i--) {
@@ -4530,8 +4563,9 @@ function pvpTake(k, f){
   pvpRemovePickup(k);
   if (pvp.coop && k.kind === 'acorn') { stash = Math.min(100, stash + 2); score += 25; updateStashPile(); }
   let wi = -1;
-  if (k.kind === 'crate') { const un = [1, 2, 3].filter(i => !f.w[i].owned); wi = un.length && (pvp.mode === 'couch' || f === pvp.local) ? pick(un) : pick([1, 2, 3]); }
-  if (pvp.mode === 'couch' || f === pvp.local) fCollect(f, k.kind, k.power, wi, k.obj.position);
+  const here = pvp.mode === 'couch' || f === pvp.local || !!f.bot;
+  if (k.kind === 'crate') { const un = [1, 2, 3].filter(i => !f.w[i].owned); wi = un.length && here ? pick(un) : pick([1, 2, 3]); }
+  if (here) fCollect(f, k.kind, k.power, wi, k.obj.position);
   else pushEv({ k: 'grant', to: f.idx, id: k.id, kc: PKINDS.indexOf(k.kind), pc: k.power ? PKEYS.indexOf(k.power) : -1, wi });
 }
 function fCollect(f, kind, power, wi, at){
@@ -4585,7 +4619,7 @@ function pvpUpdatePickups(dt){
       if (f.dead) continue;
       const d = Math.hypot(o.position.x - f.pos.x, o.position.y - (f.pos.y + 0.7), o.position.z - f.pos.z);
       if (d > (k.kind === 'crate' ? 1.4 : 1.1)) continue;
-      if (auth && (pvp.mode === 'couch' || f === pvp.local)) { pvpTake(k, f); break; }
+      if (auth && (pvp.mode === 'couch' || f === pvp.local || f.bot)) { pvpTake(k, f); break; }
       if (!auth && f === pvp.local && k.claimT <= 0) { pushEv({ k: 'claim', id: k.id }); k.claimT = 1; }
     }
     k.claimT = Math.max(0, k.claimT - dt);
@@ -4594,6 +4628,11 @@ function pvpUpdatePickups(dt){
 
 // ---------- network (online) and pads (couch)
 function pushEv(e){ pvp.seq++; e.s = pvp.seq; pvp.ev.push(e); if (pvp.ev.length > 16) pvp.ev.shift(); }
+function fighterState(f){
+  return { x: r2(f.pos.x), y: r2(f.pos.y), z: r2(f.pos.z), vx: r2(f.vel.x), vz: r2(f.vel.z), yw: Math.round(f.yaw * 1000) / 1000, pt: Math.round(f.pitch * 1000) / 1000,
+    w: f.cur, f: f.shots, hp: Math.ceil(f.hp), dd: f.dead ? 1 : 0, d: f.deaths, sh: f.pw.shield > 0 ? 1 : 0, iv: f.inv > 0 ? 1 : 0, g: f.onGround ? 1 : 0,
+    kb: (f.killedBy || [0, 0, 0, 0]).slice(), k: f.kills | 0, ...(f.dead && pvp.coop ? { rv: Math.round(clamp((f.revT || 0) / REVIVE_T, 0, 1) * 100) } : {}) };
+}
 function netSend(dt){
   // co-op carries the enemies too: send 30 times a second, not every frame
   if (pvp.coop) { pvp.netT = (pvp.netT || 0) - (dt || 0); if (pvp.netT > 0) return; pvp.netT = 1 / 30; }
@@ -4608,6 +4647,7 @@ function netSend(dt){
   if (pvp.coop) { st.k = f.kills | 0; if (f.dead) st.rv = Math.round(clamp((f.revT || 0) / REVIVE_T, 0, 1) * 100); }
   const p = { role: pvp.role, code: pvp.code, m: pvp.m, phase: pvp.phase, st, ev: pvp.ev };
   if (pvp.coop) { p.coop = 1; if (pvp.role === 'host') { p.co = coopPack(); p.why = pvp.why; } }
+  if (pvp.role === 'host') { p.bt = pvp.fighters.filter(o => o.bot).map(o => [o.idx, fighterState(o)]); p.bots = pvp.bots; }
   if (pvp.role === 'host') { p.chars = pvp.fighters.map(f => f.ch); p.slots = pvp.fighters.map(f => f.idx + 1); p.seats = pvp.seats; p.map = mapIdx; p.pk = pvp.pk.map(k => [k.id, PKINDS.indexOf(k.kind), r2(k.x), r2(k.z), k.power ? PKEYS.indexOf(k.power) : -1]); p.win = pvp.winner; }
   else p.gid = myGid;
   pvp.r.presence(p).catch(() => {});
@@ -4647,6 +4687,14 @@ function handleEv(e, from){
   if (!e || typeof e !== 'object') return;
   const local = pvp.local;
   // hits, enemy damage and pickups name who they're for
+  const by = e.by !== undefined ? pvp.fighters.find(o => o.idx === +e.by) : null;
+  if (by) from = by;
+  // a hit on one of the host's CPUs
+  if (e.k === 'hit' && e.to !== undefined && +e.to !== local.idx) {
+    const t = pvp.fighters.find(o => o.idx === +e.to);
+    if (t && t.bot) applyDamage(t, clamp(+e.d || 0, 0, 300), from);
+    return;
+  }
   if (e.to !== undefined && +e.to !== local.idx) return;
   if (pvp.coop) {
     if (e.k === 'ehit' && pvp.role === 'host') {
@@ -4688,12 +4736,14 @@ function netRead(dt){
     if (nb.textContent !== t) { nb.textContent = t; nb.hidden = !t; nb.classList.toggle('on', t === '⚡ Direct'); }
   }
   for (const remote of pvp.remotes) {
+    if (remote.bot) continue; // the host runs its CPUs itself
+    if (remote.cpu) continue; // (their state comes with the host's, below)
     const p = onlinePeer(peers, pvp.seats, remote.idx);
     if (!p) {
       remote.missT = (remote.missT || 0) + dt;
       if (remote.missT > 6 && !remote.left && pvp.phase !== 'over') {
         // the host gone, or nobody else left: the match is over; otherwise play on without them
-        const others = pvp.remotes.filter(o => o !== remote && !o.left);
+        const others = pvp.remotes.filter(o => o !== remote && !o.left && !o.bot && !o.cpu);
         if (remote.idx === 0 || !others.length) { if (pvp.coop) coopOver('left'); else pvpOver(pvp.fighters.indexOf(pvp.local), 'left'); return; }
         remote.left = true; remote.dead = true; remote.model.group.visible = false;
         showPvBanner(remote.tag + ' left', 'The match carries on');
@@ -4714,6 +4764,13 @@ function netRead(dt){
     remote.lastPr = pr;
     if (pr.st && typeof pr.st === 'object') applyRemoteState(remote, pr.st);
     if (pvp.coop && pvp.role === 'guest' && remote.idx === 0) coopUnpack(pr.co);
+    if (pvp.role === 'guest' && remote.idx === 0 && Array.isArray(pr.bt)) {
+      for (const a of pr.bt.slice(0, 3)) {
+        if (!Array.isArray(a) || !a[1] || typeof a[1] !== 'object') continue;
+        const c = pvp.fighters.find(o => o.idx === Math.round(+a[0]) && o.cpu);
+        if (c) applyRemoteState(c, a[1]);
+      }
+    }
     const evs = Array.isArray(pr.ev) ? pr.ev : [], k = remote.idx;
     if (!pvp.seqInit[k]) { pvp.seqInit[k] = true; pvp.lastSeq[k] = evs.reduce((a, e) => Math.max(a, +(e && e.s) || 0), 0); }
     else for (const e of evs) { const s = +(e && e.s) || 0; if (s > pvp.lastSeq[k]) { pvp.lastSeq[k] = s; handleEv(e, remote); if (!pvp) return; } }
@@ -4975,7 +5032,7 @@ function coopHitEnemy(shooter, e, dmg, head, pt, dir, kb){
 // An enemy hit a fighter. The online guest owns its own health, so it is told instead.
 function coopHurt(f, d, src){
   if (pvp.phase !== 'play') return;
-  if (pvp.mode === 'online' && f !== pvp.local) { pushEv({ k: 'ouch', to: f.idx, d: Math.round(d), x: r2(src ? src.x : f.pos.x), z: r2(src ? src.z : f.pos.z), up: d >= 18 ? 1 : 0 }); return; }
+  if (pvp.mode === 'online' && f !== pvp.local && !f.bot) { pushEv({ k: 'ouch', to: f.idx, d: Math.round(d), x: r2(src ? src.x : f.pos.x), z: r2(src ? src.z : f.pos.z), up: d >= 18 ? 1 : 0 }); return; }
   applyDamage(f, d, src ? { pos: src } : null);
 }
 // Kill drops become shared pickups; the TV or the host decides who grabs them
@@ -5137,12 +5194,13 @@ function startPvp(mode, role, r, code, m, chars, map, coop, slots, bots, guns){
   // online: my fighter is the host's (index 0) or the seat the host gave me
   const me = role === 'host' ? 0 : (sel && sel.local > 0 ? sel.local : seatsOf((peersFor(r, code).find(p => p.presence.role === 'host') || {}).presence)[myGid] || 1);
   fighters.forEach(f => { f.tag = mode === 'couch' ? 'P' + (f.idx + 1) + ' ' + f.name : (f.idx === me ? 'You' : 'P' + (f.idx + 1) + ' ' + f.name); });
-  if (mode === 'couch' && Array.isArray(bots)) fighters.forEach(f => { if (bots.includes(f.idx + 1)) { f.bot = { lv: botLv, t: 0, aimErr: new V3(), strafe: Math.random() < 0.5 ? 1 : -1, stuck: 0 }; f.tag += ' (bot)'; } });
+  if (Array.isArray(bots) && (mode === 'couch' || role === 'host')) fighters.forEach(f => { if (bots.includes(f.idx + 1)) { f.bot = { lv: botLv, t: 0, aimErr: new V3(), strafe: Math.random() < 0.5 ? 1 : -1, stuck: 0 }; f.tag += mode === 'couch' ? ' (bot)' : ' (CPU)'; } });
+  if (Array.isArray(bots) && mode === 'online' && role === 'guest') fighters.forEach(f => { if (bots.includes(f.idx + 1)) { f.cpu = true; f.tag += ' (CPU)'; } });
   // only people get a slice of the screen
   const humans = fighters.filter(f => !f.bot);
   pvp = { mode, role, r, code, m: 0, fighters, local: null, remotes: [], seats: role === 'host' ? { ...(pvpSeats || {}) } : {}, ev: [], seq: 0, lastSeq: {}, seqInit: {}, pk: [], pkId: 1, pkTimer: 8,
     projs: [], phase: 'countdown', count: 3.6, winner: -1, missing: 0, tvT: 0, lastPr: null, gone: new Set(), scoreHtml: '', coop: !!coop,
-    humans, bots: fighters.filter(f => f.bot).map(f => f.idx + 1) };
+    humans, bots: fighters.filter(f => f.bot || f.cpu).map(f => f.idx + 1) };
   if (mode === 'online') { pvp.local = fighters.find(f => f.idx === me) || fighters[0]; pvp.remotes = fighters.filter(f => f !== pvp.local); }
   if (mode === 'online') pvp.local.gun0 = startGun;
   if (mode === 'couch' && Array.isArray(guns)) fighters.forEach((f, i) => { f.gun0 = clamp(Math.round(+guns[i]) || 0, 0, WEAPONS.length - 1); });
@@ -5235,6 +5293,7 @@ function backToSelect(){
 }
 function leavePvp(){
   if (!pvp) return;
+  if (pvp.mode === 'online') endNetPad();
   leaveRoom(pvp.r);
   teardownPvp();
   sq.group.visible = true; player.pos.set(0, 0, 9); player.vel.set(0, 0, 0);
@@ -5257,9 +5316,11 @@ function pvpUpdate(dt){
       if (a) { f.yaw += a.dy; f.pitch = clamp(f.pitch + a.dp, PMIN, PMAX); }
     }
     if (jumpQueued) { jumpQueued = false; I.jumpQ = true; }
+    if (NETPAD) netPadInput(f, dt);
   }
   for (const f of pvp.fighters) {
-    const simulated = pvp.mode === 'couch' || f === pvp.local;
+    const simulated = pvp.mode === 'couch' || f === pvp.local || !!f.bot;
+    if (f.bot && pvp.mode === 'online') botThink(f, dt);
     if (simulated) {
       fTimers(f, dt);
       if (f.dead && pvp.coop && pvp.phase === 'play') {
@@ -5371,18 +5432,20 @@ const chIdx = (v) => { const n = Math.round(+v); return CHARS[n] ? n : 0; };
 function hostChars(pr){
   const chars = Array.isArray(pr.chars) ? pr.chars.slice(0, 4).map(chIdx) : [chIdx(pr.ch), 0];
   const slots = Array.isArray(pr.slots) && pr.slots.length === chars.length ? pr.slots.map(v => clamp(Math.round(+v) || 1, 1, 4)) : chars.map((_, i) => i + 1);
-  return { chars, slots };
+  const bots = Array.isArray(pr.bots) ? pr.bots.map(v => Math.round(+v)).filter(v => v >= 2 && v <= 4) : [];
+  return { chars, slots, bots };
 }
 // Online seats: the host keeps { guest id: fighter index (1-3) }, in the order guests join, and
 // shares it in its presence; a guest finds its own index there.
-function seatGuests(peers, seats){
+function seatGuests(peers, seats, bots){
   const here = peers.filter(p => p.presence.role === 'guest' && typeof p.presence.gid === 'string');
   const ids = new Set(here.map(p => p.presence.gid));
   for (const id in seats) if (!ids.has(id)) delete seats[id];
   for (const p of here) {
     const id = p.presence.gid; if (id in seats) continue;
-    const used = new Set(Object.values(seats)), free = [1, 2, 3].find(i => !used.has(i));
-    if (free) seats[id] = free;
+    const used = new Set(Object.values(seats));
+    const free = [1, 2, 3].find(i => !used.has(i) && !(bots && bots.has(i))) || [1, 2, 3].find(i => !used.has(i));
+    if (free) { seats[id] = free; if (bots) bots.delete(free); }
   }
   return seats;
 }
@@ -5417,11 +5480,12 @@ function enterSelect(mode, role, r, code, picks, prevM, map, coop, base, bots){
   if (mode === 'online') base = null; // (online, base carries the guest's seat)
   sel = { mode, role, r, code, local, n, coop: !!coop, picks: p0, ready: Array(n).fill(false), padOk: Array(n).fill(false), seats: mode === 'online' && role === 'host' ? (pvpSeats || {}) : {},
     previews: Array(n).fill(null), guns: Array(n).fill(0), shown: Array(n).fill(-1), missing: 0, go: 0, t: 0, prevM: prevM || 0, sendT: 0, ui: [], base: base || null,
-    bots: new Set(mode === 'couch' && Array.isArray(bots) ? bots : []) };
-  $('selBotLv').hidden = mode !== 'couch'; $('selBotLv').textContent = 'Bots: ' + BOT_LV[botLv];
+    bots: new Set(Array.isArray(bots) && (mode === 'couch' || role === 'host') ? bots : []) };
+  $('selBotLv').hidden = !(mode === 'couch' || (mode === 'online' && role === 'host')); $('selBotLv').textContent = (mode === 'online' ? 'CPUs: ' : 'Bots: ') + BOT_LV[botLv];
   if (!sel.base) gameUrl().then(b => { if (sel) sel.base = b; });
   $('selScr').classList.toggle('quad', n === 4);
   $('selScr').classList.toggle('net', mode === 'online');
+  $('selRoom').hidden = mode !== 'online'; $('selRoomCode').textContent = code.toUpperCase();
   for (let i = 2; i < 4; i++) $('sel' + i).hidden = i >= n;
   sel.map = map === undefined ? mapIdx : mapOf(map); sel.lastMp = null; buildMap(sel.map);
   const canMap = mode === 'couch' || role === 'host';
@@ -5430,7 +5494,7 @@ function enterSelect(mode, role, r, code, picks, prevM, map, coop, base, bots){
   for (let i = 0; i < n; i++) buildSelPanel(i);
   $('selLede').textContent = mode === 'couch'
     ? 'Everyone picks on their phone, then taps Ready. More players can still scan in. The match starts when everyone in is ready.'
-    : (isTouch ? 'Tap a fighter, then Ready.' : 'Pick with the mouse or the arrow keys, then press Ready (Enter).') + (role === 'host' ? ' You choose the map. Up to four can play: others can still join with the link.' : ' The host chooses the map.');
+    : role === 'host' ? 'Share the room code. Up to four can play; open spots can be CPUs. Pick a fighter and a map, then Start game when everyone is ready.' : 'Pick a fighter and tap Ready. The room\'s creator picks the map and starts the game.';
   $('selScr').hidden = false;
   state = 'select';
   if (mode === 'couch') r.presence({ role: 'tv', code, phase: 'select', m: 0, hud: null, picks: sel.picks, ready: sel.ready, in: sel.padOk, map: sel.map, mapName: MAPS[sel.map].name, coop: coop ? 1 : 0 }).catch(() => {});
@@ -5444,7 +5508,7 @@ function buildSelPanel(i){
   el.innerHTML = '<div class="sel-head"><b>P' + (i + 1) + '</b><span></span></div><div class="sel-name"></div><div class="sel-list"></div>'
     + (isLocal ? '<p class="sel-gunlbl">Starting gun</p><div class="sel-guns"></div>' : '')
     + '<div class="sel-join" hidden><div class="qr-code"></div><span>Scan to join</span>' + (sel.mode === 'online' ? '<button class="btn ghost sm sel-invite">Copy invite link</button>' : '') + '</div><div class="sel-foot"><span class="sel-status"></span></div>'
-    + (sel.mode === 'couch' ? '<button class="btn ghost sm sel-bot"></button>' : '');
+    + (sel.mode === 'couch' || (sel.mode === 'online' && sel.role === 'host' && !isLocal) ? '<button class="btn ghost sm sel-bot"></button>' : '');
   const botBtn = el.querySelector('.sel-bot');
   if (botBtn) botBtn.addEventListener('click', () => selToggleBot(i));
   el.querySelector('.sel-head span').textContent = who;
@@ -5484,12 +5548,12 @@ function buildSelPanel(i){
 }
 // couch: an empty spot can be a bot instead (and a phone or controller joining there takes it back)
 function selToggleBot(i){
-  if (!sel || sel.mode !== 'couch') return;
+  if (!sel || !(sel.mode === 'couch' || (sel.mode === 'online' && sel.role === 'host'))) return;
   if (sel.bots.has(i)) sel.bots.delete(i);
   else if (!sel.padOk[i]) { sel.bots.add(i); sel.picks[i] = Math.floor(Math.random() * CHARS.length); }
   sfx.swap(); sel.sendT = 0;
 }
-$('selBotLv').addEventListener('click', () => { botLv = (botLv + 1) % 3; try { localStorage.setItem('squirrel-commando-bots', String(botLv)); } catch (e) {} $('selBotLv').textContent = 'Bots: ' + BOT_LV[botLv]; sfx.swap(); });
+$('selBotLv').addEventListener('click', () => { botLv = (botLv + 1) % 3; try { localStorage.setItem('squirrel-commando-bots', String(botLv)); } catch (e) {} $('selBotLv').textContent = (sel && sel.mode === 'online' ? 'CPUs: ' : 'Bots: ') + BOT_LV[botLv]; sfx.swap(); });
 function selMap(i){
   if (!sel) return;
   sel.map = mapOf(i); buildMap(sel.map); sfx.swap();
@@ -5504,6 +5568,12 @@ function selPick(k){
 }
 function selToggleReady(){
   if (!sel || sel.local < 0) return;
+  // the room's creator starts the game once everyone else is ready
+  if (sel.mode === 'online' && sel.role === 'host' && !sel.ready[sel.local]) {
+    const others = [1, 2, 3].filter(i => sel.padOk[i] || sel.bots.has(i));
+    const msg = !others.length ? 'Share the room code, or add a CPU to an open spot.' : !others.every(i => sel.ready[i]) ? 'Waiting for everyone to tap Ready.' : '';
+    if (msg) { $('selLede').textContent = msg; sfx.empty(); return; }
+  }
   sel.ready[sel.local] = !sel.ready[sel.local];
   sel.r.presence({ ch: sel.picks[sel.local], rdy: sel.ready[sel.local] ? 1 : 0 }).catch(() => {});
   if (sel.ready[sel.local]) sfx.pickup(true);
@@ -5540,6 +5610,8 @@ function selTick(dt){
         S.missing = 0;
         const pr = host.presence;
         S.seats = seatsOf(pr);
+        S.bots = new Set();
+        if (pr.sbots && typeof pr.sbots === 'object') for (const k in pr.sbots) { const i = Math.round(+k); if (i >= 1 && i <= 3) { S.bots.add(i); S.picks[i] = chIdx(pr.sbots[k]); } }
         const mine = S.seats[myGid];
         if (pr.phase === 'select' && mine === undefined && S.t > 2) { selAbort('The host\'s room is full (four players). Ask them for a new link.'); return; }
         if (mine !== undefined && mine !== S.local) { const { mode, role, r, code, picks, prevM, map, coop } = S; enterSelect(mode, role, r, code, picks, prevM, map, coop, mine); return; }
@@ -5548,17 +5620,20 @@ function selTick(dt){
           const r = S.r, code = S.code, coop = S.coop; clearPreviews(); sel = null; $('selScr').hidden = true;
           if (at < 0) { leaveRoom(r); state = 'menu'; showLobby('Match started', 'The match started without you. Ask the host for a new link.'); $('lobbyCancel').textContent = 'Back to menu'; return; }
           hc.chars[at] = S.picks[S.local];
-          startPvp('online', 'guest', r, code, +pr.m, hc.chars, mapOf(pr.map), coop, hc.slots); return;
+          startPvp('online', 'guest', r, code, +pr.m, hc.chars, mapOf(pr.map), coop, hc.slots, hc.bots); return;
         }
         if (pr.map !== undefined && mapOf(pr.map) !== S.map) { S.map = mapOf(pr.map); buildMap(S.map); }
       }
     } else {
-      const before = JSON.stringify(S.seats);
-      seatGuests(peers, S.seats);
-      if (JSON.stringify(S.seats) !== before) S.r.presence({ seats: { ...S.seats } }).catch(() => {});
+      seatGuests(peers, S.seats, S.bots);
+      // the seats, the CPUs and the CPUs' fighters, for the guests' screens
+      const bp = {}; S.bots.forEach(i => { bp[i] = S.picks[i]; });
+      const msg = JSON.stringify([S.seats, bp]);
+      if (msg !== S.lastSeats) { S.lastSeats = msg; S.r.presence({ seats: { ...S.seats }, sbots: bp }).catch(() => {}); }
     }
     for (let i = 0; i < S.n; i++) {
       if (i === S.local) { S.padOk[i] = true; continue; }
+      if (S.bots.has(i)) { S.padOk[i] = false; S.ready[i] = true; continue; }
       const p = onlinePeer(peers, S.seats, i), pr = p && p.presence;
       S.padOk[i] = !!p;
       if (pr && (pr.phase === 'select' || S.role === 'host')) { S.picks[i] = chIdx(pr.ch); S.ready[i] = S.t > 1 && pr.phase === 'select' && !!pr.rdy; }
@@ -5607,7 +5682,7 @@ function selTick(dt){
     const u = S.ui[i]; if (!u) continue;
     // couch co-op: a missing player's panel shows their QR code instead
     const isBot = S.bots.has(i), away = !S.padOk[i] && !isBot;
-    if (u.botBtn) { const bt = isBot ? 'Remove bot' : 'Add a bot'; if (u.botBtn.textContent !== bt) u.botBtn.textContent = bt; u.botBtn.hidden = !isBot && !away; }
+    if (u.botBtn) { const bt = S.mode === 'online' ? (isBot ? 'Remove CPU' : 'Add a CPU') : isBot ? 'Remove bot' : 'Add a bot'; if (u.botBtn.textContent !== bt) u.botBtn.textContent = bt; u.botBtn.hidden = !isBot && !away; }
     setClass(u.el, 'away', away); u.join.hidden = !away;
     if (away && !u.qrDone && S.base && window.QRCode) {
       u.qrDone = true;
@@ -5616,18 +5691,174 @@ function selTick(dt){
     const nm = CHARS[S.picks[i]].name; if (u.name.textContent !== nm) u.name.textContent = nm;
     if (S.mode === 'couch') { const hd = PALS[i].name + ' team · ' + (isBot ? BOT_LV[botLv].toLowerCase() + ' bot' : gpHas(i + 1, S.code) ? 'controller' : 'phone'), he = u.el.querySelector('.sel-head span'); if (he.textContent !== hd) he.textContent = hd; }
     u.btns.forEach((b, k) => setClass(b, 'on', k === S.picks[i]));
-    const st = isBot ? 'Bot' : S.ready[i] ? 'Ready!' : (!S.padOk[i] ? (S.mode === 'online' ? 'Open spot' : 'Not joined') : (S.mode === 'online' && i !== S.local && S.missing > 0 ? 'Reconnecting…' : 'Picking…'));
+    const st = isBot ? (S.mode === 'online' ? 'CPU · ' + BOT_LV[botLv] : 'Bot') : S.ready[i] ? 'Ready!' : (!S.padOk[i] ? (S.mode === 'online' ? 'Open spot' : 'Not joined') : (S.mode === 'online' && i !== S.local && S.missing > 0 ? 'Reconnecting…' : 'Picking…'));
     if (u.status.textContent !== st) u.status.textContent = st;
     setClass(u.status, 'ok', S.ready[i]);
-    if (u.ready) { const t = S.ready[i] ? 'Not ready' : 'Ready'; if (u.ready.textContent !== t) u.ready.textContent = t; setClass(u.ready, 'ready-on', S.ready[i]); }
+    if (u.ready) { const t = S.mode === 'online' && S.role === 'host' ? (S.ready[i] ? 'Starting…' : 'Start game') : S.ready[i] ? 'Not ready' : 'Ready'; if (u.ready.textContent !== t) u.ready.textContent = t; setClass(u.ready, 'ready-on', S.ready[i]); }
   }
 }
 $('selLeave').addEventListener('click', () => {
   if (!sel) return;
+  endNetPad();
   const r = sel.r; clearPreviews(); sel = null; leaveRoom(r);
   $('selScr').hidden = true; $('selScr').classList.remove('quad'); sq.group.visible = true; player.pos.set(0, 0, 9);
   state = 'menu'; $('menu').hidden = false;
 });
+
+
+// ---------- rooms: create one (a 4-letter code) or join one, then say how you'll play
+const ROOM_LETTERS = 'abcdefghjkmnpqrstuvwxyz';
+const newRoomCode = () => Array.from({ length: 4 }, () => ROOM_LETTERS[Math.floor(Math.random() * ROOM_LETTERS.length)]).join('');
+let playStyle = isTouch ? 'touch' : 'keys';
+try { const v = localStorage.getItem('squirrel-commando-style'); if (['touch', 'pad', 'phone', 'keys'].includes(v)) playStyle = v; } catch (e) {}
+let roomFlow = null; // { coop, act: 'create' | 'join', code, from }
+function roomStart(coop, act, code, from){
+  roomFlow = { coop, act, code, from };
+  ['menu', 'vsScr', 'coScr', 'lobbyScr'].forEach(id => { $(id).hidden = true; });
+  const pads = navigator.getGamepads ? [...navigator.getGamepads()].filter(Boolean) : [];
+  $('stylePadTxt').textContent = pads.length ? 'Connected: ' + pads[0].id.replace(/\s*\(.*$/, '').slice(0, 40) + '.' : 'A Pro Controller, Xbox or PlayStation controller paired with this device (pair it in Bluetooth settings, then press a button).';
+  const rec = pads.length ? 'pad' : isTouch ? 'touch' : 'keys';
+  $('styleScr').querySelectorAll('[data-style]').forEach(b => {
+    const st = b.dataset.style;
+    b.hidden = (st === 'touch' && !isTouch) || (st === 'keys' && isTouch);
+    b.classList.toggle('rec', st === rec);
+  });
+  $('styleLede').textContent = act === 'create' ? 'Pick how you\'ll control your fighter. Your room opens next, with a code to share.' : 'Pick how you\'ll control your fighter, then you join room ' + code.toUpperCase() + '.';
+  $('styleScr').hidden = false;
+  const first = $('styleScr').querySelector('[data-style].rec:not([hidden])') || $('styleScr').querySelector('[data-style]:not([hidden])');
+  if (first) first.focus({ preventScroll: true });
+}
+$('styleScr').querySelectorAll('[data-style]').forEach(b => b.addEventListener('click', () => {
+  if (!roomFlow) return;
+  playStyle = b.dataset.style; try { localStorage.setItem('squirrel-commando-style', playStyle); } catch (e) {}
+  $('styleScr').hidden = true; initAudio(); sfx.swap();
+  if (playStyle === 'phone') pairPhone(roomGo); else { endNetPad(); roomGo(); }
+}));
+$('styleBack').addEventListener('click', () => { const from = roomFlow && roomFlow.from; roomFlow = null; $('styleScr').hidden = true; $(from || 'menu').hidden = false; });
+function roomGo(){
+  const F = roomFlow; if (!F) return;
+  if (F.act === 'create') createRoom(F.coop); else joinOnline(F.code);
+}
+// the room's creator goes straight to the room: friends join as they come, open spots can be CPUs
+async function createRoom(coop){
+  initAudio();
+  const ticket = {}; lobby = ticket;
+  showLobby('Opening a room', 'Getting a room code…');
+  let code = '', j = null;
+  for (let t = 0; t < 3 && !(j && j.r); t++) { code = newRoomCode(); j = await joinCode(code); if (j.r && peersFor(j.r, code).length) { leaveRoom(j.r); j = null; } }
+  if (lobby !== ticket) { if (j && j.r) leaveRoom(j.r); return; }
+  if (!j || !j.r) { $('lobbyLede').textContent = roomErr((j && j.err) || 'error'); return; }
+  const base = await gameUrl();
+  if (lobby !== ticket) { leaveRoom(j.r); return; }
+  j.r.presence({ role: 'host', code, phase: 'lobby', m: 0, coop: coop ? 1 : 0 }).catch(() => {});
+  pvpSeats = {};
+  enterSelect('online', 'host', j.r, code, undefined, 0, undefined, coop);
+  if (sel) sel.base = base;
+}
+function joinSubmit(pre, coop){
+  const raw = $(pre + 'Code').value.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+  if (!/^[a-z0-9]{4,10}$/.test(raw)) { $(pre + 'JoinErr').textContent = 'Room codes are 4 letters, like ABCD.'; return; }
+  $(pre + 'JoinErr').textContent = '';
+  roomStart(coop, 'join', raw, pre + 'Scr');
+}
+[['co', true], ['vs', false]].forEach(([pre, coop]) => {
+  $(pre + 'Create').addEventListener('click', () => roomStart(coop, 'create', '', pre + 'Scr'));
+  $(pre + 'Join').addEventListener('click', () => { const f = $(pre + 'JoinForm'); f.hidden = !f.hidden; if (!f.hidden) $(pre + 'Code').focus(); });
+  $(pre + 'JoinForm').addEventListener('submit', (e) => { e.preventDefault(); joinSubmit(pre, coop); });
+  $(pre + 'Code').addEventListener('input', (e) => { e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); });
+});
+$('selShare').addEventListener('click', () => {
+  if (!sel) return;
+  const link = (sel.base || location.origin + location.pathname) + '#vs-' + sel.code + '-join', b = $('selShare');
+  const text = 'Join my Squirrel Commando room: ' + sel.code.toUpperCase();
+  if (navigator.share && isTouch) { navigator.share({ title: 'Squirrel Commando', text, url: link }).catch(() => {}); return; }
+  const done = (t) => { b.textContent = t; setTimeout(() => { b.textContent = 'Share'; }, 1500); };
+  try { navigator.clipboard.writeText(text + ' ' + link).then(() => done('Copied'), () => done('Copy failed')); } catch (e) { done('Copy failed'); }
+});
+
+// ---------- phone controller for an online room: this screen shows your view, a phone steers it
+let NETPAD = null;
+function endNetPad(){ if (NETPAD) { leaveRoom(NETPAD.r); NETPAD = null; } }
+async function pairPhone(then){
+  endNetPad();
+  const ticket = { mode: 'pair', then }; lobby = ticket;
+  showLobby('Connect your phone', 'Opening a link for your phone…');
+  const code = Math.random().toString(36).slice(2, 8).replace(/[^a-z0-9]/g, 'x').padEnd(6, '7');
+  const j = await joinCode(code);
+  if (lobby !== ticket) { if (j.r) leaveRoom(j.r); return; }
+  if (!j.r) { $('lobbyLede').textContent = roomErr(j.err); return; }
+  const base = await gameUrl();
+  if (lobby !== ticket) { leaveRoom(j.r); return; }
+  NETPAD = { r: j.r, code, last: null, yawOff: 0, pitchOff: 0, sendT: 0, lostT: 0, seenRdy: null };
+  Object.assign(ticket, { r: j.r, code, status: [] });
+  j.r.presence({ role: 'tv', code, phase: 'lobby', m: 0, solo: 1 }).catch(() => {});
+  $('lobbyLede').textContent = 'Scan this with the phone you\'ll play with. It becomes your controller, and this screen shows the game.';
+  ticket.status = [qrCard('Your phone', PALS[0].css, base + '#vs-' + code + '-p1')];
+  state = 'lobby';
+}
+function netPadPeer(){
+  if (!NETPAD) return null;
+  const ps = peersFor(NETPAD.r, NETPAD.code).filter(q => q.presence.role === 'pad' && q.presence.slot === 1);
+  const p = ps[ps.length - 1];
+  return p && p.presence.i && typeof p.presence.i === 'object' ? p : null;
+}
+// fighter select: the phone's picks are yours
+function netPadSelect(S){
+  const p = netPadPeer(); if (!p || S.local < 0) return;
+  const i = p.presence.i, n = (v) => (typeof v === 'number' && isFinite(v)) ? v : 0;
+  const L = NETPAD.last && NETPAD.last.peer === p.peer ? NETPAD.last : (NETPAD.last = { peer: p.peer, ch: -1, rdy: -1, gn: -1, mp: n(i.mp), mn: 0 });
+  if (chIdx(i.ch) !== L.ch) { L.ch = chIdx(i.ch); if (L.ch !== S.picks[S.local]) selPick(L.ch); }
+  const gn = clamp(Math.round(n(i.gn)), 0, WEAPONS.length - 1); if (gn !== L.gn) { L.gn = gn; startGun = gn; }
+  const rdy = i.rdy ? 1 : 0; if (rdy !== L.rdy) { const was = L.rdy; L.rdy = rdy; if (was !== -1 && !!rdy !== !!S.ready[S.local]) selToggleReady(); }
+  if (n(i.mp) !== L.mp) { L.mp = n(i.mp); if (S.role === 'host') selMap((S.map + 1) % MAPS.length); }
+}
+// in a match: the phone moves and aims your fighter
+function netPadInput(f, dt){
+  const p = netPadPeer();
+  if (!p) { NETPAD.lostT += dt; if (NETPAD.lostT > 1.5) { f.in.fire = false; } return; }
+  NETPAD.lostT = 0;
+  const i = p.presence.i, n = (v) => (typeof v === 'number' && isFinite(v)) ? v : 0;
+  const mnN = i.mn && typeof i.mn === 'object' ? n(i.mn.n) : 0;
+  if (!NETPAD.last || NETPAD.last.peer !== p.peer || NETPAD.last.j === undefined) { NETPAD.last = { peer: p.peer, j: n(i.j), r: n(i.r), w: n(i.w), c: n(i.c), ps: n(i.ps), mn: mnN }; NETPAD.yawOff = f.yaw - n(i.yaw); }
+  const L = NETPAD.last, edge = (k) => { const v = n(i[k]); if (v !== L[k]) { L[k] = v; return true; } return false; };
+  if (mnN !== L.mn) { L.mn = mnN; tvMenuPress(i.mn); if (!pvp) return; }
+  if (edge('ps') && $('pvpPauseScr').hidden) showPvpPause();
+  f.in.x = clamp(n(i.x), -1, 1); f.in.y = clamp(n(i.y), -1, 1); f.in.fire = !!i.f; f.in.sprint = !!i.s;
+  if (!f.dead && pvp.phase !== 'over') {
+    f.yaw = NETPAD.yawOff + n(i.yaw); f.pitch = clamp(n(i.pitch) + NETPAD.pitchOff, PMIN, PMAX);
+    const a = pvp.phase === 'play' ? aimAssist(f.cam.position, f.yaw, f.pitch, aimPoints(f), dt, f.in.fire) : null;
+    if (a) { NETPAD.yawOff += a.dy; f.yaw += a.dy; NETPAD.pitchOff = clamp(NETPAD.pitchOff + a.dp, -1, 1); f.pitch = clamp(f.pitch + a.dp, PMIN, PMAX); }
+  } else NETPAD.yawOff = f.yaw - n(i.yaw);
+  if (edge('j') && !f.dead) f.in.jumpQ = true;
+  if (edge('r') && !f.dead) fReload(f);
+  if (edge('w') && !f.dead) fCycle(f, 1);
+  if (edge('c')) { f.camMode = (f.camMode + 1) % 2; }
+}
+// what the phone shows: fighter select, or your health and ammo, or the open menu
+function netPadTick(dt){
+  const P = NETPAD; if (!P) return;
+  if (state === 'lobby' && lobby && lobby.mode === 'pair') {
+    const ok = !!netPadPeer(), el = lobby.status[0];
+    if (el) { const t = ok ? 'Phone connected' : 'Waiting for your phone…'; if (el.textContent !== t) { el.textContent = t; el.classList.toggle('ok', ok); } }
+    if (ok && !lobby.go) { lobby.go = true; const then = lobby.then; setTimeout(() => { if (NETPAD && lobby && lobby.mode === 'pair') { lobby = null; then(); } }, 600); }
+  }
+  if (state === 'select' && sel && sel.mode === 'online') netPadSelect(sel);
+  P.sendT -= dt; if (P.sendT > 0) return; P.sendT = 0.12;
+  let msg = { role: 'tv', code: P.code, phase: 'lobby', m: 0, solo: 1 };
+  if (state === 'select' && sel && sel.local >= 0) {
+    const others = [0, 1, 2, 3].filter(k => k !== sel.local && (sel.padOk[k] || sel.bots.has(k)));
+    msg = { role: 'tv', code: P.code, phase: 'select', m: 0, coop: sel.coop ? 1 : 0, picks: [sel.picks[sel.local]], ready: [sel.ready[sel.local]], in: [true], map: sel.map, mapName: MAPS[sel.map].name,
+      otxt: 'Room ' + sel.code.toUpperCase() + (others.length ? ' · ' + others.map(k => 'P' + (k + 1) + (sel.bots.has(k) ? ' CPU' : sel.ready[k] ? ' ready' : ' picking')).join(' · ') : ' · waiting for friends') };
+  } else if (state === 'pvp' && pvp && pvp.local) {
+    const f = pvp.local, w = f.w[f.cur];
+    const k = pvp.coop ? f.kills | 0 : bonksOf(f), o = pvp.coop ? 0 : Math.max(0, ...foesOf(f).map(bonksOf));
+    const hud = { slot: 1, hp: Math.ceil(f.hp), dead: f.dead ? 1 : 0, wn: WEAPONS[f.cur].name, am: w.ammo, rs: w.reserve === Infinity ? -1 : w.reserve, k, o };
+    if (pvp.phase === 'over' && pvp.awards) hud.aw = pvp.awards.filter(a => a.who === f).map(a => a.icon + ' ' + a.name);
+    msg = { role: 'tv', code: P.code, phase: pvp.phase, m: pvp.m, hud: [hud], coop: pvp.coop ? 1 : 0, menu: tvMenu() };
+    if (pvp.coop) msg.co = { w: wave, sd: Math.ceil(stash) };
+  }
+  P.r.presence(msg).catch(() => {});
+}
 
 // ---------- lobby
 function qrCard(label, css, link){
@@ -5705,7 +5936,7 @@ async function joinOnline(code){
   state = 'lobby';
 }
 function lobbyTick(dt){
-  const L = lobby; if (!L || !L.r) return;
+  const L = lobby; if (!L || !L.r || L.mode === 'pair') return;
   const peers = peersFor(L.r, L.code);
   if (L.mode === 'solo') {
     const p = peers.find(q => q.presence.role === 'pad' && q.presence.slot === 1);
@@ -5727,7 +5958,7 @@ function lobbyTick(dt){
     const seat = host ? seatsOf(host.presence)[myGid] : undefined;
     const busy = host && (host.presence.phase === 'countdown' || host.presence.phase === 'play' || host.presence.phase === 'over') && +host.presence.m > 0;
     if (host && host.presence.phase === 'select' && seat !== undefined) enterSelect('online', 'guest', L.r, L.code, undefined, 0, undefined, !!host.presence.coop, seat);
-    else if (busy && seat !== undefined) { const hc = hostChars(host.presence); if (hc.slots.includes(seat + 1)) startPvp('online', 'guest', L.r, L.code, +host.presence.m, hc.chars, mapOf(host.presence.map), !!host.presence.coop, hc.slots); }
+    else if (busy && seat !== undefined) { const hc = hostChars(host.presence); if (hc.slots.includes(seat + 1)) startPvp('online', 'guest', L.r, L.code, +host.presence.m, hc.chars, mapOf(host.presence.map), !!host.presence.coop, hc.slots, hc.bots); }
     else if (host && L.t > 4) {
       const t = busy ? 'That match is already being played. You can join when it goes back to fighter select.' : 'The room is full: four players at most.';
       if ($('lobbyLede').textContent !== t) $('lobbyLede').textContent = t;
@@ -5736,18 +5967,17 @@ function lobbyTick(dt){
   }
 }
 function cancelLobby(){
+  if (lobby && lobby.mode === 'pair') { NETPAD = null; roomFlow = null; }
   if (lobby && lobby.r) leaveRoom(lobby.r);
   lobby = null; state = 'menu';
   $('lobbyScr').hidden = true; $('menu').hidden = false;
 }
-$('versusBtn').addEventListener('click', () => { $('menu').hidden = true; $('vsScr').hidden = false; $('couchBtn').focus({ preventScroll: true }); });
-$('coopBtn').addEventListener('click', () => { $('menu').hidden = true; $('coScr').hidden = false; $('coCouchBtn').focus({ preventScroll: true }); });
+$('versusBtn').addEventListener('click', () => { $('menu').hidden = true; $('vsScr').hidden = false; $('vsCreate').focus({ preventScroll: true }); });
+$('coopBtn').addEventListener('click', () => { $('menu').hidden = true; $('coScr').hidden = false; $('coCreate').focus({ preventScroll: true }); });
 $('coBack').addEventListener('click', () => { $('coScr').hidden = true; $('menu').hidden = false; });
 $('coCouchBtn').addEventListener('click', () => openLobby('couch', true));
-$('coOnlineBtn').addEventListener('click', () => openLobby('online', true));
 $('vsBack').addEventListener('click', () => { $('vsScr').hidden = true; $('menu').hidden = false; });
 $('couchBtn').addEventListener('click', () => openLobby('couch'));
-$('onlineBtn').addEventListener('click', () => openLobby('online'));
 $('lobbyCancel').addEventListener('click', cancelLobby);
 $('pvpResume').addEventListener('click', () => { $('ctrlScr').hidden = true; initAudio(); $('pvpPauseScr').hidden = true; if (pvp && pvp.mode === 'online') { document.body.classList.add('playing'); lockPointer(); } });
 $('pvpLeave').addEventListener('click', leavePvp);
@@ -6157,6 +6387,7 @@ function frame(){
   adaptRes(dt, state === 'pvp' && !!pvp && pvp.mode === 'couch');
   gpPoll(dt);
   soloPadTick(dt);
+  netPadTick(dt);
   if (state === 'paused') { renderer.render(scene, camera); return; }
   time += dt;
   if (state === 'pvp' && pvp) {
