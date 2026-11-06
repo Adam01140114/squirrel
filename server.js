@@ -24,9 +24,11 @@
 
 const crypto = require('crypto');
 const express = require('express');
+const fs = require('fs');
 const http = require('http');
 const os = require('os');
 const path = require('path');
+const zlib = require('zlib');
 const { Server } = require('socket.io');
 
 const PORT = process.env.PORT || 6868;
@@ -93,8 +95,27 @@ app.use((req, res, next) => {
 });
 
 // The game is one page; serve it and nothing else from this folder
+// (gzipped once and kept, about 110 KB instead of 390: the public link is much slower than Wi-Fi)
 const page = path.join(__dirname, 'index.html');
-app.get(['/', '/index.html'], (req, res) => res.sendFile(page));
+let packed = null;
+function pagePacked() {
+    const mtime = fs.statSync(page).mtimeMs;
+    if (!packed || packed.mtime !== mtime) {
+        const html = fs.readFileSync(page);
+        packed = { mtime, html, gz: zlib.gzipSync(html, { level: 9 }), etag: '"' + crypto.createHash('sha1').update(html).digest('hex').slice(0, 16) + '"' };
+    }
+    return packed;
+}
+app.get(['/', '/index.html'], (req, res) => {
+    const p = pagePacked();
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('ETag', p.etag);
+    res.setHeader('Vary', 'Accept-Encoding');
+    if (req.headers['if-none-match'] === p.etag) return res.status(304).end();
+    if (/\bgzip\b/.test(req.headers['accept-encoding'] || '')) { res.setHeader('Content-Encoding', 'gzip'); return res.send(p.gz); }
+    res.send(p.html);
+});
 
 // Addresses a phone on the same Wi-Fi can reach this computer at, best first.
 // The game uses these for its QR codes when it is opened on localhost.
