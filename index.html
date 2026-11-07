@@ -394,12 +394,21 @@ body.touch .desk-only{display:none}
 .sel-invite{display:none}
 /* a phone held upright, online: your own panel first and full size, everyone else as a slim card */
 @media (max-width:760px) and (min-height:501px){
-  #selScr.net{grid-template-rows:auto auto;align-content:start;gap:10px;padding-inline:12px}
-  #selScr.net .sel-title{padding:10px 14px;max-width:none;width:100%;box-sizing:border-box}
-  #selScr.net .sel-title .h2{font-size:24px}
+  #selScr.net{grid-template-rows:auto minmax(150px,1fr) auto;grid-template-columns:minmax(0,1fr);align-content:stretch;gap:8px;padding-inline:12px;overflow:hidden}
+  #selScr.net > *{min-width:0}
+  #selScr.net .sel-title > *{max-width:100%;min-width:0}
+  #selScr.net .sel-btns{flex-wrap:nowrap}
+  #selScr.net .sel-title{padding:8px 10px;max-width:none;width:100%;box-sizing:border-box;gap:6px;display:flex;flex-wrap:wrap;justify-content:center;align-items:center}
+  #selScr.net .sel-title .h2,#selScr.net #selLede{display:none}
+  #selScr.net .sel-title .sel-maps{order:3;flex-basis:100%}
+  #selScr.net .room-tag{padding:4px 6px 4px 10px;gap:8px}
+  #selScr.net .room-tag b{font-size:22px}
+  #selScr.net .sel-btns{gap:6px}
+  #selScr.net .sel-btns .btn,#selScr.net .room-tag .btn{min-height:40px;padding:6px 12px;font-size:14px}
+  #selScr.net .sel-panels{grid-row:3}
   #selScr.net .sel-maps{flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;width:100%;padding-bottom:2px;scrollbar-width:none}
   #selScr.net .sel-maps .map-card{flex:0 0 auto;min-height:40px}
-  #selScr.net .sel-panels{grid-row:auto;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;align-items:stretch}
+  #selScr.net .sel-panels{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;align-items:stretch}
   #selScr.net .sel-panel.mine{grid-column:1 / -1;order:-1;padding:12px;gap:10px}
   #selScr.net .sel-panel.mine .sel-list{grid-template-columns:repeat(6,minmax(0,1fr));gap:4px}
   #selScr.net .sel-panel.mine .sel-ch{padding:6px 1px;font-size:10px;min-height:52px}
@@ -412,7 +421,11 @@ body.touch .desk-only{display:none}
   #selScr.net .sel-panel:not(.mine) .sel-status{font-size:13px}
   #selScr.net .sel-panel:not(.mine) .sel-foot{min-height:0}
   #selScr.net .sel-join .qr-code,#selScr.net .sel-join > span{display:none}
-  #selScr.net .sel-invite{display:block;min-height:40px;padding:6px 8px;font-size:13px;width:100%}
+  #selScr.net .sel-invite{display:block;min-height:36px;padding:4px 6px;font-size:12px;width:100%}
+  #selScr.net .sel-panel:not(.mine) .sel-bot{min-height:36px;padding:4px 6px;font-size:12px}
+  #selScr.net .sel-panel.mine .sel-name{display:none}
+  #selScr.net .sel-panel.mine{padding:10px;gap:8px}
+  #selScr.net .sel-panel.mine .sel-foot .btn{min-height:46px}
   #selScr.net .sel-panel.away .sel-name{display:none}
 }
 /* a phone on its side: a slim title and the two players side by side */
@@ -5666,16 +5679,32 @@ function selTick(dt){
     }
     const m = S.previews[i];
     selPos(i, m.group.position); m.group.position.y = S.ready[i] ? Math.abs(Math.sin(time * 6)) * 0.25 : 0;
-    m.group.rotation.y = Math.atan2(-SEL.ux, -SEL.uz) + selSide(i) * -0.2 + Math.sin(time * 0.8 + i) * 0.15;
+    m.group.rotation.y = Math.atan2(-SEL.ux, -SEL.uz) + (S.mode === 'online' && i === S.local ? 0 : selSide(i) * -0.2) + Math.sin(time * 0.8 + i) * 0.15;
     m.body.position.y = Math.sin(time * 2.2 + i) * 0.015;
     const wg = m.wag || 1;
     m.segs.forEach((s, k) => { const b = s.userData.base, t = s.userData.t; s.position.set(b.x + Math.sin(time * 2.6 * Math.max(1, wg) - k * 0.45) * 0.07 * t * wg, b.y, b.z); });
     m.gunRig.rotation.x = -0.15;
   }
   const back = S.n === 4 ? 8.4 : 6.2;
-  camera.position.set(SEL.sx + SEL.ux * back, 1.75, SEL.sz + SEL.uz * back);
-  camera.lookAt(SEL_SPOT.x, 1.15, SEL_SPOT.z);
-  if (Math.abs(camera.fov - 50) > 0.05) { camera.fov = 50; camera.updateProjectionMatrix(); }
+  // a phone held upright, online: your own fighter close up, in the window between the top bar and the cards
+  const gapTop = $('selScr').querySelector('.sel-title').getBoundingClientRect().bottom, gapBot = $('selScr').querySelector('.sel-panels').getBoundingClientRect().top;
+  const W = window.innerWidth, H = window.innerHeight, gap = gapBot - gapTop;
+  if (S.mode === 'online' && S.local >= 0 && W <= 760 && H > 500 && gap > 90) {
+    selPos(S.local, pvB);
+    const d = 3.4;
+    camera.position.set(pvB.x + SEL.ux * d, 1.25, pvB.z + SEL.uz * d);
+    camera.lookAt(pvB.x, 0.85, pvB.z);
+    // tall enough that the fighter (about 1.7 high) fills ~80% of the window
+    const fov = clamp(2 * Math.atan((1.7 / 0.8) * (H / gap) / (2 * d)) * 180 / Math.PI, 30, 110);
+    if (Math.abs(camera.fov - fov) > 0.05) { camera.fov = fov; camera.updateProjectionMatrix(); }
+    const shift = Math.round(H / 2 - (gapTop + gapBot) / 2);
+    if (!camera.view || !camera.view.enabled || camera.view.offsetY !== shift || camera.view.fullHeight !== H || camera.view.fullWidth !== W) camera.setViewOffset(W, H, 0, shift, W, H);
+  } else {
+    if (camera.view && camera.view.enabled) camera.clearViewOffset();
+    camera.position.set(SEL.sx + SEL.ux * back, 1.75, SEL.sz + SEL.uz * back);
+    camera.lookAt(SEL_SPOT.x, 1.15, SEL_SPOT.z);
+    if (Math.abs(camera.fov - 50) > 0.05) { camera.fov = 50; camera.updateProjectionMatrix(); }
+  }
   player.pos.copy(SEL_SPOT);
   // panels
   for (let i = 0; i < S.n; i++) {
@@ -6401,7 +6430,7 @@ function frame(){
   else if (state === 'select' && sel) selTick(dt);
   else if (state === 'menu' || state === 'lobby') { attract(dt); if (state === 'lobby') lobbyTick(dt); }
   // the Solo setup's shifted picture is only for that screen
-  if (state !== 'menu' && camera.view && camera.view.enabled) camera.clearViewOffset();
+  if (state !== 'menu' && state !== 'select' && camera.view && camera.view.enabled) camera.clearViewOffset();
   else if (state === 'perk') { updateFloats(dt); renderer.render(scene, camera); return; }
   else { updatePickups(dt); updateProps(dt); }
   updateParticles(dt);
