@@ -430,6 +430,7 @@ body.touch .desk-only{display:none}
   #selScr.net .sel-panel.away .sel-name{display:none}
 }
 .sel-others{display:none}
+.sel-spin{display:none}
 #selLeave{min-width:min(100%,220px)}
 .sel-maplbl{display:none}
 @media (max-width:760px) and (min-height:501px){
@@ -449,6 +450,8 @@ body.touch .desk-only{display:none}
   #selScr.net.phone .sel-others .sel-invite,#selScr.net.phone .sel-others .sel-bot{min-height:32px;padding:2px 4px;font-size:12px;box-shadow:none}
   #selScr.net.phone .sel-others .sel-join{gap:4px}
   #selScr.net.phone .sel-panels{grid-template-columns:minmax(0,1fr)}
+  #selScr.net.phone .sel-spin{display:block;grid-row:2;pointer-events:auto;touch-action:none;cursor:grab}
+  #selScr.net.phone .sel-spin:active{cursor:grabbing}
   #selScr.net.phone .sel-panel.mine{gap:6px;padding:10px}
   #selScr.net.phone .sel-panel.mine .sel-head{display:none}
   #selScr.net.phone .sel-panel.mine .sel-ch{min-height:48px;padding:5px 1px}
@@ -718,6 +721,7 @@ body.pad-mode{background:#1b120b}
       <div class="room-tag" id="selRoom" hidden><span>Room</span><b id="selRoomCode"></b><button class="btn ghost sm" id="selShare" type="button">Share</button></div>
       <div class="row sel-btns"><button class="btn ghost sm" id="selBotLv" hidden>Bots: Normal</button><button class="btn ghost sm" id="selLeave">Leave</button></div>
     </div>
+    <div class="sel-spin" id="selSpin" aria-label="Drag to turn your fighter"></div>
     <div class="sel-panels">
       <div class="sel-panel" id="sel0"></div>
       <div class="sel-panel" id="sel1"></div>
@@ -5471,7 +5475,19 @@ function drawMap(){
 
 // ---------- character select
 let sel = null;
-let pvpSeats = null; // online host: the guests' seats when the match started
+let pvpSeats = null;
+const selSpin = { a: 0, v: 0, drag: null, lastMove: 0 };
+(() => {
+  const el = $('selSpin');
+  el.addEventListener('pointerdown', (e) => { selSpin.drag = { id: e.pointerId, x: e.clientX, t: performance.now() }; selSpin.v = 0; try { el.setPointerCapture(e.pointerId); } catch (_) {} });
+  el.addEventListener('pointermove', (e) => {
+    const d = selSpin.drag; if (!d || d.id !== e.pointerId) return;
+    const now = performance.now(), da = (e.clientX - d.x) * 0.012;
+    selSpin.a += da; selSpin.v = da / Math.max(0.016, (now - d.t) / 1000); d.x = e.clientX; d.t = now; selSpin.lastMove = now;
+  });
+  const end = (e) => { if (selSpin.drag && selSpin.drag.id === e.pointerId) { selSpin.drag = null; selSpin.v = performance.now() - selSpin.lastMove < 80 ? clamp(selSpin.v, -12, 12) : 0; } };
+  el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
+})(); // online host: the guests' seats when the match started
 // P1 on the left of the camera, P2 on the right; four across for couch co-op
 const selSide = (i) => sel && sel.n === 4 ? [-2.55, -0.85, 0.85, 2.55][i] : (i ? 1 : -1) * 1.45;
 const selPos = (i, out) => out.set(SEL.sx + SEL.uz * selSide(i), 0, SEL.sz - SEL.ux * selSide(i));
@@ -5725,6 +5741,7 @@ function selTick(dt){
     const here = S.padOk[i] || S.bots.has(i);
     if (!here) { if (S.previews[i]) { scene.remove(S.previews[i].group); S.previews[i] = null; S.shown[i] = -1; } continue; }
     if (S.shown[i] !== S.picks[i]) {
+      if (i === S.local) { selSpin.a = 0; selSpin.v = 0; }
       if (S.previews[i]) scene.remove(S.previews[i].group);
       const m = buildCritter(CHARS[S.picks[i]].id, PALS[i]); scene.add(m.group);
       S.previews[i] = m; S.shown[i] = S.picks[i];
@@ -5732,12 +5749,14 @@ function selTick(dt){
     }
     const m = S.previews[i];
     selPos(i, m.group.position); m.group.position.y = S.ready[i] ? Math.abs(Math.sin(time * 6)) * 0.25 : 0;
-    m.group.rotation.y = Math.atan2(-SEL.ux, -SEL.uz) + (S.mode === 'online' && i === S.local ? 0 : selSide(i) * -0.2) + Math.sin(time * 0.8 + i) * 0.15;
+    const spinMe = $('selScr').classList.contains('phone') && i === S.local;
+    m.group.rotation.y = Math.atan2(-SEL.ux, -SEL.uz) + (spinMe ? selSpin.a : (S.mode === 'online' && i === S.local ? 0 : selSide(i) * -0.2) + Math.sin(time * 0.8 + i) * 0.15);
     m.body.position.y = Math.sin(time * 2.2 + i) * 0.015;
     const wg = m.wag || 1;
     m.segs.forEach((s, k) => { const b = s.userData.base, t = s.userData.t; s.position.set(b.x + Math.sin(time * 2.6 * Math.max(1, wg) - k * 0.45) * 0.07 * t * wg, b.y, b.z); });
     m.gunRig.rotation.x = -0.15;
   }
+  if (!selSpin.drag) { if (Math.abs(selSpin.v) < 0.7) selSpin.a += dt * 0.7; selSpin.a += selSpin.v * dt; selSpin.v *= Math.exp(-4 * dt); }
   const back = S.n === 4 ? 8.4 : 6.2;
   // a phone held upright, online: your own fighter close up, in the window between the top bar and the cards
   const gapTop = $('selScr').querySelector('.sel-title').getBoundingClientRect().bottom, gapBot = $('selScr').querySelector('.sel-panels').getBoundingClientRect().top;
