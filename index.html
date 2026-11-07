@@ -306,6 +306,7 @@ body.touch .desk-only{display:none}
 .hat-sec summary:focus-visible{outline:3px solid var(--cream);outline-offset:2px}
 /* Starting gun */
 .gun-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+@media (max-width:899px){.gun-row{display:flex;overflow-x:auto;scrollbar-width:none}.gun-row .gun-card{flex:0 0 88px}.gun-row::-webkit-scrollbar{display:none}}
 .gun-card{display:grid;justify-items:center;align-content:start;gap:4px;min-height:44px;padding:9px 4px 8px;border-radius:10px;background:rgba(0,0,0,.25);border:2px solid transparent;color:var(--cream);font-family:var(--body);font-size:12px;line-height:1.15;cursor:pointer;text-align:center;min-width:0}
 .gun-card b{font-size:22px;line-height:1}.gun-card small{color:var(--cream-dim);font-size:10.5px}
 .gun-card.on{border-color:var(--acorn);background:rgba(240,138,36,.18)}
@@ -387,7 +388,7 @@ body.touch .desk-only{display:none}
 .btn.ready-on{background:var(--leaf);box-shadow:0 5px 0 #4f8a2a}
 @media (max-width:760px){.sel-panels{grid-template-columns:minmax(0,1fr)}.sel-name{font-size:24px}}
 /* fighter select, your own starting gun */
-.sel-guns{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
+.sel-guns{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}.sel-guns::-webkit-scrollbar{display:none}.sel-guns .sel-gun{flex:1 0 64px}
 .sel-gun{min-height:40px;padding:4px 2px;border-radius:9px;background:rgba(0,0,0,.25);border:2px solid transparent;color:var(--cream);font-family:var(--body);font-size:10.5px;line-height:1.1;display:grid;justify-items:center;gap:2px;cursor:pointer;min-width:0}
 .sel-gun b{font-size:16px;line-height:1}
 .sel-gun.on{border-color:var(--pc);background:rgba(255,243,220,.1)}
@@ -859,6 +860,24 @@ const CHARS = [
   { id: 'bear', name: 'Bearito', kind: 'Bear', sw: 'linear-gradient(135deg,#7a4a2a 55%,#c8955e 55%)' },
   { id: 'cat', name: 'Mormo', kind: 'Orange Cat', sw: 'linear-gradient(135deg,#e8862e 55%,#fbe6c8 55%)' }
 ];
+// A short buzz. Android browsers vibrate; iPhones have no vibrate API, but toggling a hidden
+// switch control gives a haptic tap (iOS 18 and later) when it follows a touch.
+const haptic = (() => {
+  let lbl = null, last = 0;
+  return (ms) => {
+    const now = performance.now(); if (now - last < 70) return; last = now;
+    try { if (navigator.vibrate) { navigator.vibrate(ms || 15); return; } } catch (e) {}
+    try {
+      if (!lbl) {
+        const inp = document.createElement('input'); inp.type = 'checkbox'; inp.setAttribute('switch', ''); inp.id = 'hapticSw'; inp.tabIndex = -1;
+        lbl = document.createElement('label'); lbl.htmlFor = 'hapticSw'; lbl.setAttribute('aria-hidden', 'true');
+        lbl.style.cssText = 'position:fixed;left:-99px;top:0;width:1px;height:1px;opacity:0;pointer-events:none';
+        lbl.appendChild(inp); document.body.appendChild(lbl);
+      }
+      lbl.click();
+    } catch (e) {}
+  };
+})();
 // a fighter in a sentence: "Bogo", but "the Panda"
 const theName = (ch) => { const c = CHARS[ch] || CHARS[0]; return c.the ? 'the ' + c.name : c.name; };
 const TheName = (ch) => { const t = theName(ch); return t.charAt(0).toUpperCase() + t.slice(1); };
@@ -1104,8 +1123,8 @@ function runController(code, slot){
     ps.querySelector('.pad-map button').hidden = slot !== 1;
   };
   const I = { x: 0, y: 0, yaw: 0, pitch: -0.05, f: 0, s: 0, j: 0, r: 0, w: 0, c: 0, ch: 0, gn: 0, rdy: 0, mp: 0, ps: 0, mn: null };
-  I.gn = 3; try { I.gn = Math.max(0, Math.min(3, parseInt(localStorage.getItem('squirrel-commando-gun') ?? '3', 10) || 0)); } catch (e) {}
-  let room = null, lastHp = 100, lastPhase = '', lastDead = false, lastK = 0;
+  I.gn = 3; try { I.gn = Math.max(0, Math.min(6, parseInt(localStorage.getItem('squirrel-commando-gun') ?? '3', 10) || 0)); } catch (e) {}
+  let room = null, lastHp = 100, lastPhase = '', lastDead = false, lastK = 0, lastHt = 0;
   const send = () => {
     if (!room) return;
     room.presence({ role: 'pad', code, slot, pid, i: { x: r2(I.x), y: r2(I.y), yaw: Math.round(I.yaw * 1000) / 1000, pitch: Math.round(I.pitch * 1000) / 1000, f: I.f, s: I.s, j: I.j, r: I.r, w: I.w, c: I.c, ch: I.ch, rdy: I.rdy, mp: I.mp, ps: I.ps, mn: I.mn } }).catch(() => {});
@@ -1123,7 +1142,7 @@ function runController(code, slot){
     ps.querySelector('.pad-sel-grid').appendChild(b); return b;
   });
   // the gun this player starts with (the Acorn Blaster always comes along)
-  const gnBtns = ['🌰 Acorn Blaster', '💥 Nutshot', '🌲 Pinecone Launcher', '🌀 Seed Spitter'].map((t, k) => {
+  const gnBtns = ['🌰 Acorn Blaster', '💥 Nutshot', '🌲 Pinecone Launcher', '🌀 Seed Spitter', '🎯 Pine Needle Rifle', '🫐 Berry Burst', '💣 Walnut Cannon'].map((t, k) => {
     const b = document.createElement('button'); b.className = 'pad-gun'; b.textContent = t;
     b.addEventListener('click', () => { I.gn = k; I.rdy = 0; try { localStorage.setItem('squirrel-commando-gun', String(k)); } catch (e) {} paintSel(); send(); });
     ps.querySelector('.pad-guns').appendChild(b); return b;
@@ -1259,8 +1278,10 @@ function runController(code, slot){
       $('padAmmo').textContent = String(hud.wn || '') + ' ' + (hud.am === undefined ? '' : hud.am + '/' + (hud.rs === -1 ? '∞' : hud.rs));
       const co = tv.presence.co;
       $('padScore').textContent = coop && co ? 'Wave ' + (+co.w || 1) + ' · ' + (+hud.k || 0) + ((+hud.k || 0) === 1 ? ' bonk' : ' bonks') : hudArr.length > 2 ? 'You ' + (+hud.k || 0) + ' · leader ' + Math.max(+hud.k || 0, +hud.o || 0) : (+hud.k || 0) + ' – ' + (+hud.o || 0);
-      const buzz = (p) => { try { navigator.vibrate && navigator.vibrate(p); } catch (_) {} };
-      if (hud.dead && !lastDead) buzz(350); else if (hp < lastHp) buzz(50);
+      const buzz = (p) => { try { if (navigator.vibrate) navigator.vibrate(p); else haptic(); } catch (_) {} };
+      const ht = +hud.ht || 0;
+      if (hud.dead && !lastDead) buzz(350); else if (hp < lastHp) buzz(50); else if (ht > lastHt) buzz(15);
+      lastHt = ht;
       if ((+hud.k || 0) > lastK) buzz([30, 40, 30]);
       lastHp = hp; lastDead = !!hud.dead; lastK = +hud.k || 0;
       if (ph === 'over' && Array.isArray(hud.aw) && hud.aw.length) {
@@ -1855,6 +1876,41 @@ function buildGunRig(body, pawMat, armMat){
     g.userData.spin = spin;
     addMuzzle(g, -0.68, 0);
   }
+  // 5. pine needle rifle: long barrel, scope
+  {
+    const g = new THREE.Group(); gunRig.add(g); guns.push(g);
+    const pine = M(0x2f5a3a), needle = M(0xcfd8c4, { roughness: 0.3, metalness: 0.5 });
+    mk(new THREE.BoxGeometry(0.11, 0.13, 0.5), pine, 0, 0, -0.04, g);
+    cyl(0.026, 0.03, 0.62, needle, 0, 0.02, -0.6, g, 8);
+    cyl(0.045, 0.045, 0.26, gunMetal, 0, 0.13, -0.08, g, 10);
+    cyl(0.055, 0.055, 0.03, orange, 0, 0.13, -0.22, g, 10); cyl(0.055, 0.055, 0.03, orange, 0, 0.13, 0.06, g, 10);
+    mk(new THREE.BoxGeometry(0.09, 0.14, 0.26), wood, 0, -0.04, 0.3, g).rotation.x = -0.1;
+    mk(new THREE.BoxGeometry(0.07, 0.15, 0.08), gunMetal, 0, -0.12, 0.04, g).rotation.x = 0.25;
+    addMuzzle(g, -0.93, 0.02);
+  }
+  // 6. berry burst: compact, a round berry drum
+  {
+    const g = new THREE.Group(); gunRig.add(g); guns.push(g);
+    const berry = M(0x7a2f8a, { roughness: 0.35 }), leaf = M(0x4c9a3a);
+    mk(new THREE.BoxGeometry(0.14, 0.15, 0.36), gunMetal, 0, 0, -0.06, g);
+    cyl(0.032, 0.032, 0.24, steel, 0, 0.02, -0.34, g, 8);
+    mk(new THREE.SphereGeometry(0.1, 12, 10), berry, 0, -0.11, -0.12, g);
+    mk(new THREE.ConeGeometry(0.04, 0.07, 5), leaf, 0, -0.01, -0.12, g);
+    mk(new THREE.BoxGeometry(0.08, 0.16, 0.09), wood, 0, -0.12, 0.08, g).rotation.x = 0.3;
+    mk(new THREE.BoxGeometry(0.15, 0.025, 0.2), orange, 0, 0.085, -0.06, g);
+    addMuzzle(g, -0.48, 0.02);
+  }
+  // 7. walnut cannon: a fat short barrel with a walnut on top
+  {
+    const g = new THREE.Group(); gunRig.add(g); guns.push(g);
+    const bronze = M(0x8a6a3a, { roughness: 0.35, metalness: 0.6 }), shell = M(0x9a6a3e, { roughness: 0.8 });
+    cyl(0.15, 0.13, 0.7, bronze, 0, 0.05, -0.22, g, 14);
+    cyl(0.17, 0.17, 0.06, gunMetal, 0, 0.05, -0.58, g, 14);
+    cyl(0.17, 0.17, 0.06, gunMetal, 0, 0.05, 0.12, g, 14);
+    const nut = mk(new THREE.IcosahedronGeometry(0.09, 1), shell, 0, 0.22, -0.12, g); nut.scale.set(1, 0.85, 1.1);
+    mk(new THREE.BoxGeometry(0.08, 0.18, 0.09), wood, 0, -0.14, 0.02, g).rotation.x = 0.25;
+    addMuzzle(g, -0.64, 0.05);
+  }
   mk(new THREE.SphereGeometry(0.075, 10, 8), pawMat, 0, -0.12, 0.02, gunRig);
   mk(new THREE.SphereGeometry(0.075, 10, 8), pawMat, -0.02, -0.06, -0.3, gunRig);
   guns.forEach((g, i) => { g.visible = i === 0; });
@@ -2077,8 +2133,12 @@ const WEAPONS = [
   { id: 'blaster', name: 'Acorn Blaster', mag: 12, rate: 0.13, reload: 1.05, dmg: 10, head: 25, pellets: 1, spread: 0.005, bloom: 0.01, maxBloom: 0.045, kick: 1, shake: 0.05, give: 0 },
   { id: 'shotgun', name: 'Nutshot', mag: 6, rate: 0.8, reload: 1.5, dmg: 7, head: 14, pellets: 8, spread: 0.07, bloom: 0, maxBloom: 0, kick: 2.2, shake: 0.28, give: 18 },
   { id: 'launcher', name: 'Pinecone Launcher', mag: 3, rate: 0.9, reload: 1.8, dmg: 75, splash: 4.2, projectile: true, pellets: 1, spread: 0.002, bloom: 0, maxBloom: 0, kick: 2, shake: 0.22, give: 6 },
-  { id: 'minigun', name: 'Seed Spitter', mag: 80, rate: 0.055, reload: 2.2, dmg: 7, head: 16, pellets: 1, spread: 0.012, bloom: 0.004, maxBloom: 0.05, kick: 0.5, shake: 0.03, spin: true, give: 160 }
+  { id: 'minigun', name: 'Seed Spitter', mag: 80, rate: 0.055, reload: 2.2, dmg: 7, head: 16, pellets: 1, spread: 0.012, bloom: 0.004, maxBloom: 0.05, kick: 0.5, shake: 0.03, spin: true, give: 160 },
+  { id: 'sniper', name: 'Pine Needle Rifle', mag: 5, rate: 0.95, reload: 2, dmg: 55, head: 140, pellets: 1, spread: 0.0008, bloom: 0, maxBloom: 0, kick: 2.6, shake: 0.16, give: 10 },
+  { id: 'smg', name: 'Berry Burst', mag: 30, rate: 0.075, reload: 1.3, dmg: 8, head: 18, pellets: 1, spread: 0.02, bloom: 0.006, maxBloom: 0.06, kick: 0.6, shake: 0.04, give: 60 },
+  { id: 'cannon', name: 'Walnut Cannon', mag: 1, rate: 1.2, reload: 2.4, dmg: 140, splash: 6.5, projectile: true, pellets: 1, spread: 0.002, bloom: 0, maxBloom: 0, kick: 3.2, shake: 0.42, give: 4 },
 ];
+const CRATE_GUNS = WEAPONS.map((w, i) => i).slice(1); // a crate holds any gun but the Blaster
 const inv = WEAPONS.map((w, i) => ({ owned: i === 0, ammo: w.mag, reserve: i === 0 ? Infinity : 0 }));
 let cur = 0;
 const POWERS = {
@@ -3044,6 +3104,9 @@ const sfx = {
     if (id === 'shotgun') { noise(0.28, { vol: 0.55, freq: 700, type: 'lowpass' }); tone(160, 0.2, { type: 'square', vol: 0.12, slide: 50 }); tone(900, 0.05, { vol: 0.05, delay: 0.35 }); tone(700, 0.05, { vol: 0.05, delay: 0.45 }); }
     else if (id === 'launcher') { noise(0.25, { vol: 0.35, freq: 400, type: 'lowpass' }); tone(220, 0.25, { type: 'triangle', vol: 0.15, slide: 520 }); }
     else if (id === 'minigun') { noise(0.04, { vol: 0.2, freq: 3000, type: 'highpass' }); tone(420, 0.05, { type: 'square', vol: 0.05, slide: 200 }); }
+    else if (id === 'sniper') { noise(0.18, { vol: 0.5, freq: 1800, type: 'highpass' }); tone(900, 0.22, { type: 'sawtooth', vol: 0.08, slide: 120 }); tone(1200, 0.05, { vol: 0.04, delay: 0.5 }); }
+    else if (id === 'smg') { noise(0.035, { vol: 0.22, freq: 2400, type: 'highpass' }); tone(640, 0.04, { type: 'square', vol: 0.05, slide: 300 }); }
+    else if (id === 'cannon') { noise(0.45, { vol: 0.6, freq: 260, type: 'lowpass' }); tone(110, 0.4, { type: 'triangle', vol: 0.22, slide: 40 }); }
     else { noise(0.07, { vol: 0.3, freq: 2600, type: 'highpass' }); tone(560, 0.09, { type: 'square', vol: 0.09, slide: 170 }); }
   },
   boom(){ noise(0.7, { vol: 0.7, freq: 220, type: 'lowpass' }); tone(70, 0.6, { type: 'sine', vol: 0.45, slide: 30 }); },
@@ -3361,12 +3424,14 @@ function tryShoot(){
       } else impact(r.kind, hitPt, w.pellets > 1 ? 2 : 6);
     }
     agg.forEach((a, e) => { if (enemies.includes(e)) hurtEnemy(e, a.dmg, a.head, a.pt, a.dir, w.pellets > 1 ? 2.2 : 1); });
+    if (agg.size && isTouch && !SOLOPAD) haptic(15);
   }
   flash.visible = true; flash.material.rotation = rand(0, TAU);
-  flash.scale.setScalar(rand(0.6, 0.95) * (w.id === 'shotgun' ? 1.6 : w.id === 'launcher' ? 1.3 : 1)); flashLight.intensity = w.id === 'minigun' ? 1.6 : 2.4;
+  flash.scale.setScalar(rand(0.6, 0.95) * (w.id === 'shotgun' || w.id === 'cannon' ? 1.6 : w.id === 'launcher' || w.id === 'sniper' ? 1.3 : 1)); flashLight.intensity = w.id === 'minigun' ? 1.6 : 2.4;
   for (let i = 0; i < 3; i++) { tv.copy(aim).multiplyScalar(rand(3, 6)).add(new V3(rand(-1, 1), rand(0, 1.5), rand(-1, 1))); emit(muzzlePos, tv, pick([0xffd27a, 0xffb347, 0xfff1c1]), 0.035, 0.18, -6); }
   sfx.shoot(w.id); addShake(w.shake);
-  if (w.id === 'shotgun' || w.id === 'launcher') { pitch = clamp(pitch + (w.id === 'shotgun' ? 0.035 : 0.02), PMIN, PMAX); }
+  const climb = { shotgun: 0.035, launcher: 0.02, sniper: 0.03, cannon: 0.05 }[w.id];
+  if (climb) pitch = clamp(pitch + climb, PMIN, PMAX);
   if (s.ammo === 0 && s.reserve > 0) startReload();
 }
 // shooter: the co-op fighter who fired (their view gets the numbers and hit marker)
@@ -3724,8 +3789,8 @@ function collect(k){
     burst(p, 24, [P.color, 0xffffff], 5, 0.07, 0.6, -2, 0.3);
     return;
   } else if (k.kind === 'crate') {
-    const unowned = [1, 2, 3].filter(i => !inv[i].owned);
-    const i = unowned.length ? pick(unowned) : pick([1, 2, 3]);
+    const unowned = CRATE_GUNS.filter(i => !inv[i].owned);
+    const i = unowned.length ? pick(unowned) : pick(CRATE_GUNS);
     const w = WEAPONS[i], s = inv[i];
     if (!s.owned) { s.owned = true; s.ammo = w.mag; s.reserve = w.give; switchWeapon(i); toast('New weapon: ' + w.name); }
     else { s.reserve += w.give; toast('+' + w.give + ' ' + w.name + ' ammo'); }
@@ -3919,7 +3984,7 @@ window.addEventListener('keydown', (e) => {
     if (e.code === 'KeyM') setMuted(!AC.muted);
     if (e.code === 'KeyV' || e.code === 'KeyC') { f.camMode = (f.camMode + 1) % 2; pvpToast(f, 'Camera: ' + CAMS[f.camMode].name); }
     if (e.code === 'KeyQ') fCycle(f, 1);
-    const dg = /^Digit([1-4])$/.exec(e.code); if (dg) fSwitch(f, parseInt(dg[1], 10) - 1);
+    const dg = /^Digit([1-7])$/.exec(e.code); if (dg) fSwitch(f, parseInt(dg[1], 10) - 1);
     keys[e.code] = true;
     return;
   }
@@ -3931,7 +3996,7 @@ window.addEventListener('keydown', (e) => {
     if (e.code === 'KeyM') setMuted(!AC.muted);
     if (e.code === 'KeyV' || e.code === 'KeyC') cycleCam();
     if (e.code === 'KeyQ') cycleWeapon(1);
-    const dg = /^Digit([1-4])$/.exec(e.code); if (dg) switchWeapon(parseInt(dg[1], 10) - 1);
+    const dg = /^Digit([1-7])$/.exec(e.code); if (dg) switchWeapon(parseInt(dg[1], 10) - 1);
     if (e.code === 'Escape' || e.code === 'KeyP') { pause(); return; }
     keys[e.code] = true;
   } else if (state === 'paused' && e.code === 'KeyP') resume();
@@ -4060,8 +4125,8 @@ function charBtn(k, onPick){
 const soloCharBtns = CHARS.map((c, k) => $('soloChars').appendChild(charBtn(k, pickSoloChar)));
 
 // ---------- starting gun: the Acorn Blaster always comes along; pick another to start with it in hand
-const GUN_ICONS = ['🌰', '💥', '🌲', '🌀'];
-const GUN_BLURB = ['Steady, never runs out', 'Close-range spread', 'Splash damage', 'Fast spray'];
+const GUN_ICONS = ['🌰', '💥', '🌲', '🌀', '🎯', '🫐', '💣'];
+const GUN_BLURB = ['Steady, never runs out', 'Close-range spread', 'Splash damage', 'Fast spray', 'Long range, big hits', 'Light and quick', 'One huge blast'];
 let startGun = 3; // the Seed Spitter, until you pick another
 try { startGun = clamp(parseInt(localStorage.getItem('squirrel-commando-gun') ?? '3', 10) || 0, 0, WEAPONS.length - 1); } catch (e) {}
 const soloGunBtns = WEAPONS.map((w, k) => {
@@ -4441,6 +4506,7 @@ function dealHit(shooter, victim, dmg, head, pt){
   if (shooter.st) { shooter.st.hits++; if (head) shooter.st.heads++; shooter.st.dmg += dmg; }
   const v = viewOf(shooter);
   if (v) { floatText(pt, String(Math.round(dmg)), head ? 'crit' : '', v); shooter.hitT = 0.12; }
+  if (shooter === pvp.local && isTouch && !NETPAD) haptic(head ? 30 : 15);
   sfx.hit(head);
   burst(pt, head ? 10 : 6, victim.colors.slice(0, 2), 4, 0.06, 0.5, -14, 0.5);
   if (pvp.mode === 'couch' || victim === pvp.local || victim.bot) applyDamage(victim, dmg, shooter);
@@ -4616,7 +4682,7 @@ function pvpTake(k, f){
   if (pvp.coop && k.kind === 'acorn') { stash = Math.min(100, stash + 2); score += 25; updateStashPile(); }
   let wi = -1;
   const here = pvp.mode === 'couch' || f === pvp.local || !!f.bot;
-  if (k.kind === 'crate') { const un = [1, 2, 3].filter(i => !f.w[i].owned); wi = un.length && here ? pick(un) : pick([1, 2, 3]); }
+  if (k.kind === 'crate') { const un = CRATE_GUNS.filter(i => !f.w[i].owned); wi = un.length && here ? pick(un) : pick(CRATE_GUNS); }
   if (here) fCollect(f, k.kind, k.power, wi, k.obj.position);
   else pushEv({ k: 'grant', to: f.idx, id: k.id, kc: PKINDS.indexOf(k.kind), pc: k.power ? PKEYS.indexOf(k.power) : -1, wi });
 }
@@ -4628,7 +4694,7 @@ function fCollect(f, kind, power, wi, at){
   else if (kind === 'acorn') { f.hp = Math.min(100, f.hp + 10); pvpToast(f, '+10 HP'); sfx.pickup(false); }
   else if (kind === 'power' && POWERS[power]) { f.pw[power] = POWERS[power].dur; pvpToast(f, POWERS[power].name + '!'); sfx.power(); burst(p, 24, [POWERS[power].color, 0xffffff], 5, 0.07, 0.6, -2, 0.3); }
   else if (kind === 'crate') {
-    if (!(wi >= 1 && wi <= 3)) wi = pick([1, 2, 3]);
+    if (!(wi >= 1 && wi < WEAPONS.length)) wi = pick(CRATE_GUNS);
     const w = WEAPONS[wi], s = f.w[wi];
     if (!s.owned) { s.owned = true; s.ammo = w.mag; s.reserve = w.give; fSwitch(f, wi); pvpToast(f, 'New weapon: ' + w.name); }
     else { s.reserve += w.give; pvpToast(f, '+' + w.give + ' ' + w.name + ' ammo'); }
@@ -4886,7 +4952,7 @@ function botThink(f, dt){
     const s = f.w[f.cur];
     if (s.ammo === 0 && s.reserve === 0) fCycle(f, 1);
     // the best gun it owns for the distance
-    if (B.t === L.react) { const best = [3, 1, 2, 0].find(i => f.w[i].owned && (f.w[i].ammo + (f.w[i].reserve === Infinity ? 99 : f.w[i].reserve)) > 0 && (i !== 1 || dist < 12)); if (best !== undefined && best !== f.cur) fSwitch(f, best); }
+    if (B.t === L.react) { const best = (dist > 24 ? [4, 3, 5, 6, 2, 0] : [3, 5, 6, 1, 2, 4, 0]).find(i => f.w[i] && f.w[i].owned && (f.w[i].ammo + (f.w[i].reserve === Infinity ? 99 : f.w[i].reserve)) > 0 && (i !== 1 || dist < 12)); if (best !== undefined && best !== f.cur) fSwitch(f, best); }
   }
   if (goal) {
     // walk in the bot's own frame: forward is where it faces
@@ -4938,7 +5004,7 @@ function tvSend(dt){
   const hud = pvp.fighters.map(f => {
     const s = f.w[f.cur];
     const k = pvp.coop ? f.kills | 0 : bonksOf(f), o = pvp.coop ? 0 : Math.max(0, ...foesOf(f).map(bonksOf));
-    const h = { hp: Math.ceil(f.hp), dead: f.dead ? 1 : 0, wn: WEAPONS[f.cur].name, am: s.ammo, rs: s.reserve === Infinity ? -1 : s.reserve, k, o, slot: f.idx + 1 };
+    const h = { hp: Math.ceil(f.hp), dead: f.dead ? 1 : 0, wn: WEAPONS[f.cur].name, am: s.ammo, rs: s.reserve === Infinity ? -1 : s.reserve, k, o, slot: f.idx + 1, ht: f.st ? f.st.hits | 0 : 0 };
     if (pvp.phase === 'over' && pvp.awards) h.aw = pvp.awards.filter(a => a.who === f).map(a => a.icon + ' ' + a.name);
     return h;
   });
@@ -5072,6 +5138,7 @@ function coopFire(f, w, spread, mul, minT){
   agg.forEach((a, e) => { if (enemies.includes(e)) coopHitEnemy(f, e, a.d, a.h, a.pt, a.dir, w.pellets > 1 ? 2.2 : 1); });
 }
 function coopHitEnemy(shooter, e, dmg, head, pt, dir, kb){
+  if (shooter && shooter === pvp.local && isTouch && !NETPAD) haptic(head ? 30 : 15);
   if (shooter && shooter.st) { shooter.st.hits++; if (head) shooter.st.heads++; shooter.st.dmg += Math.min(dmg, Math.max(0, e.hp)); }
   if (pvp.mode === 'couch' || pvp.role === 'host') { hurtEnemy(e, dmg, head, pt, dir, kb, shooter); return; }
   // online guest: show it now, the host applies it
@@ -5592,6 +5659,7 @@ function buildSelPanel(i){
     WEAPONS.forEach((w, k) => {
       const b = document.createElement('button'); b.className = 'sel-gun'; b.type = 'button';
       b.innerHTML = '<b aria-hidden="true"></b><span></span>'; b.querySelector('b').textContent = GUN_ICONS[k]; b.querySelector('span').textContent = w.name.split(' ').pop();
+      if (k === startGun) setTimeout(() => b.scrollIntoView({ block: 'nearest', inline: 'center' }), 0);
       b.title = w.name + ': ' + GUN_BLURB[k];
       b.addEventListener('click', () => { startGun = k; try { localStorage.setItem('squirrel-commando-gun', String(k)); } catch (e) {} paint(); sfx.swap(); });
       gl.appendChild(b);
@@ -5953,7 +6021,7 @@ function netPadTick(dt){
   } else if (state === 'pvp' && pvp && pvp.local) {
     const f = pvp.local, w = f.w[f.cur];
     const k = pvp.coop ? f.kills | 0 : bonksOf(f), o = pvp.coop ? 0 : Math.max(0, ...foesOf(f).map(bonksOf));
-    const hud = { slot: 1, hp: Math.ceil(f.hp), dead: f.dead ? 1 : 0, wn: WEAPONS[f.cur].name, am: w.ammo, rs: w.reserve === Infinity ? -1 : w.reserve, k, o };
+    const hud = { slot: 1, hp: Math.ceil(f.hp), dead: f.dead ? 1 : 0, wn: WEAPONS[f.cur].name, am: w.ammo, rs: w.reserve === Infinity ? -1 : w.reserve, k, o, ht: f.st ? f.st.hits | 0 : 0 };
     if (pvp.phase === 'over' && pvp.awards) hud.aw = pvp.awards.filter(a => a.who === f).map(a => a.icon + ' ' + a.name);
     msg = { role: 'tv', code: P.code, phase: pvp.phase, m: pvp.m, hud: [hud], coop: pvp.coop ? 1 : 0, menu: tvMenu() };
     if (pvp.coop) msg.co = { w: wave, sd: Math.ceil(stash) };
