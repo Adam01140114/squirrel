@@ -283,6 +283,7 @@ body.touch .desk-only{display:none}
 /* solo setup + map pickers */
 #soloScr .placard{max-width:620px}
 .pick-sec{display:grid;gap:8px}
+.ch-kind{display:block;font-size:.78em;opacity:.7;margin-top:1px;font-family:var(--body);font-weight:400;letter-spacing:0}
 /* rooms: create / join, the code, how you play */
 .join-form{display:grid;gap:8px}
 .join-form label{font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--cream-dim)}
@@ -427,6 +428,32 @@ body.touch .desk-only{display:none}
   #selScr.net .sel-panel.mine{padding:10px;gap:8px}
   #selScr.net .sel-panel.mine .sel-foot .btn{min-height:46px}
   #selScr.net .sel-panel.away .sel-name{display:none}
+}
+.sel-others{display:none}
+.sel-maplbl{display:none}
+@media (max-width:760px) and (min-height:501px){
+  #selScr.net.phone{grid-template-rows:auto minmax(110px,1fr) auto;padding-block:calc(8px + env(safe-area-inset-top,0px)) calc(8px + env(safe-area-inset-bottom,0px))}
+  #selScr.net.phone .sel-title{display:grid;grid-template-columns:minmax(0,1fr);justify-items:stretch;gap:8px;padding:8px}
+  #selScr.net.phone .room-tag{order:1;justify-content:center}
+  #selScr.net.phone .sel-others{order:2;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+  #selScr.net.phone .sel-btns{order:3;justify-content:center}
+  #selScr.net.phone .sel-others .sel-panel{padding:6px;gap:4px;border-width:2px;border-top-width:4px;border-radius:12px;box-shadow:none;align-content:start}
+  #selScr.net.phone .sel-others .sel-head{justify-content:space-between}
+  #selScr.net.phone .sel-others .sel-head b{font-size:15px}
+  #selScr.net.phone .sel-others .sel-name{display:block;font-size:13px;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #selScr.net.phone .sel-others .sel-panel.away .sel-name{display:none}
+  #selScr.net.phone .sel-others .sel-foot{min-height:0}
+  #selScr.net.phone .sel-others .sel-status{font-size:12px}
+  #selScr.net.phone .sel-others .sel-invite,#selScr.net.phone .sel-others .sel-bot{min-height:32px;padding:2px 4px;font-size:12px;box-shadow:none}
+  #selScr.net.phone .sel-others .sel-join{gap:4px}
+  #selScr.net.phone .sel-panels{grid-template-columns:minmax(0,1fr)}
+  #selScr.net.phone .sel-panel.mine{gap:6px;padding:10px}
+  #selScr.net.phone .sel-panel.mine .sel-head{display:none}
+  #selScr.net.phone .sel-panel.mine .sel-ch{min-height:48px;padding:5px 1px}
+  #selScr.net.phone .sel-panel.mine .sel-maps{display:flex;flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;gap:6px;scrollbar-width:none}
+  #selScr.net.phone .sel-panel.mine .sel-maps::-webkit-scrollbar{display:none}
+  #selScr.net.phone .sel-panel.mine .sel-maps .map-card{flex:0 0 auto;min-height:38px}
+  #selScr.net.phone .sel-gunlbl{display:none}
 }
 /* a phone on its side: a slim title and the two players side by side */
 @media (max-height:500px){
@@ -685,6 +712,7 @@ body.pad-mode{background:#1b120b}
       <h2 class="h2">Pick your fighter</h2>
       <p id="selLede"></p>
       <div class="sel-maps" id="selMaps"></div>
+      <div class="sel-others" id="selOthers"></div>
       <div class="room-tag" id="selRoom" hidden><span>Room</span><b id="selRoomCode"></b><button class="btn ghost sm" id="selShare" type="button">Share</button></div>
       <div class="row sel-btns"><button class="btn ghost sm" id="selBotLv" hidden>Bots: Normal</button><button class="btn ghost sm" id="selLeave">Leave</button></div>
     </div>
@@ -818,13 +846,18 @@ const PALS = [
   { name: 'Green', fur: 0x6f9a4a, light: 0xa6cf7e, dark: 0x3f5f2a, cream: 0xeaf3d8, band: 0x2f9e44, css: '#8fd14f' }
 ];
 const CHARS = [
-  { id: 'squirrel', name: 'Squirrel', sw: 'linear-gradient(135deg,#c8692a 55%,#f6e2bf 55%)' },
-  { id: 'panda', name: 'Panda', sw: 'linear-gradient(135deg,#f4f4f0 55%,#222326 55%)' },
-  { id: 'shepherd', name: 'German Shepherd', sw: 'linear-gradient(135deg,#c48a48 55%,#2a2420 55%)' },
-  { id: 'jack', name: 'Jack Russell', sw: 'linear-gradient(135deg,#f6f3ee 55%,#c8803c 55%)' },
-  { id: 'bear', name: 'Bear', sw: 'linear-gradient(135deg,#7a4a2a 55%,#c8955e 55%)' },
-  { id: 'cat', name: 'Orange Cat', sw: 'linear-gradient(135deg,#e8862e 55%,#fbe6c8 55%)' }
+  { id: 'squirrel', name: 'Bogo', kind: 'Squirrel', sw: 'linear-gradient(135deg,#c8692a 55%,#f6e2bf 55%)' },
+  { id: 'panda', name: 'Panda', kind: '', the: true, sw: 'linear-gradient(135deg,#f4f4f0 55%,#222326 55%)' },
+  { id: 'shepherd', name: 'Jojo', kind: 'German Shepherd', sw: 'linear-gradient(135deg,#c48a48 55%,#2a2420 55%)' },
+  { id: 'jack', name: 'Soto', kind: 'Jack Russell', sw: 'linear-gradient(135deg,#f6f3ee 55%,#c8803c 55%)' },
+  { id: 'bear', name: 'Bearito', kind: 'Bear', sw: 'linear-gradient(135deg,#7a4a2a 55%,#c8955e 55%)' },
+  { id: 'cat', name: 'Mormo', kind: 'Orange Cat', sw: 'linear-gradient(135deg,#e8862e 55%,#fbe6c8 55%)' }
 ];
+// a fighter in a sentence: "Bogo", but "the Panda"
+const theName = (ch) => { const c = CHARS[ch] || CHARS[0]; return c.the ? 'the ' + c.name : c.name; };
+const TheName = (ch) => { const t = theName(ch); return t.charAt(0).toUpperCase() + t.slice(1); };
+// a fighter button's label: the name, and what they are underneath
+function charLabel(el, c){ el.textContent = c.name; if (c.kind) { const k = document.createElement('small'); k.className = 'ch-kind'; k.textContent = c.kind; el.appendChild(k); } }
 const r2 = (v) => Math.round((+v || 0) * 100) / 100;
 let roomP = null;
 function useRoom(){
@@ -1065,7 +1098,7 @@ function runController(code, slot){
     ps.querySelector('.pad-map button').hidden = slot !== 1;
   };
   const I = { x: 0, y: 0, yaw: 0, pitch: -0.05, f: 0, s: 0, j: 0, r: 0, w: 0, c: 0, ch: 0, gn: 0, rdy: 0, mp: 0, ps: 0, mn: null };
-  try { I.gn = Math.max(0, Math.min(3, parseInt(localStorage.getItem('squirrel-commando-gun') || '0', 10) || 0)); } catch (e) {}
+  I.gn = 3; try { I.gn = Math.max(0, Math.min(3, parseInt(localStorage.getItem('squirrel-commando-gun') ?? '3', 10) || 0)); } catch (e) {}
   let room = null, lastHp = 100, lastPhase = '', lastDead = false, lastK = 0;
   const send = () => {
     if (!room) return;
@@ -1079,7 +1112,7 @@ function runController(code, slot){
   paintSeat();
   const chBtns = CHARS.map((c, k) => {
     const b = document.createElement('button'); b.className = 'pad-ch'; b.style.setProperty('--sw', c.sw);
-    b.innerHTML = '<i></i><span></span>'; b.querySelector('span').textContent = c.name;
+    b.innerHTML = '<i></i><span></span>'; charLabel(b.querySelector('span'), c);
     b.addEventListener('click', () => { I.ch = k; I.rdy = 0; paintSel(); send(); });
     ps.querySelector('.pad-sel-grid').appendChild(b); return b;
   });
@@ -4015,7 +4048,7 @@ function mapCard(i, onPick){
 }
 function charBtn(k, onPick){
   const c = CHARS[k], b = document.createElement('button'); b.className = 'sel-ch'; b.style.setProperty('--sw', c.sw);
-  b.innerHTML = '<i></i><span></span>'; b.querySelector('span').textContent = c.name;
+  b.innerHTML = '<i></i><span></span>'; charLabel(b.querySelector('span'), c);
   b.addEventListener('click', () => onPick(k)); return b;
 }
 const soloCharBtns = CHARS.map((c, k) => $('soloChars').appendChild(charBtn(k, pickSoloChar)));
@@ -4023,8 +4056,8 @@ const soloCharBtns = CHARS.map((c, k) => $('soloChars').appendChild(charBtn(k, p
 // ---------- starting gun: the Acorn Blaster always comes along; pick another to start with it in hand
 const GUN_ICONS = ['🌰', '💥', '🌲', '🌀'];
 const GUN_BLURB = ['Steady, never runs out', 'Close-range spread', 'Splash damage', 'Fast spray'];
-let startGun = 0;
-try { startGun = clamp(parseInt(localStorage.getItem('squirrel-commando-gun') || '0', 10) || 0, 0, WEAPONS.length - 1); } catch (e) {}
+let startGun = 3; // the Seed Spitter, until you pick another
+try { startGun = clamp(parseInt(localStorage.getItem('squirrel-commando-gun') ?? '3', 10) || 0, 0, WEAPONS.length - 1); } catch (e) {}
 const soloGunBtns = WEAPONS.map((w, k) => {
   const b = document.createElement('button'); b.className = 'gun-card'; b.type = 'button';
   b.innerHTML = '<b aria-hidden="true"></b><span></span><small></small>';
@@ -4499,8 +4532,8 @@ function killFeed(k, v){
   if (!k) { showPvBanner(v.tag + ' got bonked', 'Respawning in 3'); return; }
   const score = bonksOf(k);
   if (pvp.mode === 'online') {
-    if (k === pvp.local) { showPvBanner('You bonked the ' + v.name + '!', score + ' of ' + MATCH_KILLS); k.killT = 0.3; }
-    else if (v === pvp.local) showPvBanner('Bonked by the ' + k.name, 'Respawning in 3');
+    if (k === pvp.local) { showPvBanner('You bonked ' + theName(v.ch) + '!', score + ' of ' + MATCH_KILLS); k.killT = 0.3; }
+    else if (v === pvp.local) showPvBanner('Bonked by ' + theName(k.ch), 'Respawning in 3');
     else showPvBanner(k.tag + ' bonked ' + v.tag, k.tag + ' has ' + score + ' of ' + MATCH_KILLS);
   } else { showPvBanner(k.tag + ' bonked ' + v.tag, k.tag + ' has ' + score + ' of ' + MATCH_KILLS); k.killT = 0.3; }
 }
@@ -5231,7 +5264,7 @@ function startPvp(mode, role, r, code, m, chars, map, coop, slots, bots, guns){
   pvpBegin(m);
   if (mode === 'online') {
     document.body.classList.add('playing');
-    if (role === 'guest') { $('pvpPauseTitle').textContent = 'Match found'; $('pvpPauseLede').textContent = 'You are the ' + pvp.local.name + ' on the ' + pvp.local.pal.name + ' team. ' + (isTouch ? 'Tap Start to jump in.' : 'Click Start to grab your mouse and jump in.'); $('pvpResume').textContent = 'Start'; $('pvpPauseScr').hidden = false; }
+    if (role === 'guest') { $('pvpPauseTitle').textContent = 'Match found'; $('pvpPauseLede').textContent = 'You are ' + theName(pvp.local.ch) + ' on the ' + pvp.local.pal.name + ' team. ' + (isTouch ? 'Tap Start to jump in.' : 'Click Start to grab your mouse and jump in.'); $('pvpResume').textContent = 'Start'; $('pvpPauseScr').hidden = false; }
     else lockPointer();
   }
 }
@@ -5276,7 +5309,7 @@ function pvpOver(w, reason){
   showAwards();
   let title, lede;
   if (reason === 'left') { title = 'Opponent left'; lede = 'The other player disconnected. Head back to the menu to start a new room.'; }
-  else if (pvp.mode === 'online') { const won = pvp.fighters[w] === pvp.local; title = won ? 'You win!' : 'You lose'; lede = (won ? 'You' : 'The ' + pvp.fighters[w].name) + ' got to ' + MATCH_KILLS + ' bonks first.'; }
+  else if (pvp.mode === 'online') { const won = pvp.fighters[w] === pvp.local; title = won ? 'You win!' : 'You lose'; lede = (won ? 'You' : TheName(pvp.fighters[w].ch)) + ' got to ' + MATCH_KILLS + ' bonks first.'; }
   else { title = pvp.fighters[w].tag + ' wins!'; lede = 'First to ' + MATCH_KILLS + ' bonks. Rematch keeps every phone connected.'; }
   $('pvpOverTitle').textContent = title; $('pvpOverLede').textContent = lede;
   const canRematch = reason !== 'left' && (pvp.mode === 'couch' || pvp.role === 'host');
@@ -5505,6 +5538,7 @@ function enterSelect(mode, role, r, code, picks, prevM, map, coop, base, bots){
   $('selMaps').innerHTML = '';
   sel.mapBtns = MAPS.map((D, i) => $('selMaps').appendChild(mapCard(i, canMap ? selMap : null)));
   for (let i = 0; i < n; i++) buildSelPanel(i);
+  layoutSel();
   $('selLede').textContent = mode === 'couch'
     ? 'Everyone picks on their phone, then taps Ready. More players can still scan in. The match starts when everyone in is ready.'
     : role === 'host' ? 'Share the room code. Up to four can play; open spots can be CPUs. Pick a fighter and a map, then Start game when everyone is ready.' : 'Pick a fighter and tap Ready. The room\'s creator picks the map and starts the game.';
@@ -5520,7 +5554,7 @@ function buildSelPanel(i){
   el.classList.toggle('mine', isLocal);
   el.innerHTML = '<div class="sel-head"><b>P' + (i + 1) + '</b><span></span></div><div class="sel-name"></div><div class="sel-list"></div>'
     + (isLocal ? '<p class="sel-gunlbl">Starting gun</p><div class="sel-guns"></div>' : '')
-    + '<div class="sel-join" hidden><div class="qr-code"></div><span>Scan to join</span>' + (sel.mode === 'online' ? '<button class="btn ghost sm sel-invite">Copy invite link</button>' : '') + '</div><div class="sel-foot"><span class="sel-status"></span></div>'
+    + '<div class="sel-join" hidden><div class="qr-code"></div><span>Scan to join</span>' + (sel.mode === 'online' ? '<button class="btn ghost sm sel-invite">Invite</button>' : '') + '</div><div class="sel-foot"><span class="sel-status"></span></div>'
     + (sel.mode === 'couch' || (sel.mode === 'online' && sel.role === 'host' && !isLocal) ? '<button class="btn ghost sm sel-bot"></button>' : '');
   const botBtn = el.querySelector('.sel-bot');
   if (botBtn) botBtn.addEventListener('click', () => selToggleBot(i));
@@ -5528,7 +5562,7 @@ function buildSelPanel(i){
   const list = el.querySelector('.sel-list');
   const btns = CHARS.map((c, k) => {
     const b = document.createElement('button'); b.className = 'sel-ch'; b.style.setProperty('--sw', c.sw);
-    b.innerHTML = '<i></i><span></span>'; b.querySelector('span').textContent = c.name;
+    b.innerHTML = '<i></i><span></span>'; charLabel(b.querySelector('span'), c);
     if (isLocal) b.addEventListener('click', () => selPick(k)); else { b.disabled = true; b.tabIndex = -1; }
     list.appendChild(b); return b;
   });
@@ -5547,7 +5581,7 @@ function buildSelPanel(i){
   const inv = el.querySelector('.sel-invite');
   if (inv) inv.addEventListener('click', () => {
     const link = (sel.base || location.origin + location.pathname) + '#vs-' + sel.code + '-join';
-    const done = (t) => { inv.textContent = t; setTimeout(() => { inv.textContent = 'Copy invite link'; }, 1600); };
+    const done = (t) => { inv.textContent = t; setTimeout(() => { inv.textContent = 'Invite'; }, 1600); };
     if (navigator.share && isTouch) navigator.share({ title: 'Squirrel Commando', text: 'Join my game', url: link }).catch(() => {});
     else try { navigator.clipboard.writeText(link).then(() => done('Copied'), () => done(link)); } catch (e) { done(link); }
   });
@@ -5559,6 +5593,22 @@ function buildSelPanel(i){
   }
   sel.ui[i] = { el, botBtn, name: el.querySelector('.sel-name'), status: el.querySelector('.sel-status'), btns, ready, join: el.querySelector('.sel-join'), qr: el.querySelector('.sel-join .qr-code'), qrDone: false };
 }
+// An upright phone in an online room: everything on one screen, no scrolling. The other players
+// go up top beside the room code, your card holds fighters, guns and maps, and your fighter
+// stands in between. Anywhere else the panels and maps stay where they are.
+const SEL_PHONE = window.matchMedia ? window.matchMedia('(max-width:760px) and (min-height:501px)') : null;
+function layoutSel(){
+  if (!sel) return;
+  const phone = sel.mode === 'online' && sel.local >= 0 && !!(SEL_PHONE && SEL_PHONE.matches);
+  const scr = $('selScr'), panels = scr.querySelector('.sel-panels'), others = $('selOthers'), title = scr.querySelector('.sel-title');
+  scr.classList.toggle('phone', phone);
+  for (let i = 0; i < 4; i++) { const el = $('sel' + i); if (i === sel.local || !phone) panels.appendChild(el); else others.appendChild(el); }
+  if (phone) { const mine = $('sel' + sel.local), foot = mine.querySelector('.sel-foot'); mine.insertBefore($('selMaps'), foot); }
+  else title.insertBefore($('selMaps'), title.querySelector('.sel-others'));
+  // panels in order (P1..P4) wherever they are
+  for (let i = 0; i < 4; i++) { const el = $('sel' + i); el.parentNode.appendChild(el); }
+}
+if (SEL_PHONE && SEL_PHONE.addEventListener) SEL_PHONE.addEventListener('change', layoutSel);
 // couch: an empty spot can be a bot instead (and a phone or controller joining there takes it back)
 function selToggleBot(i){
   if (!sel || !(sel.mode === 'couch' || (sel.mode === 'online' && sel.role === 'host'))) return;
@@ -5711,7 +5761,7 @@ function selTick(dt){
     const u = S.ui[i]; if (!u) continue;
     // couch co-op: a missing player's panel shows their QR code instead
     const isBot = S.bots.has(i), away = !S.padOk[i] && !isBot;
-    if (u.botBtn) { const bt = S.mode === 'online' ? (isBot ? 'Remove CPU' : 'Add a CPU') : isBot ? 'Remove bot' : 'Add a bot'; if (u.botBtn.textContent !== bt) u.botBtn.textContent = bt; u.botBtn.hidden = !isBot && !away; }
+    if (u.botBtn) { const bt = S.mode === 'online' ? (isBot ? 'Remove CPU' : '+ CPU') : isBot ? 'Remove bot' : 'Add a bot'; if (u.botBtn.textContent !== bt) u.botBtn.textContent = bt; u.botBtn.hidden = !isBot && !away; }
     setClass(u.el, 'away', away); u.join.hidden = !away;
     if (away && !u.qrDone && S.base && window.QRCode) {
       u.qrDone = true;

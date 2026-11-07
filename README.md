@@ -2,7 +2,7 @@
 
 A third-person 3D shooter built with three.js, in a single `index.html`.
 
-Play as a squirrel, panda, German Shepherd, Jack Russell, bear or orange cat across five maps:
+Play as Bogo the squirrel, the Panda, Jojo the German Shepherd, Soto the Jack Russell, Bearito the bear or Mormo the orange cat across five maps:
 Sunny Meadow, Frosty Pines, Canyon Dunes, Spooky Hollow and Blossom Garden.
 
 ## Modes
