@@ -430,13 +430,15 @@ body.touch .desk-only{display:none}
   #selScr.net .sel-panel.away .sel-name{display:none}
 }
 .sel-others{display:none}
+#selLeave{min-width:min(100%,220px)}
 .sel-maplbl{display:none}
 @media (max-width:760px) and (min-height:501px){
   #selScr.net.phone{grid-template-rows:auto minmax(110px,1fr) auto;padding-block:calc(8px + env(safe-area-inset-top,0px)) calc(8px + env(safe-area-inset-bottom,0px))}
   #selScr.net.phone .sel-title{display:grid;grid-template-columns:minmax(0,1fr);justify-items:stretch;gap:8px;padding:8px}
   #selScr.net.phone .room-tag{order:1;justify-content:center}
   #selScr.net.phone .sel-others{order:2;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
-  #selScr.net.phone .sel-btns{order:3;justify-content:center}
+  #selScr.net.phone .sel-btns{order:3;justify-content:stretch}
+  #selScr.net.phone #selLeave{flex:1 1 100%;width:100%;min-height:44px}
   #selScr.net.phone .sel-others .sel-panel{padding:6px;gap:4px;border-width:2px;border-top-width:4px;border-radius:12px;box-shadow:none;align-content:start}
   #selScr.net.phone .sel-others .sel-head{justify-content:space-between}
   #selScr.net.phone .sel-others .sel-head b{font-size:15px}
@@ -5512,8 +5514,8 @@ function guestId(code){
 const mapOf = (v) => { const n = Math.round(+v); return MAPS[n] ? n : 0; };
 // coop: a co-op match; base: the join address, for the QR codes of players who are still to join
 const BOT_LV = ['Easy', 'Normal', 'Hard'];
-let botLv = 1;
-try { botLv = clamp(parseInt(localStorage.getItem('squirrel-commando-bots') || '1', 10) || 0, 0, 2); } catch (e) {}
+const botLv = 1;
+// CPUs and bots always play on Normal
 function enterSelect(mode, role, r, code, picks, prevM, map, coop, base, bots){
   lobby = null;
   ['menu', 'vsScr', 'coScr', 'lobbyScr', 'pvpOverScr', 'pvpPauseScr'].forEach(id => { $(id).hidden = true; });
@@ -5527,7 +5529,7 @@ function enterSelect(mode, role, r, code, picks, prevM, map, coop, base, bots){
   sel = { mode, role, r, code, local, n, coop: !!coop, picks: p0, ready: Array(n).fill(false), padOk: Array(n).fill(false), seats: mode === 'online' && role === 'host' ? (pvpSeats || {}) : {},
     previews: Array(n).fill(null), guns: Array(n).fill(0), shown: Array(n).fill(-1), missing: 0, go: 0, t: 0, prevM: prevM || 0, sendT: 0, ui: [], base: base || null,
     bots: new Set(Array.isArray(bots) && (mode === 'couch' || role === 'host') ? bots : []) };
-  $('selBotLv').hidden = !(mode === 'couch' || (mode === 'online' && role === 'host')); $('selBotLv').textContent = (mode === 'online' ? 'CPUs: ' : 'Bots: ') + BOT_LV[botLv];
+  $('selBotLv').hidden = true; $('selBotLv').textContent = (mode === 'online' ? 'CPUs: ' : 'Bots: ') + BOT_LV[botLv];
   if (!sel.base) gameUrl().then(b => { if (sel) sel.base = b; });
   $('selScr').classList.toggle('quad', n === 4);
   $('selScr').classList.toggle('net', mode === 'online');
@@ -5616,7 +5618,6 @@ function selToggleBot(i){
   else if (!sel.padOk[i]) { sel.bots.add(i); sel.picks[i] = Math.floor(Math.random() * CHARS.length); }
   sfx.swap(); sel.sendT = 0;
 }
-$('selBotLv').addEventListener('click', () => { botLv = (botLv + 1) % 3; try { localStorage.setItem('squirrel-commando-bots', String(botLv)); } catch (e) {} $('selBotLv').textContent = (sel && sel.mode === 'online' ? 'CPUs: ' : 'Bots: ') + BOT_LV[botLv]; sfx.swap(); });
 function selMap(i){
   if (!sel) return;
   sel.map = mapOf(i); buildMap(sel.map); sfx.swap();
@@ -5768,9 +5769,9 @@ function selTick(dt){
       try { new QRCode(u.qr, { text: S.base + '#vs-' + S.code + (S.mode === 'online' ? '-join' : '-pad'), width: 120, height: 120, colorDark: '#1b120b', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M }); } catch (e) {}
     }
     const nm = CHARS[S.picks[i]].name; if (u.name.textContent !== nm) u.name.textContent = nm;
-    if (S.mode === 'couch') { const hd = PALS[i].name + ' team · ' + (isBot ? BOT_LV[botLv].toLowerCase() + ' bot' : gpHas(i + 1, S.code) ? 'controller' : 'phone'), he = u.el.querySelector('.sel-head span'); if (he.textContent !== hd) he.textContent = hd; }
+    if (S.mode === 'couch') { const hd = PALS[i].name + ' team · ' + (isBot ? 'bot' : gpHas(i + 1, S.code) ? 'controller' : 'phone'), he = u.el.querySelector('.sel-head span'); if (he.textContent !== hd) he.textContent = hd; }
     u.btns.forEach((b, k) => setClass(b, 'on', k === S.picks[i]));
-    const st = isBot ? (S.mode === 'online' ? 'CPU · ' + BOT_LV[botLv] : 'Bot') : S.ready[i] ? 'Ready!' : (!S.padOk[i] ? (S.mode === 'online' ? 'Open spot' : 'Not joined') : (S.mode === 'online' && i !== S.local && S.missing > 0 ? 'Reconnecting…' : 'Picking…'));
+    const st = isBot ? (S.mode === 'online' ? 'CPU' : 'Bot') : S.ready[i] ? 'Ready!' : (!S.padOk[i] ? (S.mode === 'online' ? 'Open spot' : 'Not joined') : (S.mode === 'online' && i !== S.local && S.missing > 0 ? 'Reconnecting…' : 'Picking…'));
     if (u.status.textContent !== st) u.status.textContent = st;
     setClass(u.status, 'ok', S.ready[i]);
     if (u.ready) { const t = S.mode === 'online' && S.role === 'host' ? (S.ready[i] ? 'Starting…' : 'Start game') : S.ready[i] ? 'Not ready' : 'Ready'; if (u.ready.textContent !== t) u.ready.textContent = t; setClass(u.ready, 'ready-on', S.ready[i]); }
