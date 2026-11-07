@@ -65,7 +65,7 @@ often), and from wave 55 they also call gnome bodyguards.
 
 ## Weapons and power-ups
 
-Acorn Blaster, Nutshot (shotgun), Pinecone Launcher and Seed Spitter (minigun) come from supply crates.
+Acorn Blaster, Nutshot (shotgun), Pinecone Launcher, Seed Spitter (minigun), Pine Needle Rifle (sniper), Berry Burst (fast and light) and Walnut Cannon (one giant blast) come from supply crates; you can also pick any of them to start with.
 Power-ups: Rapid Fire, Double Damage, Shield and Turbo Paws.
 
 ## Controls
