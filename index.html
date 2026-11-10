@@ -652,7 +652,7 @@ body.pad-mode{background:#1b120b}
     <div class="placard wide">
       <h2 class="h2">Solo setup</h2>
       <p class="peek-hint" aria-hidden="true">Drag to turn</p>
-      <section class="pick-sec"><h3 class="pick-h">Fighter</h3><div class="pick-row" id="soloChars"></div></section>
+      <section class="pick-sec"><h3 class="pick-h">Fighter</h3><div class="pick-row" id="soloChars"></div><p class="hat-tip" id="charTip"></p></section>
       <section class="pick-sec"><h3 class="pick-h">Starting gun</h3><div class="gun-row" id="soloGuns"></div><p class="hat-tip" id="gunTip"></p></section>
       <details class="pick-sec hat-sec"><summary class="pick-h">Hat <span class="hat-now" id="hatNow"></span> <span class="hat-count" id="hatCount"></span></summary><div class="pick-row hats" id="soloHats"></div><p class="hat-tip" id="hatTip"></p></details>
       <section class="pick-sec"><h3 class="pick-h">Map</h3><div class="map-grid" id="soloMaps"></div></section>
@@ -853,13 +853,21 @@ const PALS = [
   { name: 'Green', fur: 0x6f9a4a, light: 0xa6cf7e, dark: 0x3f5f2a, cream: 0xeaf3d8, band: 0x2f9e44, css: '#8fd14f' }
 ];
 const CHARS = [
-  { id: 'squirrel', name: 'Bogo', kind: 'Squirrel', sw: 'linear-gradient(135deg,#c8692a 55%,#f6e2bf 55%)' },
-  { id: 'panda', name: 'Panda', kind: '', the: true, sw: 'linear-gradient(135deg,#f4f4f0 55%,#222326 55%)' },
-  { id: 'shepherd', name: 'Jojo', kind: 'German Shepherd', sw: 'linear-gradient(135deg,#c48a48 55%,#2a2420 55%)' },
-  { id: 'jack', name: 'Soto', kind: 'Jack Russell', sw: 'linear-gradient(135deg,#f6f3ee 55%,#c8803c 55%)' },
+  { id: 'squirrel', name: 'Bogo', kind: 'Squirrel', sw: 'linear-gradient(135deg,#c8692a 55%,#f6e2bf 55%)', power: 'Climbs the stash tree: walk into the trunk and shoot from the top, where crows can\'t get him' },
+  { id: 'panda', name: 'Panda', kind: '', the: true, sw: 'linear-gradient(135deg,#f4f4f0 55%,#222326 55%)', power: 'Double health' },
+  { id: 'shepherd', name: 'Jojo', kind: 'German Shepherd', sw: 'linear-gradient(135deg,#c48a48 55%,#2a2420 55%)', power: 'Two guns at once, two crosshairs and double ammo' },
+  { id: 'jack', name: 'Soto', kind: 'Jack Russell', sw: 'linear-gradient(135deg,#f6f3ee 55%,#c8803c 55%)', power: 'Double speed' },
   { id: 'bear', name: 'Bearito', kind: 'Bear', sw: 'linear-gradient(135deg,#7a4a2a 55%,#c8955e 55%)' },
-  { id: 'cat', name: 'Mormo', kind: 'Orange Cat', sw: 'linear-gradient(135deg,#e8862e 55%,#fbe6c8 55%)' }
+  { id: 'cat', name: 'Mormo', kind: 'Orange Cat', sw: 'linear-gradient(135deg,#e8862e 55%,#fbe6c8 55%)', power: 'Scares the crows: they never swoop down near him' }
 ];
+// special abilities, by fighter (CHARS index)
+const CH = { BOGO: 0, PANDA: 1, JOJO: 2, SOTO: 3, MORMO: 5 };
+const baseHp = (ch) => ch === CH.PANDA ? 200 : 100;
+const speedMul = (ch) => ch === CH.SOTO ? 2 : 1;
+const dualGuns = (ch) => ch === CH.JOJO;
+const ammoMul = (ch) => dualGuns(ch) ? 2 : 1; // Jojo carries double ammo: a full magazine for each gun
+const magOf = (i, ch) => WEAPONS[i].mag * ammoMul(ch);
+const MORMO_R = 10; // crows won't swoop at anything this close to Mormo
 // A short buzz. Android browsers vibrate; iPhones have no vibrate API, but toggling a hidden
 // switch control gives a haptic tap (iOS 18 and later) when it follows a touch.
 const haptic = (() => {
@@ -882,7 +890,7 @@ const haptic = (() => {
 const theName = (ch) => { const c = CHARS[ch] || CHARS[0]; return c.the ? 'the ' + c.name : c.name; };
 const TheName = (ch) => { const t = theName(ch); return t.charAt(0).toUpperCase() + t.slice(1); };
 // a fighter button's label: the name, and what they are underneath
-function charLabel(el, c){ el.textContent = c.name; if (c.kind) { const k = document.createElement('small'); k.className = 'ch-kind'; k.textContent = c.kind; el.appendChild(k); } }
+function charLabel(el, c){ el.textContent = c.name; if (c.kind) { const k = document.createElement('small'); k.className = 'ch-kind'; k.textContent = c.kind; el.appendChild(k); } if (c.power) el.title = c.name + ': ' + c.power; }
 const r2 = (v) => Math.round((+v || 0) * 100) / 100;
 let roomP = null;
 function useRoom(){
@@ -1274,7 +1282,7 @@ function runController(code, slot){
     if (hud && typeof hud === 'object') {
       $('padHud').hidden = false;
       const hp = cl(+hud.hp || 0, 0, 100);
-      $('padHp').style.transform = 'scaleX(' + (hp / 100) + ')'; $('padHpN').textContent = hud.dead ? 'KO' : String(Math.ceil(hp));
+      $('padHp').style.transform = 'scaleX(' + (hp / (hud.mx || 100)) + ')'; $('padHpN').textContent = hud.dead ? 'KO' : String(Math.ceil(hp));
       $('padAmmo').textContent = String(hud.wn || '') + ' ' + (hud.am === undefined ? '' : hud.am + '/' + (hud.rs === -1 ? '∞' : hud.rs));
       const co = tv.presence.co;
       $('padScore').textContent = coop && co ? 'Wave ' + (+co.w || 1) + ' · ' + (+hud.k || 0) + ((+hud.k || 0) === 1 ? ' bonk' : ' bonks') : hudArr.length > 2 ? 'You ' + (+hud.k || 0) + ' · leader ' + Math.max(+hud.k || 0, +hud.o || 0) : (+hud.k || 0) + ' – ' + (+hud.o || 0);
@@ -1411,7 +1419,7 @@ const MAPS = [
   { id: 'desert', name: 'Canyon Dunes', blurb: 'Cacti, red mesas and blistering sun.', sw: 'linear-gradient(170deg,#4a98dc 0 42%,#e2b877 42%)',
     sky: [0x3f8fd8, 0x9fd0ea, 0xf0d6a8], fog: [60, 175], sun: { col: 0xffe2b0, int: 1.2, dir: [0.2, 0.75, 0.3], tint: 0xfff0c0, pow: 60, glow: 0.25 },
     hemi: [0xfff0d6, 0xb3874f, 0.75], ground: [0xe2b877, 0xd6a560, 0xc98a4f], clearing: [0xc99a5c, 0xb98a4d], fence: 0xa07850,
-    parts: { mode: 'dust', colors: [0xe8c890, 0xd9b27a, 0xf2dcb0] }, clouds: 0xfff8ee,
+    parts: { mode: 'dust', colors: [0xe8c890, 0xd9b27a, 0xf2dcb0] }, clouds: 0xfff8ee, palm: true,
     grass: { h: [0.1, 0.16], s: [0.3, 0.45], l: [0.36, 0.5], n: 700 }, flowers: null,
     canopy: [0x3f8a3a, 0x4f9a3a, 0x356f2e, 0x5aa040], bark: [0x8a6a44, 0x6e5234] },
   { id: 'night', name: 'Spooky Hollow', blurb: 'Moonlight, pumpkins and very old graves.', sw: 'linear-gradient(170deg,#141c42 0 42%,#2f4a33 42%)',
@@ -1425,7 +1433,24 @@ const MAPS = [
     hemi: [0xffeef6, 0x5f8a45, 0.85], ground: [0x7cc35a, 0x9bd46e, 0x5d9e45], clearing: [0xbdb6a6, 0x9fb889], fence: 0xb8382c,
     parts: { mode: 'petals', colors: [0xf7c2d6, 0xf4a7c3, 0xffe1ec] }, clouds: 0xffffff,
     grass: { h: [0.25, 0.31], s: [0.45, 0.6], l: [0.38, 0.52] }, flowers: [0xf7c2d6, 0xffffff, 0xf4a7c3, 0xffe1ec],
-    canopy: [0xf4a7c3, 0xf7c2d6, 0xe98bb0, 0xffd6e5], bark: [0x4a2e26, 0x3a231d] }
+    canopy: [0xf4a7c3, 0xf7c2d6, 0xe98bb0, 0xffd6e5], bark: [0x4a2e26, 0x3a231d] },
+  { id: 'beach', name: 'Coconut Cove', blurb: 'Palm trees, beach umbrellas and warm sand.', sw: 'linear-gradient(170deg,#5cc3f0 0 42%,#f1dca0 42%)',
+    sky: [0x3aa8ec, 0xa6dcf4, 0xf6ecd0], fog: [60, 180], sun: { col: 0xfff1d6, int: 1.15, dir: [0.3, 0.7, 0.4], tint: 0xfff2c8, pow: 70, glow: 0.22 },
+    hemi: [0xf2fbff, 0xc9b27a, 0.8], ground: [0xf1dca0, 0xe8cf8c, 0xd8bd78], clearing: [0xe4cc90, 0xd4b878], fence: 0xc9a46a,
+    parts: { mode: 'dust', colors: [0xf6e7b8, 0xffffff, 0xf1dca0] }, clouds: 0xffffff, palm: true,
+    grass: { h: [0.2, 0.26], s: [0.35, 0.5], l: [0.4, 0.55], n: 500 }, flowers: null,
+    canopy: [0x3f9a3a, 0x4fae44, 0x358a32, 0x5ab84a], bark: [0x9a7448, 0x7a5a36] },
+  { id: 'volcano', name: 'Ember Peaks', blurb: 'Black rock, lava pools and drifting embers.', sw: 'linear-gradient(170deg,#7a3424 0 42%,#3a3434 42%)',
+    sky: [0x2a1418, 0x7a3424, 0xd8743a], fog: [34, 125], sun: { col: 0xffc8a0, int: 0.8, dir: [-0.3, 0.35, 0.5], tint: 0xffb070, pow: 40, glow: 0.35 },
+    hemi: [0xffb08a, 0x2a1a16, 0.7], ground: [0x3a3434, 0x4a403c, 0x2a2424], clearing: [0x5a4a40, 0x4a3a34], fence: 0x2a2222,
+    parts: { mode: 'embers', colors: [0xffa040, 0xff6a1a, 0xffd06a] }, clouds: 0x4a3434,
+    grass: null, flowers: null, canopy: [0xc8501e, 0xe0702a, 0xa83a18, 0xf0902e], bark: [0x2a1e1a, 0x1e1614] },
+  { id: 'mushroom', name: 'Mushroom Grove', blurb: 'Giant toadstools and glowing spores at dusk.', sw: 'linear-gradient(170deg,#3a2a6a 0 42%,#3f6a4a 42%)',
+    sky: [0x241a4a, 0x5a4a8a, 0xb89ac8], fog: [36, 130], sun: { col: 0xe0d0ff, int: 0.75, dir: [0.4, 0.5, -0.3], tint: 0xf0d8ff, pow: 200, glow: 0.12 },
+    hemi: [0xb8a8ff, 0x2a3a30, 0.8], ground: [0x3f6a4a, 0x4f7a52, 0x34583e], clearing: [0x5a4a3a, 0x4a5a40], fence: 0x4a3a5a,
+    parts: { mode: 'fireflies', colors: [0x9af0ff, 0xc89aff, 0x7affc8] }, clouds: 0x8a7ab0, stars: true,
+    grass: { h: [0.38, 0.46], s: [0.35, 0.5], l: [0.22, 0.34] }, flowers: [0x9af0ff, 0xc89aff, 0xffffff],
+    canopy: [0xc83a5a, 0xe05a7a, 0x9a3aa8, 0xd84a6a], bark: [0xe8dcc8, 0xc8bca8] }
 ];
 const SPAWNS = [[0, -33], [0, 33], [-31, -12], [31, 12], [-24, 25], [24, -25], [-36, 6], [36, -6]];
 
@@ -1517,8 +1542,8 @@ function cactus(x, z, s){
   }
   colliders.push({ x, z, r: 0.45 * s, h: 3.2 * s, kind: 'wood' });
 }
-function mesa(x, z, s, collide){
-  const g = group(x, z, s), cols = [0xc0643a, 0xa8522f, 0xd27a48];
+function mesa(x, z, s, collide, cols){
+  const g = group(x, z, s); cols = cols || [0xc0643a, 0xa8522f, 0xd27a48];
   let y = 0; const tiers = 2 + Math.floor(rng() * 3);
   for (let k = 0; k < tiers; k++) { const h = rr(1.2, 2.4), w = 1.7 - k * 0.25; const m = mk(GEO.cyl6, M(cols[k % 3]), 0, y + h / 2, 0, g); m.scale.set(w, h, w); m.rotation.y = rng(); y += h; }
   if (collide) colliders.push({ x, z, r: 1.75 * s, h: y * s, kind: 'rock' });
@@ -1554,6 +1579,59 @@ function bamboo(x, z){
   }
   colliders.push({ x, z, r: 0.75, h: 5, kind: 'wood' });
 }
+function palmTree(x, z, s, collide){
+  const g = group(x, z, s), bark = M(rpick([0x9a7448, 0x8a6a40])), lean = rr(0.03, 0.07);
+  let y = 0, px = 0;
+  for (let i = 0; i < 7; i++) { const seg = mk(GEO.cyl6, bark, px, y + 0.4, 0, g); seg.scale.set(0.3 - i * 0.02, 0.85, 0.3 - i * 0.02); seg.rotation.y = i * 0.5; y += 0.8; px += i * lean; }
+  const fm = [M(0x3f9a3a), M(0x4fae44)];
+  for (let i = 0; i < 7; i++) { const a = i / 7 * TAU; const fr = mk(GEO.box, fm[i % 2], px + Math.cos(a) * 1.2, y - 0.25, Math.sin(a) * 1.2, g); fr.scale.set(2.6, 0.08, 0.55); fr.rotation.set(0, -a, -0.45); }
+  for (let i = 0; i < 3; i++) mk(GEO.ball, M(0x6e4a26), px + rr(-0.25, 0.25), y - 0.3, rr(-0.25, 0.25), g).scale.setScalar(0.17);
+  if (collide) colliders.push({ x, z, r: 0.4 * s, h: 6 * s, kind: 'wood' });
+}
+function umbrella(x, z){
+  const g = group(x, z, rr(0.9, 1.1)), col = rpick([0xe8452e, 0x2f8fe0, 0xf2c230, 0x3fb86a]);
+  mk(GEO.cactus, M(0xf4f0e6), 0, 1.1, 0, g).scale.set(0.08, 2.2, 0.08);
+  mk(new THREE.ConeGeometry(1.4, 0.55, 8), M(col), 0, 2.25, 0, g);
+  mk(new THREE.ConeGeometry(1.42, 0.56, 8, 1, true, 0, Math.PI / 4), M(0xffffff), 0, 2.25, 0, g);
+  const towel = mk(GEO.box, M(rpick([0xff8fab, 0x6fb7ff, 0xffd23f])), 0.9, 0.02, 0.3, g); towel.scale.set(0.9, 0.03, 1.7);
+  colliders.push({ x, z, r: 0.3, h: 2.4, kind: 'wood' });
+}
+function sandcastle(x, z){
+  const g = group(x, z, rr(0.8, 1.15)), sand = M(0xe2c27e), dark = M(0xcfa964);
+  const keep = mk(GEO.box, sand, 0, 0.4, 0, g); keep.scale.set(1.3, 0.8, 1.3);
+  for (const [tx, tz] of [[-0.65, -0.65], [0.65, -0.65], [-0.65, 0.65], [0.65, 0.65]]) {
+    mk(GEO.cyl6, dark, tx, 0.55, tz, g).scale.set(0.3, 1.1, 0.3);
+    mk(new THREE.ConeGeometry(0.34, 0.4, 7), sand, tx, 1.3, tz, g);
+  }
+  colliders.push({ x, z, r: 1.05, h: 1.4, kind: 'rock' });
+}
+function lavaPool(x, z, r){
+  const glow = new THREE.MeshStandardMaterial({ color: lin(0xff7a1a), emissive: lin(0xff4a00), emissiveIntensity: 1.5, roughness: 0.6, polygonOffset: true, polygonOffsetFactor: -3 });
+  const p = inWorld(new THREE.Mesh(new THREE.CircleGeometry(r, 24), glow)); p.rotation.x = -Math.PI / 2; p.position.set(x, 0.03, z);
+  const rim = inWorld(new THREE.Mesh(new THREE.RingGeometry(r, r + 0.45, 24), new THREE.MeshStandardMaterial({ color: lin(0x1e1614), roughness: 1, polygonOffset: true, polygonOffsetFactor: -3 })));
+  rim.rotation.x = -Math.PI / 2; rim.position.set(x, 0.035, z);
+}
+function basalt(x, z, s){
+  const g = group(x, z, s), cols = [0x2a2626, 0x3a3434, 0x221e1e];
+  for (let i = 0; i < 5; i++) { const a = i / 5 * TAU + rng(), h = rr(1.2, 3.2); const c = mk(GEO.cyl6, M(rpick(cols)), Math.cos(a) * 0.45, h / 2, Math.sin(a) * 0.45, g); c.scale.set(0.42, h, 0.42); }
+  colliders.push({ x, z, r: 1.05 * s, h: 3 * s, kind: 'rock' });
+}
+function toadstool(x, z, s, collide, cap){
+  const g = group(x, z, s), dots = M(0xfff6e6);
+  const stem = mk(GEO.cyl6, M(0xe8dcc8), 0, 1.4, 0, g); stem.scale.set(0.38, 2.8, 0.38);
+  const c = mk(new THREE.SphereGeometry(1.5, 14, 8, 0, TAU, 0, Math.PI / 2), M(cap), 0, 2.7, 0, g); c.scale.y = 0.75;
+  for (let i = 0; i < 6; i++) { const a = i / 6 * TAU + rng(); mk(GEO.ball, dots, Math.cos(a) * 0.95, 3.35, Math.sin(a) * 0.95, g, false).scale.set(0.2, 0.08, 0.2); }
+  if (collide) colliders.push({ x, z, r: 0.5 * s, h: 3.8 * s, kind: 'wood' });
+}
+function glowShroom(x, z){
+  const g = group(x, z, rr(0.6, 1.2)), col = rpick([0x9af0ff, 0xc89aff, 0x7affc8]);
+  const glow = new THREE.MeshStandardMaterial({ color: lin(col), emissive: lin(col), emissiveIntensity: 1.2, flatShading: true });
+  for (let i = 0; i < 3; i++) {
+    const a = rng() * TAU, r = rr(0, 0.3), h = rr(0.2, 0.45);
+    mk(GEO.cactus, M(0xe8dcc8), Math.cos(a) * r, h / 2, Math.sin(a) * r, g).scale.set(0.06, h, 0.06);
+    mk(new THREE.SphereGeometry(0.16, 8, 5, 0, TAU, 0, Math.PI / 2), glow, Math.cos(a) * r, h, Math.sin(a) * r, g, false);
+  }
+}
 
 // ---- the stash tree at the centre
 const stashAcorns = [];
@@ -1574,10 +1652,39 @@ function makeAcorn(golden){
   mk(AG.stem, golden ? acornMats.gcap : acornMats.cap, 0, 0.25, 0, g);
   return g;
 }
+// Bogo stands on top of the stash tree: he climbs the trunk (treeClimb), stands on the leaves
+// up there out of the crows' reach, and drops off the edge to come down. While he's up there his
+// view fades the tree (treeFade) so he can see what's below it.
+const PERCH = { y: 0, r: 0 };
+const TRUNK_R = 2.25;
+const treeMats = []; // the stash tree's own materials (copies of the shared ones), so it can fade alone
+function treeTop(oak, y, r){
+  PERCH.y = y; PERCH.r = r;
+  treeMats.length = 0;
+  const copies = new Map();
+  oak.traverse(o => {
+    if (!o.material) return;
+    if (!copies.has(o.material)) { const m = o.material.clone(); copies.set(o.material, m); treeMats.push(m); }
+    o.material = copies.get(o.material);
+  });
+  treeFade(1);
+}
+// how solid the stash tree looks in the view about to be drawn: 1 solid, down to TREE_SEE when you're up it
+const TREE_SEE = 0.3;
+let treeOpNow = 1;
+function treeFade(op){
+  if (Math.abs(op - treeOpNow) < 0.005 && treeMats.length && treeMats[0].opacity === op) return;
+  treeOpNow = op;
+  const see = op < 0.99;
+  for (const m of treeMats) {
+    if (m.transparent !== see) { m.transparent = see; m.needsUpdate = true; }
+    m.opacity = op; m.depthWrite = !see;
+  }
+}
 function stashTree(D){
   const oak = inWorld(new THREE.Group());
   const bark = M(D.bark[0]), barkDark = M(D.bark[1]);
-  if (D.id === 'desert') {
+  if (D.palm) {
     // an oasis palm on a rocky mound
     for (let i = 0; i < 9; i++) { const a = i / 9 * TAU; const r = mk(GEO.rock, M(rpick([0xb98a4d, 0xa87a44, 0xc99a5c])), Math.cos(a) * 1.5, 0.35, Math.sin(a) * 1.5, oak); r.scale.set(0.9, 0.6, 0.9); r.rotation.set(rng(), rng(), rng()); }
     let y = 0.3, x = 0;
@@ -1585,6 +1692,7 @@ function stashTree(D){
     const frond = M(0x4f9a3a), frond2 = M(0x3f8a3a);
     for (let i = 0; i < 9; i++) { const a = i / 9 * TAU; const f = mk(GEO.box, i % 2 ? frond : frond2, x + Math.cos(a) * 2.2, y - 0.5, Math.sin(a) * 2.2, oak); f.scale.set(4.6, 0.12, 0.9); f.rotation.set(0, -a, -0.45); }
     for (let i = 0; i < 4; i++) mk(GEO.ball, M(0x6e4a26), x + rr(-0.4, 0.4), y - 0.4, rr(-0.4, 0.4), oak).scale.setScalar(0.28);
+    treeTop(oak, y - 0.1, 3);
   } else {
     mk(new THREE.CylinderGeometry(1.25, 1.9, 7.5, 11), bark, 0, 3.6, 0, oak);
     for (let i = 0; i < 7; i++) {
@@ -1594,13 +1702,17 @@ function stashTree(D){
     const hollow = mk(new THREE.CircleGeometry(0.55, 16), M(0x22150b), 0, 2.4, 1.62, oak, false); hollow.scale.y = 1.4; hollow.rotation.x = -0.07;
     for (let i = 0; i < 3; i++) { const br = mk(new THREE.CylinderGeometry(0.25, 0.45, 4, 7), bark, 0, 7.2, 0, oak); br.rotation.z = (i - 1) * 0.7; br.rotation.y = i * 2.1; br.position.x = (i - 1) * 1.2; }
     const lm = D.canopy.map(c => M(c));
+    let top = 0;
     for (let i = 0; i < 9; i++) {
-      const a = i / 9 * TAU, r = i === 0 ? 0 : rr(2.2, 3.6);
-      mk(new THREE.IcosahedronGeometry(rr(2.6, 3.6), 1), lm[i % 4], Math.cos(a) * r, 9 + rr(-0.6, 1.8), Math.sin(a) * r, oak).rotation.set(rng(), rng(), rng());
+      const a = i / 9 * TAU, r = i === 0 ? 0 : rr(2.2, 3.6), size = rr(2.6, 3.6), y = 9 + rr(-0.6, 1.8);
+      mk(new THREE.IcosahedronGeometry(size, 1), lm[i % 4], Math.cos(a) * r, y, Math.sin(a) * r, oak).rotation.set(rng(), rng(), rng());
+      if (i === 0) top = y + size; // the middle of the canopy: Bogo stands on top of it
     }
+    treeTop(oak, top - 0.3, 3.2);
     if (D.id === 'night') { const glow = new THREE.MeshStandardMaterial({ color: lin(0xffd36a), emissive: lin(0xff9a1a), emissiveIntensity: 1.6 }); for (const s of [-1, 1]) mk(GEO.ball, glow, 0.35 * s, 2.6, 1.66, oak, false).scale.set(0.12, 0.16, 0.05); }
   }
-  colliders.push({ x: 0, z: 0, r: 2.25, h: 14, kind: 'wood' });
+  // up on top of the tree you're above the trunk, so it no longer pushes you out
+  colliders.push({ x: 0, z: 0, r: TRUNK_R, h: PERCH.y - 0.4, kind: 'wood' });
   stashAcorns.length = 0;
   for (let i = 0; i < 54; i++) {
     const a = i * 2.39996 + 0.5, r = 2.0 + (i % 5) * 0.16 + rng() * 0.15;
@@ -1805,6 +1917,34 @@ function buildMap(i){
     }
     ring(110, (x, z) => rng() < 0.6 ? oakTree(x, z, rr(1, 1.8), false, rpick(pinks), 0x4a2e26) : pineTree(x, z, rr(1, 1.7), false, rpick([0x2f7a4a, 0x3b8c52])));
     buildFence(D.fence);
+  } else if (D.id === 'beach') {
+    place(14, 12, ARENA - 5, 4.5, (x, z) => palmTree(x, z, rr(0.9, 1.3), true));
+    place(7, 10, ARENA - 4, 3.5, umbrella);
+    place(4, 12, ARENA - 6, 4, sandcastle);
+    place(7, 10, ARENA - 4, 4, (x, z) => rock(x, z, rr(0.7, 1.3), [0xb8a78a, 0xa8977a, 0xcbb898]));
+    const star = M(0xff8a5a), shell = M(0xfff0e0);
+    place(16, 9, ARENA - 2, 1, (x, z) => {
+      const g = group(x, z, rr(0.7, 1.2));
+      if (rng() < 0.5) for (let k = 0; k < 5; k++) { const arm = mk(GEO.box, star, Math.sin(k / 5 * TAU) * 0.12, 0.03, Math.cos(k / 5 * TAU) * 0.12, g, false); arm.scale.set(0.07, 0.04, 0.3); arm.rotation.y = k / 5 * TAU; }
+      else mk(GEO.ball, shell, 0, 0.04, 0, g, false).scale.set(0.16, 0.07, 0.12);
+    });
+    ring(110, (x, z) => palmTree(x, z, rr(1.1, 1.8), false));
+    buildFence(D.fence);
+  } else if (D.id === 'volcano') {
+    place(7, 13, ARENA - 6, 5, (x, z) => basalt(x, z, rr(0.9, 1.3)));
+    place(8, 11, ARENA - 5, 4.5, (x, z) => deadTree(x, z, rr(1, 1.4), true, 0x1e1614));
+    place(9, 10, ARENA - 4, 4, (x, z) => rock(x, z, rr(0.8, 1.5), [0x2a2626, 0x3a2e3e, 0x1e1a1e]));
+    place(6, 12, ARENA - 6, 6, (x, z) => lavaPool(x, z, rr(1.3, 2.4)));
+    ring(60, (x, z) => mesa(x, z, rr(1.6, 3.6), false, [0x2a2424, 0x3a3030, 0x4a3a34]));
+    ring(50, (x, z) => deadTree(x, z, rr(1.2, 2), false, 0x1e1614));
+    buildFence(D.fence, true);
+  } else if (D.id === 'mushroom') {
+    const caps = [0xc83a5a, 0xe05a7a, 0x9a3aa8, 0x3a8ac8];
+    place(12, 12, ARENA - 5, 5, (x, z) => toadstool(x, z, rr(0.9, 1.4), true, rpick(caps)));
+    place(20, 9, ARENA - 2, 1.4, glowShroom);
+    place(8, 10, ARENA - 4, 4, (x, z) => rock(x, z, rr(0.8, 1.4), [0x5a6a5a, 0x4a5a4e]));
+    ring(90, (x, z) => rng() < 0.6 ? toadstool(x, z, rr(1.4, 2.6), false, rpick(caps)) : pineTree(x, z, rr(1.1, 1.8), false, rpick([0x2a4a4a, 0x3a3a5a])));
+    buildFence(D.fence);
   }
   buildCover(D);
   buildClouds(D);
@@ -1816,8 +1956,9 @@ try { savedMap = clamp(parseInt(localStorage.getItem('squirrel-commando-map') ||
 buildMap(savedMap);
 
 // ---------------------------------------------------------------- squirrel
-// the four guns plus the paws and arms holding them; shared by every character
-function buildGunRig(body, pawMat, armMat){
+// the guns plus the paws and arms holding them; shared by every character. offhand: Jojo's
+// second set, in his left paw (no arms of its own; syncOff keeps it mirroring the right one)
+function buildGunRig(body, pawMat, armMat, offhand){
   const gunMetal = M(0x2d343e, { roughness: 0.45, metalness: 0.4 }), steel = M(0x8a95a1, { roughness: 0.3, metalness: 0.7 });
   const orange = M(0xff8a1e, { roughness: 0.5 }), wood = M(0x7a4a24);
   const gunRig = new THREE.Group(); gunRig.position.set(0.2, 0.84, -0.32); body.add(gunRig);
@@ -1914,6 +2055,7 @@ function buildGunRig(body, pawMat, armMat){
   mk(new THREE.SphereGeometry(0.075, 10, 8), pawMat, 0, -0.12, 0.02, gunRig);
   mk(new THREE.SphereGeometry(0.075, 10, 8), pawMat, -0.02, -0.06, -0.3, gunRig);
   guns.forEach((g, i) => { g.visible = i === 0; });
+  if (offhand) { gunRig.position.x = -0.2; return { gunRig, guns, muzzles }; }
   const armL = mk(new THREE.SphereGeometry(0.08, 10, 8), armMat, -0.03, 0.83, -0.36, body); armL.scale.set(4.2, 1, 1); armL.rotation.y = 0.88;
   const armR = mk(new THREE.SphereGeometry(0.08, 10, 8), armMat, 0.23, 0.8, -0.2, body); armR.scale.set(1, 1, 1.8);
   return { gunRig, guns, muzzles };
@@ -1983,7 +2125,7 @@ function buildCritter(kind, pal){
   const tailMats = [], segs = [];
   const tailMat = (hex) => { const m = MU(hex, { transparent: true }); tailMats.push(m); return m; };
   const addSeg = (r, mat, x, y, z, t) => { const m = mk(new THREE.IcosahedronGeometry(r, 1), mat, x, y, z, tail); m.userData.base = m.position.clone(); m.userData.t = t; segs.push(m); };
-  let feet, rig, colors, wag = 0.6, scale = 1;
+  let feet, rig, off = null, colors, wag = 0.6, scale = 1;
 
   if (kind === 'panda') {
     const wh = M(0xf4f4f0), bk = M(0x222326);
@@ -2030,7 +2172,7 @@ function buildCritter(kind, pal){
       const inn = mk(new THREE.ConeGeometry(0.06, 0.2, 6), M(0xd9a46a), 0.16 * s, 0.3, -0.03, head); inn.rotation.z = -0.22 * s;
     }
     eyes(0.12, 0.08, -0.22, 0.06, M(0x4a2c12));
-    feet = feetOf(tan); rig = buildGunRig(body, bk, tan);
+    feet = feetOf(tan); rig = buildGunRig(body, bk, tan); off = buildGunRig(body, bk, tan, true);
     const tm = tailMat(0xc48a48), tb = tailMat(0x2a2420);
     for (let i = 0; i < 8; i++) { const t = i / 7; addSeg(0.1 + Math.sin(t * Math.PI) * 0.06, i % 2 ? tb : tm, 0, -t * 0.3 + Math.sin(t * Math.PI) * 0.12, t * 0.8, t); }
     colors = [0xc48a48, 0x2a2420, 0xe8c48e, pal.band]; wag = 2.2;
@@ -2078,7 +2220,19 @@ function buildCritter(kind, pal){
     colors = [0xe8862e, 0xb4561a, 0xfbe6c8, pal.band]; wag = 1.2; scale = 0.92;
   }
   g.scale.setScalar(scale);
-  return { group: g, body, head, feet, gunRig: rig.gunRig, tail, segs, tailMats, guns: rig.guns, muzzles: rig.muzzles, wag, colors };
+  return { group: g, body, head, feet, gunRig: rig.gunRig, tail, segs, tailMats, guns: rig.guns, muzzles: rig.muzzles, off, wag, colors };
+}
+// the gun a model holds (both paws for Jojo)
+function holdGun(m, i){
+  m.guns.forEach((g, k) => { g.visible = k === i; });
+  if (m.off) m.off.guns.forEach((g, k) => { g.visible = k === i; });
+}
+// Jojo's left-paw gun copies the right one's pose, mirrored
+function syncOff(m){
+  if (!m.off) return;
+  const a = m.gunRig, b = m.off.gunRig;
+  b.position.set(-a.position.x, a.position.y, a.position.z); b.rotation.set(a.rotation.x, -a.rotation.y, -a.rotation.z);
+  const sa = m.guns[3].userData.spin, sb = m.off.guns[3].userData.spin; if (sa && sb) sb.rotation.z = -sa.rotation.z;
 }
 let sq = buildSquirrel(), soloChar = 0;
 scene.add(sq.group);
@@ -2092,6 +2246,7 @@ const flashTex = (() => {
 })();
 const flash = new THREE.Sprite(new THREE.SpriteMaterial({ map: flashTex, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, fog: false }));
 flash.scale.set(0.8, 0.8, 1); flash.visible = false; sq.muzzles[0].add(flash);
+const flash2 = new THREE.Sprite(flash.material); flash2.scale.set(0.8, 0.8, 1); flash2.visible = false; // Jojo's left gun
 const flashLight = new THREE.PointLight(0xffb84a, 0, 8, 2); sq.muzzles[0].add(flashLight);
 scene.add(camera);
 
@@ -2112,8 +2267,9 @@ function setSoloChar(ch){
   const m = buildCritter(CHARS[ch].id, PALS[0]);
   m.group.position.copy(old.group.position); m.group.rotation.y = old.group.rotation.y; m.group.visible = old.group.visible;
   scene.remove(old.group); scene.add(m.group);
-  m.guns.forEach((g, k) => { g.visible = k === cur; });
+  holdGun(m, cur);
   m.muzzles[cur].add(flash); m.muzzles[cur].add(flashLight); m.group.add(shieldBubble);
+  if (m.off) m.off.muzzles[cur].add(flash2); else if (flash2.parent) flash2.parent.remove(flash2);
   sq = m; soloChar = ch;
   if (typeof wearHat === 'function') wearHat(sq, hatId);
   if (wasFps) setFps(true);
@@ -2160,6 +2316,7 @@ function setFps(on){
   if (on === fpsOn) return; fpsOn = on;
   if (on) { camera.add(sq.gunRig); sq.gunRig.position.set(0.26, -0.27, -0.5); sq.gunRig.rotation.set(0, 0, 0); sq.body.visible = false; }
   else { sq.body.add(sq.gunRig); sq.gunRig.position.set(0.2, 0.84, -0.32); sq.body.visible = true; }
+  if (sq.off) { (on ? camera : sq.body).add(sq.off.gunRig); syncOff(sq); }
 }
 
 // ---------------------------------------------------------------- particles
@@ -2608,7 +2765,7 @@ function bossCharge(e, dt){
   const C = e.def.charge;
   if (!e.ch) {
     e.chT -= dt;
-    const T = nearestFoe(e.pos); if (e.chT > 0 || !T || e.slamWind > 0 || e.spawnT < 1) return false;
+    const T = nearestFoe(e.pos, t => !upTree(t)); if (e.chT > 0 || !T || e.slamWind > 0 || e.spawnT < 1) return false;
     const d = Math.hypot(T.pos.x - e.pos.x, T.pos.z - e.pos.z);
     if (d < 4 || d > 24) return false;
     e.ch = 'wind'; e.chTime = 0.75; e.chDir = new V3(T.pos.x - e.pos.x, 0, T.pos.z - e.pos.z).normalize(); sfx.dig();
@@ -2681,7 +2838,7 @@ function updateKeeper(e, dt){
 // Diggers (the Mole Overlord and the Mole Queen) tunnel to whoever is nearest, burst up under them,
 // throw rocks, then dive again. The Queen brings diggers with her every time she comes up.
 function updateOverlord(e, dt){
-  const T = nearestFoe(e.pos) || STASH_FOE, D = e.def || BOSSES.overlord;
+  const T = nearestFoe(e.pos, t => !upTree(t)) || STASH_FOE, D = e.def || BOSSES.overlord;
   if (e.state === 'dig') {
     e.up = Math.max(0, e.up - dt * 2);
     const tx = T.pos.x, tz = T.pos.z, dx = tx - e.pos.x, dz = tz - e.pos.z, d = Math.hypot(dx, dz);
@@ -2923,11 +3080,22 @@ function updateMole(e, dt){
 const isCoop = () => !!(pvp && pvp.coop);
 const STASH_FOE = { pos: new V3(0, 0, 0), vel: new V3(), dead: false, stash: true };
 function foeTargets(){ return isCoop() ? pvp.fighters.filter(f => !f.dead) : [player]; }
-function nearestFoe(p){
+// ok: only targets it accepts (a crow skips anyone it can't swoop at, a gnome skips Bogo up the tree)
+function nearestFoe(p, ok){
   let best = null, bd = Infinity;
-  for (const t of foeTargets()) { const d = Math.hypot(t.pos.x - p.x, t.pos.z - p.z); if (d < bd) { bd = d; best = t; } }
+  for (const t of foeTargets()) { if (ok && !ok(t)) continue; const d = Math.hypot(t.pos.x - p.x, t.pos.z - p.z); if (d < bd) { bd = d; best = t; } }
   return best;
 }
+// whose fighter a target is (the solo hero, a co-op fighter; the stash is nobody's)
+const chOf = (t) => !t || t.stash ? -1 : t === player ? soloChar : t.ch;
+// Mormo scares the crows: they won't swoop at anything this close to him
+function mormoNear(p){
+  for (const t of foeTargets()) if (chOf(t) === CH.MORMO && Math.hypot(t.pos.x - p.x, t.pos.z - p.z) < MORMO_R) return true;
+  return false;
+}
+// a crow can swoop at this: not Bogo up the tree, and nowhere near Mormo
+const swoopable = (t) => !!t && !(chOf(t) === CH.BOGO && upTree(t)) && !mormoNear(t.pos);
+const crowFoe = (p) => nearestFoe(p, swoopable) || STASH_FOE;
 function hurtFoe(t, d, src){
   if (!t) return;
   if (t.stash) damageStash(Math.ceil(d / 4), src);
@@ -2942,7 +3110,7 @@ function spawnEnemy(kind){
     const B = bossFor(wave);
     e = buildBoss(B.kind, B.tier);
     const a = rand(0, TAU), r = ARENA - 4;
-    if (e.type === 'crow') { e.pos.set(Math.cos(a) * (ARENA + 6), 16, Math.sin(a) * (ARENA + 6)); e.tgt = nearestFoe(e.pos) || STASH_FOE; e.ang = Math.atan2(e.pos.z - e.tgt.pos.z, e.pos.x - e.tgt.pos.x); }
+    if (e.type === 'crow') { e.pos.set(Math.cos(a) * (ARENA + 6), 16, Math.sin(a) * (ARENA + 6)); e.tgt = crowFoe(e.pos); e.ang = Math.atan2(e.pos.z - e.tgt.pos.z, e.pos.x - e.tgt.pos.x); }
     else { e.pos.set(Math.cos(a) * r, 0, Math.sin(a) * r); if (nearAny(e.pos.x, e.pos.z)) e.pos.set(-e.pos.x, 0, -e.pos.z); e.mesh.rotation.y = Math.atan2(e.pos.x, e.pos.z); }
     if (e.type === 'gnome') e.inner.position.y = -2;
     const tip = BOSSES[B.kind].tip;
@@ -2958,7 +3126,7 @@ function spawnEnemy(kind){
   } else if (kind === 'crow') {
     e = buildCrow();
     const a = rand(0, TAU); e.pos.set(Math.cos(a) * (ARENA + 6), rand(14, 18), Math.sin(a) * (ARENA + 6));
-    e.tgt = nearestFoe(e.pos) || STASH_FOE;
+    e.tgt = crowFoe(e.pos);
     e.ang = Math.atan2(e.pos.z - e.tgt.pos.z, e.pos.x - e.tgt.pos.x);
   } else {
     e = buildGnome(false);
@@ -3136,13 +3304,17 @@ function setMuted(m){ AC.muted = m; if (AC.master) AC.master.gain.value = m ? 0 
 // ---------------------------------------------------------------- game state
 const player = { pos: new V3(0, 0, 9), vel: new V3(), onGround: true, jumps: 0, hp: 100, inv: 0, phase: 0 };
 let yaw = Math.PI, pitch = -0.06;
-const gun = { cd: 0, reload: 0, reloadTotal: 1, recoil: 0, bloom: 0, switchT: 0, spin: 0, spinSfx: 0 };
+const gun = { cd: 0, reload: 0, reloadTotal: 1, recoil: 0, bloom: 0, switchT: 0, spin: 0, spinSfx: 0, idle: 0 };
+// every gun reloads by itself once you're on the move and have stopped shooting for this long
+const AUTO_RELOAD = 0.6;
 let state = 'menu', wave = 1, waveState = 'intro', waveTimer = 0, queue = [], spawnT = 0;
 let score = 0, combo = 0, comboT = 0, kills = 0, stash = 100;
 let firing = false, jumpQueued = false, shake = 0, dmgFlash = 0, camDist = 4.6, camSide = 1.4, camH = 2.05, attractAng = 0.6, time = 0, hitT = 0, killT = 0;
 const keys = {};
 
 const hud = $('hud'), bossBox = $('bossBox'), cross = $('cross'), vignette = $('vignette');
+// Jojo's second crosshair, for his left gun (hidden for everyone else)
+const cross2 = cross.cloneNode(true); cross2.id = 'cross2'; cross2.hidden = true; cross.after(cross2);
 const els = {
   hpFill: $('hpFill'), hpNum: $('hpNum'), hpMeter: $('hpMeter'), stashFill: $('stashFill'), stashNum: $('stashNum'), stashMeter: $('stashMeter'),
   wave: $('waveLbl'), left: $('leftLbl'), score: $('scoreLbl'), combo: $('comboLbl'), ammo: $('ammoNum'), ammoBox: $('ammoBox'),
@@ -3211,7 +3383,7 @@ const PERKS = [
 ];
 const perk = {};
 const perkLv = (id) => perk[id] | 0;
-const maxHp = () => 100 + 25 * perkLv('fur');
+const maxHp = () => baseHp(soloChar) + 25 * perkLv('fur');
 let perkChoices = [];
 // Auto Choose: remembered on this device; ticking it on the upgrade screen picks one of the three cards now
 let perkAuto = false;
@@ -3324,21 +3496,21 @@ function rayCyl(o, d, c){
   if (disc < 0) return Infinity; const t = (-b - Math.sqrt(disc)) / (2 * a); if (t < 0) return Infinity;
   const y = o.y + d.y * t; return (y < 0 || y > c.h) ? Infinity : t;
 }
-const aim = new V3(), camRight = new V3(), camUp = new V3(), shotDir = new V3(), hitPt = new V3(), muzzlePos = new V3();
+const aim = new V3(), camRight = new V3(), camUp = new V3(), shotDir = new V3(), hitPt = new V3(), muzzlePos = new V3(), pvSide = new V3();
 function startReload(){
   const w = WEAPONS[cur], s = inv[cur];
-  if (gun.reload > 0 || gun.switchT > 0 || s.ammo >= w.mag || s.reserve <= 0) return;
+  if (gun.reload > 0 || gun.switchT > 0 || s.ammo >= magOf(cur, soloChar) || s.reserve <= 0) return;
   gun.reloadTotal = w.reload * (pw.rapid > 0 ? 0.5 : 1) * Math.pow(0.75, perkLv('hands')); gun.reload = gun.reloadTotal; sfx.reload();
 }
 function finishReload(){
-  const w = WEAPONS[cur], s = inv[cur], take = Math.min(w.mag - s.ammo, s.reserve);
+  const s = inv[cur], take = Math.min(magOf(cur, soloChar) - s.ammo, s.reserve);
   s.ammo += take; if (s.reserve !== Infinity) s.reserve -= take;
 }
 function switchWeapon(i){
   if (i === cur || !inv[i] || !inv[i].owned) return;
   cur = i; gun.reload = 0; gun.cd = 0.3; gun.switchT = 0.3; gun.spin = 0; gun.bloom = 0;
-  sq.guns.forEach((g, k) => { g.visible = k === i; });
-  sq.muzzles[i].add(flash); sq.muzzles[i].add(flashLight);
+  holdGun(sq, i);
+  sq.muzzles[i].add(flash); sq.muzzles[i].add(flashLight); if (sq.off) sq.off.muzzles[i].add(flash2);
   toast(WEAPONS[i].name); sfx.swap();
 }
 function cycleWeapon(dir){
@@ -3379,10 +3551,17 @@ function castRay(dir){
   }
   return r;
 }
-function spreadDir(out, spread){
+function spreadDir(out, spread, base){
   const a = rand(0, TAU), r = Math.sqrt(Math.random()) * spread;
-  return out.copy(aim).addScaledVector(camRight, Math.cos(a) * r).addScaledVector(camUp, Math.sin(a) * r).normalize();
+  return out.copy(base || aim).addScaledVector(camRight, Math.cos(a) * r).addScaledVector(camUp, Math.sin(a) * r).normalize();
 }
+// Jojo's two guns each shoot at their own crosshair, this far either side of the middle
+const DUAL = 0.045;
+// which guns fire: the one gun (0), or for Jojo the right (1) and left (-1) ones, a shot from each magazine
+const gunSides = (ch, ammo) => !dualGuns(ch) ? [0] : ammo >= 2 ? [1, -1] : [1];
+const sideAim = (out, base, right, side) => side ? out.copy(base).addScaledVector(right, side * DUAL).normalize() : out.copy(base);
+// how far a Jojo crosshair sits from the middle of a view, in pixels
+const dualPx = (cam, h) => DUAL * h / 2 / Math.tan(cam.fov * Math.PI / 360);
 function impact(kind, pt, n){
   if (kind === 'ground') burst(pt, n, [0x7a5a36, 0x9b7148, 0x6aa83b], 3, 0.06, 0.5, -14, 0.8);
   else if (kind === 'wood') burst(pt, n, [0x6b4423, 0x8a5a2b, 0xc89a62], 3.5, 0.06, 0.5, -14, 0.3);
@@ -3398,37 +3577,41 @@ function tryShoot(){
     return;
   }
   if (w.spin && gun.spin < 1) return;
-  s.ammo--; gun.cd = w.rate * (pw.rapid > 0 ? 0.5 : 1); gun.recoil = w.kick;
+  const sides = gunSides(soloChar, s.ammo);
+  s.ammo -= sides.length; gun.cd = w.rate * (pw.rapid > 0 ? 0.5 : 1); gun.recoil = w.kick; gun.idle = 0;
   const mul = (pw.dmg > 0 ? 2 : 1) * (1 + 0.15 * perkLv('acorn'));
   const moving = Math.hypot(player.vel.x, player.vel.z) > 1.2;
   const spread = w.spread + gun.bloom + (w.pellets > 1 ? 0 : (moving ? 0.01 : 0) + (player.onGround ? 0 : 0.018));
   gun.bloom = Math.min(gun.bloom + w.bloom, w.maxBloom);
   sq.group.updateMatrixWorld(true); camera.updateMatrixWorld(true);
-  sq.muzzles[cur].getWorldPosition(muzzlePos);
-  if (w.projectile) {
-    spreadDir(shotDir, spread);
-    const r = castRay(shotDir);
-    hitPt.copy(camera.position).addScaledVector(shotDir, Math.min(r.t, 60));
-    tv.copy(hitPt).sub(muzzlePos).normalize();
-    launchPinecone(muzzlePos, tv, w.dmg * mul, w.splash);
-  } else {
-    const agg = new Map();
-    for (let p = 0; p < w.pellets; p++) {
-      spreadDir(shotDir, spread);
+  for (const side of sides) {
+    (side < 0 && sq.off ? sq.off.muzzles[cur] : sq.muzzles[cur]).getWorldPosition(muzzlePos);
+    const base = sideAim(pvSide, aim, camRight, side);
+    if (w.projectile) {
+      spreadDir(shotDir, spread, base);
       const r = castRay(shotDir);
-      hitPt.copy(camera.position).addScaledVector(shotDir, r.t);
-      tracer(muzzlePos, hitPt);
-      if (r.kind === 'enemy') {
-        const a = agg.get(r.e) || { dmg: 0, head: false, pt: hitPt.clone(), dir: shotDir.clone() };
-        a.dmg += (r.head ? w.head : w.dmg) * mul; a.head = a.head || r.head; agg.set(r.e, a);
-      } else impact(r.kind, hitPt, w.pellets > 1 ? 2 : 6);
+      hitPt.copy(camera.position).addScaledVector(shotDir, Math.min(r.t, 60));
+      tv.copy(hitPt).sub(muzzlePos).normalize();
+      launchPinecone(muzzlePos, tv, w.dmg * mul, w.splash);
+    } else {
+      const agg = new Map();
+      for (let p = 0; p < w.pellets; p++) {
+        spreadDir(shotDir, spread, base);
+        const r = castRay(shotDir);
+        hitPt.copy(camera.position).addScaledVector(shotDir, r.t);
+        tracer(muzzlePos, hitPt);
+        if (r.kind === 'enemy') {
+          const a = agg.get(r.e) || { dmg: 0, head: false, pt: hitPt.clone(), dir: shotDir.clone() };
+          a.dmg += (r.head ? w.head : w.dmg) * mul; a.head = a.head || r.head; agg.set(r.e, a);
+        } else impact(r.kind, hitPt, w.pellets > 1 ? 2 : 6);
+      }
+      agg.forEach((a, e) => { if (enemies.includes(e)) hurtEnemy(e, a.dmg, a.head, a.pt, a.dir, w.pellets > 1 ? 2.2 : 1); });
+      if (agg.size && isTouch && !SOLOPAD) haptic(15);
     }
-    agg.forEach((a, e) => { if (enemies.includes(e)) hurtEnemy(e, a.dmg, a.head, a.pt, a.dir, w.pellets > 1 ? 2.2 : 1); });
-    if (agg.size && isTouch && !SOLOPAD) haptic(15);
   }
-  flash.visible = true; flash.material.rotation = rand(0, TAU);
-  flash.scale.setScalar(rand(0.6, 0.95) * (w.id === 'shotgun' || w.id === 'cannon' ? 1.6 : w.id === 'launcher' || w.id === 'sniper' ? 1.3 : 1)); flashLight.intensity = w.id === 'minigun' ? 1.6 : 2.4;
-  for (let i = 0; i < 3; i++) { tv.copy(aim).multiplyScalar(rand(3, 6)).add(new V3(rand(-1, 1), rand(0, 1.5), rand(-1, 1))); emit(muzzlePos, tv, pick([0xffd27a, 0xffb347, 0xfff1c1]), 0.035, 0.18, -6); }
+  flash.visible = true; flash.material.rotation = rand(0, TAU); flash2.visible = sides.length > 1;
+  flash.scale.setScalar(rand(0.6, 0.95) * (w.id === 'shotgun' || w.id === 'cannon' ? 1.6 : w.id === 'launcher' || w.id === 'sniper' ? 1.3 : 1)); flashLight.intensity = w.id === 'minigun' ? 1.6 : 2.4; flash2.scale.copy(flash.scale);
+  for (let i = 0; i < 3 * sides.length; i++) { tv.copy(aim).multiplyScalar(rand(3, 6)).add(new V3(rand(-1, 1), rand(0, 1.5), rand(-1, 1))); emit(muzzlePos, tv, pick([0xffd27a, 0xffb347, 0xfff1c1]), 0.035, 0.18, -6); }
   sfx.shoot(w.id); addShake(w.shake);
   const climb = { shotgun: 0.035, launcher: 0.02, sniper: 0.03, cannon: 0.05 }[w.id];
   if (climb) pitch = clamp(pitch + climb, PMIN, PMAX);
@@ -3531,6 +3714,18 @@ function collide(p, r){
   const d = Math.hypot(p.x, p.z), lim = ARENA - 0.6;
   if (d > lim) { p.x *= lim / d; p.z *= lim / d; }
 }
+// Bogo's climb: walking into the stash tree's trunk takes him up it, to the top
+function treeClimb(b, ch, wx, wz){
+  if (ch !== CH.BOGO || !PERCH.y || b.pos.y >= PERCH.y) return false;
+  const d = Math.hypot(b.pos.x, b.pos.z);
+  if (d > TRUNK_R + 0.75 || d < 1e-3 || -(b.pos.x * wx + b.pos.z * wz) / d < 2) return false;
+  b.vel.y = 7.5; b.onGround = false; b.jumps = 0;
+  return true;
+}
+// what's under you: the top of the stash tree for Bogo once he's up there, the ground for everyone else
+const floorAt = (b, ch, prevY) => ch === CH.BOGO && PERCH.y && prevY >= PERCH.y - 0.5 && Math.hypot(b.pos.x, b.pos.z) < PERCH.r ? PERCH.y : 0;
+// up the stash tree (climbing it or on top): out of reach of crows and gnomes
+const upTree = (t) => !!t && !t.stash && t.pos.y > 3.5 && Math.hypot(t.pos.x, t.pos.z) < PERCH.r + 1;
 
 // ---------------------------------------------------------------- update: player
 function updatePlayer(dt){
@@ -3544,7 +3739,7 @@ function updatePlayer(dt){
   const il = Math.hypot(ix, iz); if (il > 1) { ix /= il; iz /= il; }
   const sprint = ((keys.ShiftLeft || keys.ShiftRight) || GP.solo.sprint || (joy.active && il > 0.95)) && iz > 0.3;
   const sy = Math.sin(yaw), cy = Math.cos(yaw);
-  const spd = (sprint ? 10.5 : 7) * (pw.speed > 0 ? 1.45 : 1) * (1 + 0.12 * perkLv('paws')) * (WEAPONS[cur].spin && firing ? 0.7 : 1);
+  const spd = (sprint ? 10.5 : 7) * speedMul(soloChar) * (pw.speed > 0 ? 1.45 : 1) * (1 + 0.12 * perkLv('paws')) * (WEAPONS[cur].spin && firing ? 0.7 : 1);
   const wx = (-sy * iz + cy * ix) * spd, wz = (-cy * iz - sy * ix) * spd;
   const acc = player.onGround ? 14 : 5;
   player.vel.x = damp(player.vel.x, wx, acc, dt); player.vel.z = damp(player.vel.z, wz, acc, dt);
@@ -3554,10 +3749,13 @@ function updatePlayer(dt){
     if (player.onGround) { player.vel.y = 9.2; player.onGround = false; player.jumps = 1; sfx.jump(); burst(player.pos, 6, [0x9b7148, 0xc8b08a], 2, 0.07, 0.4, -6, 0.2); }
     else if (player.jumps < (pw.speed > 0 ? 3 : 2)) { player.vel.y = 8.4; player.jumps++; sfx.jump(); tv.copy(player.pos); tv.y += 0.3; burst(tv, 8, 0xfff6e6, 2.5, 0.08, 0.35, 0, 0); }
   }
+  player.climbing = treeClimb(player, soloChar, wx, wz);
+  const prevY = player.pos.y;
   player.pos.addScaledVector(player.vel, dt);
-  if (player.pos.y <= 0) {
+  const floor = floorAt(player, soloChar, prevY);
+  if (player.pos.y <= floor) {
     if (!player.onGround && player.vel.y < -8) burst(player.pos, 6, [0x9b7148, 0xc8b08a], 2.2, 0.07, 0.4, -6, 0.2);
-    player.pos.y = 0; player.vel.y = 0; player.onGround = true; player.jumps = 0;
+    player.pos.y = floor; player.vel.y = 0; player.onGround = true; player.jumps = 0;
   } else player.onGround = false;
   collide(player.pos, 0.45);
   player.inv = Math.max(0, player.inv - dt);
@@ -3571,7 +3769,7 @@ function animateSquirrel(dt){
   sq.group.position.copy(player.pos);
   sq.group.rotation.y = angLerp(sq.group.rotation.y, yaw, 1 - Math.exp(-20 * dt));
   sq.body.position.y = air ? 0 : Math.abs(Math.sin(player.phase)) * 0.09 * run + Math.sin(time * 2.2) * 0.012;
-  sq.body.rotation.x = -run * 0.12 + (air ? 0.15 : 0);
+  sq.body.rotation.x = player.climbing ? -0.55 : -run * 0.12 + (air ? 0.15 : 0);
   sq.feet.forEach((f, i) => {
     const ph = player.phase + i * Math.PI;
     f.position.z = -0.06 + (air ? -0.1 : Math.sin(ph) * 0.22 * run);
@@ -3598,6 +3796,7 @@ function animateSquirrel(dt){
     sq.gunRig.position.z = -0.32 + rec * 0.12;
   }
   const mg = sq.guns[3].userData.spin; if (mg) mg.rotation.z += dt * gun.spin * 30;
+  syncOff(sq);
   const to = state === 'playing' ? CAMS[camMode].tail : 1;
   tailOpacity = damp(tailOpacity, to, 8, dt);
   sq.tailMats.forEach(m => { m.opacity = tailOpacity; m.depthWrite = tailOpacity > 0.97; });
@@ -3621,7 +3820,7 @@ function updateCamera(dt, sprint){
     pivot.set(player.pos.x, player.pos.y + cm.h + sq.body.position.y, player.pos.z);
     camPos.copy(pivot).addScaledVector(aim, 0.12);
   } else {
-    pivot.set(player.pos.x, player.pos.y * 0.85 + camH, player.pos.z);
+    pivot.set(player.pos.x, player.pos.y - 0.15 * Math.min(player.pos.y, 3) + camH, player.pos.z);
     camPos.copy(pivot).addScaledVector(aim, -camDist).addScaledVector(camRight, camSide);
   }
   if (camPos.y < 0.45) camPos.y = 0.45;
@@ -3657,7 +3856,7 @@ function updateGnome(e, dt){
     return;
   }
   if (e.boss && e.def && e.def.charge && bossCharge(e, dt)) return;
-  const T = nearestFoe(e.pos);
+  const T = nearestFoe(e.pos, t => !upTree(t));
   const toP = T ? Math.hypot(T.pos.x - e.pos.x, T.pos.z - e.pos.z) : Infinity;
   let tx, tz, reach, onPlayer;
   if (T && (e.boss || toP < 7.5)) { tx = T.pos.x; tz = T.pos.z; reach = 0.95 + 0.42 * e.s; onPlayer = true; }
@@ -3703,7 +3902,7 @@ function updateGnome(e, dt){
 const pc = new V3();
 function updateCrow(e, dt){
   e.t += dt; e.flap += dt * (e.state === 'dive' ? 5 : 15);
-  if (!e.tgt || e.tgt.dead || (isCoop() && e.tgt !== STASH_FOE && !pvp.fighters.includes(e.tgt))) e.tgt = nearestFoe(e.pos) || STASH_FOE;
+  if (!e.tgt || e.tgt.dead || (isCoop() && e.tgt !== STASH_FOE && !pvp.fighters.includes(e.tgt))) e.tgt = crowFoe(e.pos);
   const T = e.tgt;
   pc.set(T.pos.x, T.pos.y + (T.stash ? 1.2 : 0.9), T.pos.z);
   if (e.state === 'enter' || e.state === 'circle') {
@@ -3714,9 +3913,15 @@ function updateCrow(e, dt){
     if (d > 0.01) tv.multiplyScalar(Math.min(spd, d * 2.5) / d);
     e.vel.lerp(tv, 1 - Math.exp(-3 * dt));
     if (e.state === 'enter' && d < 3) { e.state = 'circle'; e.t = 0; }
-    if (e.state === 'circle' && e.t > e.wait) {
+    if (e.state === 'circle' && e.t > e.wait && !swoopable(T)) {
+      // Bogo is up the tree or Mormo is about: keep circling, and look for someone else
+      e.t = 0; e.wait = rand(0.8, 1.6); e.tgt = crowFoe(e.pos);
+    } else if (e.state === 'circle' && e.t > e.wait) {
       e.state = 'dive'; e.t = 0; tv.copy(pc).sub(e.pos).normalize(); e.vel.copy(tv).multiplyScalar(14 + Math.min(wave, 10) * 0.3); sfx.caw();
     }
+  } else if (e.state === 'dive' && !swoopable(T)) {
+    // pulled out of the dive: Mormo came near, or Bogo got up the tree
+    e.state = 'climb'; e.t = 0;
   } else if (e.state === 'dive') {
     tv.copy(pc).sub(e.pos).normalize().multiplyScalar(e.vel.length());
     e.vel.lerp(tv, 1 - Math.exp(-0.9 * dt));
@@ -3724,7 +3929,7 @@ function updateCrow(e, dt){
     else if (e.pos.y < 0.6 || e.t > 2.2) { e.state = 'climb'; e.t = 0; }
   } else {
     e.vel.y = damp(e.vel.y, 9, 4, dt); e.vel.x = damp(e.vel.x, 0, 1.5, dt); e.vel.z = damp(e.vel.z, 0, 1.5, dt);
-    if (e.t > 1.3) { e.tgt = nearestFoe(e.pos) || STASH_FOE; e.state = 'circle'; e.t = 0; e.wait = rand(2.2, 4.5); e.ang = Math.atan2(e.pos.z - e.tgt.pos.z, e.pos.x - e.tgt.pos.x); }
+    if (e.t > 1.3) { e.tgt = crowFoe(e.pos); e.state = 'circle'; e.t = 0; e.wait = rand(2.2, 4.5); e.ang = Math.atan2(e.pos.z - e.tgt.pos.z, e.pos.x - e.tgt.pos.x); }
   }
   e.kb.multiplyScalar(Math.exp(-5 * dt));
   e.pos.addScaledVector(e.vel, dt).addScaledVector(e.kb, dt);
@@ -3792,8 +3997,9 @@ function collect(k){
     const unowned = CRATE_GUNS.filter(i => !inv[i].owned);
     const i = unowned.length ? pick(unowned) : pick(CRATE_GUNS);
     const w = WEAPONS[i], s = inv[i];
-    if (!s.owned) { s.owned = true; s.ammo = w.mag; s.reserve = w.give; switchWeapon(i); toast('New weapon: ' + w.name); }
-    else { s.reserve += w.give; toast('+' + w.give + ' ' + w.name + ' ammo'); }
+    const give = w.give * ammoMul(soloChar);
+    if (!s.owned) { s.owned = true; s.ammo = magOf(i, soloChar); s.reserve = give; switchWeapon(i); toast('New weapon: ' + w.name); }
+    else { s.reserve += give; toast('+' + give + ' ' + w.name + ' ammo'); }
     sfx.crate(); burst(p, 20, [0xa8743c, 0xff8a1e, 0xffd23f], 5, 0.09, 0.6, -14, 0.5);
     return;
   }
@@ -3820,10 +4026,11 @@ function updateAmbient(dt){
     let sc = 1, py = l.y;
     if (partMode === 'snow') { l.y -= l.sp * 1.6 * dt; l.x += Math.sin(time * 0.9 + l.ph) * 0.35 * dt; l.rx += dt; sc = 0.45; }
     else if (partMode === 'dust') { l.y -= 0.05 * dt; l.x += (2.2 + l.sp) * dt; l.z += Math.sin(time * 0.6 + l.ph) * 0.4 * dt; l.rx += dt * 4; l.ry += dt * 3; sc = 0.3; if (l.y > 4) l.y = rand(0.2, 3); }
+    else if (partMode === 'embers') { l.y += (0.8 + l.sp) * dt; l.x += Math.sin(time * 1.1 + l.ph) * 0.5 * dt; l.rx += dt * 3; sc = 0.22; if (l.y > 14) l.y = rand(0.1, 1); }
     else if (partMode === 'fireflies') { l.x += Math.sin(time * 0.7 + l.ph) * 0.5 * dt; l.z += Math.cos(time * 0.6 + l.ph * 1.3) * 0.5 * dt; py = l.by + Math.sin(time * 1.4 + l.ph) * 0.4; sc = 0.28 * (0.6 + 0.4 * Math.abs(Math.sin(time * 2 + l.ph * 3))); }
     else { l.y -= l.sp * dt; l.x += Math.sin(time * 1.3 + l.ph) * 0.7 * dt; l.rx += dt * 2; l.ry += dt * 1.3; sc = partMode === 'petals' ? 0.8 : 1; }
     if (l.y < 0.05 || Math.abs(l.x - cx) > 32 || Math.abs(l.z - cz) > 32) {
-      l.y = partMode === 'dust' ? rand(0.2, 3) : rand(8, 15); l.x = cx + rand(-28, 28); l.z = cz + rand(-28, 28); l.by = rand(0.4, 3);
+      l.y = partMode === 'dust' || partMode === 'embers' ? rand(0.2, 3) : rand(8, 15); l.x = cx + rand(-28, 28); l.z = cz + rand(-28, 28); l.by = rand(0.4, 3);
       if (partMode === 'fireflies') py = l.by;
     }
     if (partMode !== 'fireflies') py = l.y;
@@ -3833,7 +4040,7 @@ function updateAmbient(dt){
   leafMesh.instanceMatrix.needsUpdate = true;
   for (const m of tracers) { if (m.userData.life > 0) { m.userData.life -= dt; m.material.opacity = Math.max(0, m.userData.life / 0.08); if (m.userData.life <= 0) m.visible = false; } }
   flashLight.intensity = damp(flashLight.intensity, 0, 30, dt);
-  if (flashLight.intensity < 0.6) flash.visible = false;
+  if (flashLight.intensity < 0.6) flash.visible = flash2.visible = false;
   boomLight.intensity = damp(boomLight.intensity, 0, 9, dt);
   for (const s of shocks) {
     if (s.userData.life <= 0) continue;
@@ -3863,7 +4070,7 @@ function updateHUD(dt){
   setText('ammoRes', '/ ' + (s.reserve === Infinity ? '∞' : s.reserve));
   setClass(els.ammoBox, 'empty', s.ammo === 0);
   setScaleX('reload', gun.reload > 0 ? 1 - gun.reload / gun.reloadTotal : w.spin ? gun.spin : 0);
-  setClass(els.hint, 'urgent', s.ammo <= Math.ceil(w.mag / 4) && gun.reload <= 0);
+  setClass(els.hint, 'urgent', s.ammo <= Math.ceil(magOf(cur, soloChar) / 4) && gun.reload <= 0);
   slotEls.forEach((el, i) => { setClass(el, 'own', inv[i].owned); setClass(el, 'cur', i === cur); });
   for (const k in pw) {
     const pe = powerEls[k], on = pw[k] > 0;
@@ -3875,9 +4082,20 @@ function updateHUD(dt){
   const spread = w.spread + gun.bloom + (w.pellets > 1 ? 0 : (moving ? 0.01 : 0) + (player.onGround ? 0 : 0.018));
   cross.style.setProperty('--gap', (5 + spread * 260).toFixed(1) + 'px');
   cross.style.setProperty('--c', pw.dmg > 0 ? '#ff7a6a' : 'var(--cream)');
-  setClass(cross, 'on', castRay(aim).kind === 'enemy');
+  if (dualGuns(soloChar)) {
+    // Jojo: a crosshair for each gun
+    const px = dualPx(camera, window.innerHeight).toFixed(1) + 'px';
+    cross.style.left = 'calc(50% + ' + px + ')'; cross2.style.left = 'calc(50% - ' + px + ')'; cross2.hidden = false;
+    cross2.style.setProperty('--gap', cross.style.getPropertyValue('--gap')); cross2.style.setProperty('--c', cross.style.getPropertyValue('--c'));
+    setClass(cross, 'on', castRay(sideAim(pvSide, aim, camRight, 1)).kind === 'enemy');
+    setClass(cross2, 'on', castRay(sideAim(pvSide, aim, camRight, -1)).kind === 'enemy');
+  } else {
+    if (!cross2.hidden) { cross2.hidden = true; cross.style.left = ''; }
+    setClass(cross, 'on', castRay(aim).kind === 'enemy');
+  }
   if (hitT > 0) { hitT -= dt; if (hitT <= 0) cross.classList.remove('hit'); }
   if (killT > 0) { killT -= dt; if (killT <= 0) cross.classList.remove('kill'); }
+  setClass(cross2, 'hit', cross.classList.contains('hit')); setClass(cross2, 'kill', cross.classList.contains('kill'));
   dmgFlash = Math.max(0, dmgFlash - dt * 2.2);
   const low = player.hp <= 30 ? 0.25 + Math.sin(time * 5) * 0.12 : 0;
   vignette.style.opacity = Math.max(dmgFlash * 0.9, low).toFixed(3);
@@ -3895,11 +4113,11 @@ function clearWorld(){
 }
 function resetGame(){
   clearWorld();
-  player.pos.set(0, 0, 9); player.vel.set(0, 0, 0); player.hp = 100; player.inv = 0; player.onGround = true; player.jumps = 0;
+  player.pos.set(0, 0, 9); player.vel.set(0, 0, 0); player.hp = baseHp(soloChar); soloTreeOp = 1; player.inv = 0; player.onGround = true; player.jumps = 0;
   yaw = Math.PI; pitch = -0.06; sq.group.rotation.y = yaw;
-  WEAPONS.forEach((w, i) => { inv[i].owned = i === 0; inv[i].ammo = w.mag; inv[i].reserve = i === 0 ? Infinity : 0; });
+  WEAPONS.forEach((w, i) => { inv[i].owned = i === 0; inv[i].ammo = magOf(i, soloChar); inv[i].reserve = i === 0 ? Infinity : 0; });
   const g0 = DAILY && mod('blaster') ? 0 : startGun;
-  if (g0) { inv[g0].owned = true; inv[g0].reserve = startReserve(g0); }
+  if (g0) { inv[g0].owned = true; inv[g0].reserve = startReserve(g0) * ammoMul(soloChar); }
   cur = g0 ? 0 : 1; switchWeapon(g0); gun.switchT = 0; gun.cd = 0;
   gun.reload = 0; gun.bloom = 0; gun.spin = 0; gun.recoil = 0;
   for (const k in pw) pw[k] = 0;
@@ -4142,7 +4360,7 @@ function paintGuns(){
   soloGunBtns.forEach((b, k) => { setClass(b, 'on', k === startGun); b.setAttribute('aria-pressed', k === startGun ? 'true' : 'false'); });
   $('gunTip').textContent = startGun ? 'Start with the ' + WEAPONS[startGun].name + ' (' + (WEAPONS[startGun].mag + startReserve(startGun)) + ' shots) and the Acorn Blaster as a backup.' : 'The Acorn Blaster never runs out. Crates bring the others.';
   // the preview holds the picked gun
-  if (state === 'menu' && sq) sq.guns.forEach((g, k) => { g.visible = k === startGun; });
+  if (state === 'menu' && sq) holdGun(sq, startGun);
 }
 
 // ---------- hats: unlocked by milestones, kept on this device, worn in solo and online
@@ -4270,7 +4488,11 @@ function paintHats(){
 }
 const soloMapBtns = MAPS.map((D, i) => $('soloMaps').appendChild(mapCard(i, pickSoloMap)));
 function paintSolo(){ paintHats(); paintDaily(); $('hatTip').textContent = 'Wearing: ' + HATS.find(q => q.id === hatId).name + '. ' + (isTouch ? 'Tap' : 'Hover') + ' a locked hat to see how to unlock it.'; paintGuns(); wearHat(sq, hatId); paintSolo0(); }
-function paintSolo0(){ soloCharBtns.forEach((b, k) => setClass(b, 'on', k === soloChar)); soloMapBtns.forEach((b, i) => setClass(b, 'on', i === mapIdx)); }
+function paintSolo0(){
+  soloCharBtns.forEach((b, k) => setClass(b, 'on', k === soloChar));
+  const c = CHARS[soloChar]; $('charTip').textContent = c.power ? 'Special: ' + c.power + '.' : TheName(soloChar) + ' has no special ability.';
+  soloMapBtns.forEach((b, i) => setClass(b, 'on', i === mapIdx));
+}
 function pickSoloChar(k){ setSoloChar(k); faceFront(); try { localStorage.setItem('squirrel-commando-char', String(k)); } catch (e) {} paintSolo(); sfx.swap(); }
 function pickSoloMap(i){ buildMap(i); try { localStorage.setItem('squirrel-commando-map', String(i)); } catch (e) {} paintSolo(); sfx.swap(); }
 try { setSoloChar(clamp(parseInt(localStorage.getItem('squirrel-commando-char') || '0', 10) || 0, 0, CHARS.length - 1)); } catch (e) {}
@@ -4286,11 +4508,12 @@ function makeFighter(idx, ch){
   const model = buildCritter(CHARS[ch].id, PALS[idx]); scene.add(model.group);
   const cam = new THREE.PerspectiveCamera(66, 1, 0.1, 600); scene.add(cam);
   const fl = new THREE.Sprite(flash.material.clone()); fl.scale.set(0.8, 0.8, 1); fl.visible = false;
+  const fl2 = new THREE.Sprite(fl.material); fl2.scale.set(0.8, 0.8, 1); fl2.visible = false; // Jojo's left gun
   const sb = new THREE.Mesh(shieldBubble.geometry, shieldBubble.material); sb.position.y = 0.85; sb.visible = false; model.group.add(sb);
   const f = {
-    idx, model, cam, fl, flT: 0, sb, pal: PALS[idx], ch, name: CHARS[ch].name, tag: CHARS[ch].name, colors: model.colors,
+    idx, model, cam, fl, flT: 0, fl2, flT2: 0, sb, pal: PALS[idx], ch, name: CHARS[ch].name, tag: CHARS[ch].name, colors: model.colors,
     pos: new V3(), vel: new V3(), tpos: new V3(), tvel: new V3(), tyaw: 0, yaw: 0, pitch: -0.05, onGround: true, jumps: 0, phase: 0,
-    hp: 100, inv: 0, dead: false, respawnT: 0, deaths: 0, hurtT: 0, hitT: 0, killT: 0,
+    hp: baseHp(ch), maxHp: baseHp(ch), inv: 0, dead: false, respawnT: 0, deaths: 0, hurtT: 0, hitT: 0, killT: 0,
     w: null, cur: 0, gun: null, pw: null, camMode: 0, camDist: 4.6, camSide: 1.4, camH: 2.05, shake: 0, sprinting: false,
     aim: new V3(0, 0, -1), right: new V3(1, 0, 0), up: new V3(0, 1, 0),
     in: { x: 0, y: 0, fire: false, sprint: false, jumpQ: false }, last: null, yawOff: 0, shots: 0, shotsSeen: undefined, lastPr: null,
@@ -4300,19 +4523,19 @@ function makeFighter(idx, ch){
   return f;
 }
 function resetLoadout(f){
-  f.w = WEAPONS.map((w, i) => ({ owned: i === 0, ammo: w.mag, reserve: i === 0 ? Infinity : 0 }));
-  f.gun = { cd: 0, reload: 0, reloadTotal: 1, recoil: 0, bloom: 0, switchT: 0, spin: 0 };
+  f.w = WEAPONS.map((w, i) => ({ owned: i === 0, ammo: magOf(i, f.ch), reserve: i === 0 ? Infinity : 0 }));
+  f.gun = { cd: 0, reload: 0, reloadTotal: 1, recoil: 0, bloom: 0, switchT: 0, spin: 0, idle: 0 };
   f.pw = { rapid: 0, dmg: 0, shield: 0, speed: 0 };
   const g0 = f.gun0 | 0;
-  if (g0 > 0 && WEAPONS[g0]) { f.w[g0].owned = true; f.w[g0].reserve = startReserve(g0); }
+  if (g0 > 0 && WEAPONS[g0]) { f.w[g0].owned = true; f.w[g0].reserve = startReserve(g0) * ammoMul(f.ch); }
   showGun(f, WEAPONS[g0] ? g0 : 0);
 }
-function showGun(f, i){ f.cur = i; f.model.guns.forEach((g, k) => { g.visible = k === i; }); f.model.muzzles[i].add(f.fl); }
+function showGun(f, i){ f.cur = i; holdGun(f.model, i); f.model.muzzles[i].add(f.fl); if (f.model.off) f.model.off.muzzles[i].add(f.fl2); }
 function spawnAt(f, s){
   f.pos.set(s[0], 0, s[1]); f.tpos.copy(f.pos); f.vel.set(0, 0, 0); f.tvel.set(0, 0, 0); f.onGround = true; f.jumps = 0;
   const yw = Math.atan2(s[0], s[1]);
   f.yawOff += yw - f.yaw; f.yaw = yw; f.tyaw = yw; f.pitch = -0.05;
-  f.hp = 100; f.dead = false; f.respawnT = 0; f.inv = 1.5; f.hurtT = 0;
+  f.hp = f.maxHp; f.dead = false; f.respawnT = 0; f.inv = 1.5; f.hurtT = 0;
   resetLoadout(f);
   f.model.group.visible = true; f.model.group.position.copy(f.pos); f.model.group.rotation.y = yw;
 }
@@ -4334,7 +4557,7 @@ function fMove(f, dt){
   const I = f.in; let ix = I.x, iz = I.y; const il = Math.hypot(ix, iz); if (il > 1) { ix /= il; iz /= il; }
   const sprint = I.sprint && iz > 0.3; f.sprinting = sprint;
   const sy = Math.sin(f.yaw), cy = Math.cos(f.yaw);
-  const spd = (sprint ? 10.5 : 7) * (f.pw.speed > 0 ? 1.45 : 1) * (WEAPONS[f.cur].spin && I.fire ? 0.7 : 1);
+  const spd = (sprint ? 10.5 : 7) * speedMul(f.ch) * (f.pw.speed > 0 ? 1.45 : 1) * (WEAPONS[f.cur].spin && I.fire ? 0.7 : 1);
   const wx = (-sy * iz + cy * ix) * spd, wz = (-cy * iz - sy * ix) * spd, acc = f.onGround ? 14 : 5;
   f.vel.x = damp(f.vel.x, wx, acc, dt); f.vel.z = damp(f.vel.z, wz, acc, dt); f.vel.y -= 26 * dt;
   if (I.jumpQ) {
@@ -4342,8 +4565,11 @@ function fMove(f, dt){
     if (f.onGround) { f.vel.y = 9.2; f.onGround = false; f.jumps = 1; sfx.jump(); burst(f.pos, 6, [0x9b7148, 0xc8b08a], 2, 0.07, 0.4, -6, 0.2); }
     else if (f.jumps < (f.pw.speed > 0 ? 3 : 2)) { f.vel.y = 8.4; f.jumps++; sfx.jump(); pvA.copy(f.pos); pvA.y += 0.3; burst(pvA, 8, 0xfff6e6, 2.5, 0.08, 0.35, 0, 0); }
   }
+  f.climbing = treeClimb(f, f.ch, wx, wz);
+  const prevY = f.pos.y;
   f.pos.addScaledVector(f.vel, dt);
-  if (f.pos.y <= 0) { f.pos.y = 0; f.vel.y = 0; f.onGround = true; f.jumps = 0; } else f.onGround = false;
+  const floor = floorAt(f, f.ch, prevY);
+  if (f.pos.y <= floor) { f.pos.y = floor; f.vel.y = 0; f.onGround = true; f.jumps = 0; } else f.onGround = false;
   collide(f.pos, 0.45);
   for (const o of pvp.fighters) {
     if (o === f || o.dead) continue;
@@ -4357,7 +4583,9 @@ function fTimers(f, dt){
   for (const k in f.pw) if (f.pw[k] > 0) { f.pw[k] = Math.max(0, f.pw[k] - dt); if (f.pw[k] === 0) pvpToast(f, POWERS[k].name + ' wore off'); }
   f.inv = Math.max(0, f.inv - dt); f.hurtT = Math.max(0, f.hurtT - dt * 2.2);
   g.cd -= dt; g.recoil = damp(g.recoil, 0, 12, dt); g.bloom = damp(g.bloom, 0, 5, dt); g.switchT = Math.max(0, g.switchT - dt);
-  if (g.reload > 0) { g.reload -= dt; if (g.reload <= 0) { g.reload = 0; const s = f.w[f.cur], take = Math.min(w.mag - s.ammo, s.reserve); s.ammo += take; if (s.reserve !== Infinity) s.reserve -= take; } }
+  if (g.reload > 0) { g.reload -= dt; if (g.reload <= 0) { g.reload = 0; const s = f.w[f.cur], take = Math.min(magOf(f.cur, f.ch) - s.ammo, s.reserve); s.ammo += take; if (s.reserve !== Infinity) s.reserve -= take; } }
+  g.idle += dt;
+  if (!f.in.fire && !f.dead && g.idle > AUTO_RELOAD && Math.hypot(f.vel.x, f.vel.z) > 1.5) fReload(f);
   if (w.spin) {
     const want = f.in.fire && g.reload <= 0 && g.switchT <= 0 && !f.dead ? 1 : 0;
     if (want && g.spin === 0) sfx.spin();
@@ -4366,7 +4594,7 @@ function fTimers(f, dt){
 }
 function fReload(f){
   const w = WEAPONS[f.cur], s = f.w[f.cur], g = f.gun;
-  if (g.reload > 0 || g.switchT > 0 || s.ammo >= w.mag || s.reserve <= 0) return;
+  if (g.reload > 0 || g.switchT > 0 || s.ammo >= magOf(f.cur, f.ch) || s.reserve <= 0) return;
   g.reloadTotal = w.reload * (f.pw.rapid > 0 ? 0.5 : 1); g.reload = g.reloadTotal; sfx.reload();
 }
 function fSwitch(f, i){
@@ -4385,7 +4613,7 @@ function fAnimate(f, dt){
   m.group.position.copy(f.pos);
   m.group.rotation.y = angLerp(m.group.rotation.y, f.yaw, 1 - Math.exp(-20 * dt));
   m.body.position.y = air ? 0 : Math.abs(Math.sin(f.phase)) * 0.09 * run + Math.sin(time * 2.2 + f.idx) * 0.012;
-  m.body.rotation.x = -run * 0.12 + (air ? 0.15 : 0);
+  m.body.rotation.x = f.climbing ? -0.55 : -run * 0.12 + (air ? 0.15 : 0);
   m.feet.forEach((ft, i) => {
     const ph = f.phase + i * Math.PI;
     ft.position.z = -0.06 + (air ? -0.1 : Math.sin(ph) * 0.22 * run);
@@ -4400,7 +4628,8 @@ function fAnimate(f, dt){
   m.gunRig.rotation.x = clamp(f.pitch, -0.5, 0.7) * 0.8 + rec * 0.3 - rk * 0.9 - sw * 0.9;
   m.gunRig.rotation.z = rk * 0.6; m.gunRig.position.z = -0.32 + rec * 0.12;
   const mg = m.guns[3].userData.spin; if (mg) mg.rotation.z += dt * g.spin * 30;
-  f.flT -= dt; f.fl.visible = f.flT > 0;
+  syncOff(m);
+  f.flT -= dt; f.fl.visible = f.flT > 0; f.fl2.visible = f.flT2 > 0; f.flT2 -= dt;
   f.sb.visible = f.pw.shield > 0 && !f.dead;
   if (f.sb.visible) f.sb.scale.setScalar(1 + Math.sin(time * 6) * 0.04);
   if (!f.dead) m.group.visible = !(f.inv > 0 && f.pw.shield <= 0 && Math.floor(f.inv * 16) % 2 === 0);
@@ -4416,7 +4645,7 @@ function fCamera(f, dt){
   const cm = CAMS[f.camMode];
   f.camDist = damp(f.camDist, cm.dist + (f.sprinting ? 0.6 : 0) + (f.dead ? 3 : 0), 6, dt);
   f.camSide = damp(f.camSide, cm.side * sideFit(f.cam.aspect), 6, dt); f.camH = damp(f.camH, cm.h + (f.dead ? 2 : 0), 6, dt);
-  pvA.set(f.pos.x, f.pos.y * 0.85 + f.camH, f.pos.z);
+  pvA.set(f.pos.x, f.pos.y - 0.15 * Math.min(f.pos.y, 3) + f.camH, f.pos.z);
   f.cam.position.copy(pvA).addScaledVector(f.aim, -f.camDist).addScaledVector(f.right, f.camSide);
   if (f.cam.position.y < 0.45) f.cam.position.y = 0.45;
   pvB.copy(f.cam.position).add(f.aim);
@@ -4424,6 +4653,7 @@ function fCamera(f, dt){
   f.cam.lookAt(pvB);
   f.cam.fov = damp(f.cam.fov, cm.fov + (f.sprinting ? 7 : 0) + (f.pw.speed > 0 ? 4 : 0), 6, dt);
   f.shake = Math.max(0, f.shake - dt * 2.5);
+  f.treeOp = damp(f.treeOp || 1, f.ch === CH.BOGO && !f.dead && upTree(f) ? TREE_SEE : 1, 6, dt);
 }
 
 // ---------- shooting
@@ -4440,9 +4670,9 @@ function pvpCast(o, dir, minT, targets, assist){
   }
   return r;
 }
-function fSpread(f, out, spread){
+function fSpread(f, out, spread, base){
   const a = rand(0, TAU), r = Math.sqrt(Math.random()) * spread;
-  return out.copy(f.aim).addScaledVector(f.right, Math.cos(a) * r).addScaledVector(f.up, Math.sin(a) * r).normalize();
+  return out.copy(base || f.aim).addScaledVector(f.right, Math.cos(a) * r).addScaledVector(f.up, Math.sin(a) * r).normalize();
 }
 function fShoot(f){
   const w = WEAPONS[f.cur], s = f.w[f.cur], g = f.gun;
@@ -4453,32 +4683,37 @@ function fShoot(f){
     return;
   }
   if (w.spin && g.spin < 1) return;
-  s.ammo--; g.cd = w.rate * (f.pw.rapid > 0 ? 0.5 : 1); g.recoil = w.kick; f.shots++;
+  const sides = gunSides(f.ch, s.ammo);
+  s.ammo -= sides.length; g.cd = w.rate * (f.pw.rapid > 0 ? 0.5 : 1); g.recoil = w.kick; g.idle = 0; f.shots++;
   const mul = f.pw.dmg > 0 ? 2 : 1;
   const moving = Math.hypot(f.vel.x, f.vel.z) > 1.2;
   const spread = w.spread + g.bloom + (w.pellets > 1 ? 0 : (moving ? 0.01 : 0) + (f.onGround ? 0 : 0.018));
   g.bloom = Math.min(g.bloom + w.bloom, w.maxBloom);
   f.model.group.updateMatrixWorld(true); f.cam.updateMatrixWorld(true);
-  f.model.muzzles[f.cur].getWorldPosition(pvC);
   const targets = foesOf(f), assist = pvp.mode === 'couch' ? 1.35 : 1.12, minT = f.camDist - 0.4;
-  if (pvp.coop) coopFire(f, w, spread, mul, minT);
-  else if (w.projectile) {
-    fSpread(f, pvD, spread);
-    const r = pvpCast(f.cam.position, pvD, minT, targets, assist);
-    pvA.copy(f.cam.position).addScaledVector(pvD, Math.min(r.t, 60)).sub(pvC).normalize();
-    pvpLaunch(f, pvC, pvA.multiplyScalar(32).add(pvB.set(0, 2.5, 0)), w.dmg * mul, w.splash, true);
-  } else {
-    let agg = null;
-    for (let p = 0; p < w.pellets; p++) {
-      fSpread(f, pvD, spread);
+  for (const side of sides) {
+    (side < 0 && f.model.off ? f.model.off.muzzles[f.cur] : f.model.muzzles[f.cur]).getWorldPosition(pvC);
+    const base = sideAim(pvSide, f.aim, f.right, side);
+    if (pvp.coop) coopFire(f, w, spread, mul, minT, base);
+    else if (w.projectile) {
+      fSpread(f, pvD, spread, base);
       const r = pvpCast(f.cam.position, pvD, minT, targets, assist);
-      pvA.copy(f.cam.position).addScaledVector(pvD, r.t);
-      tracer(pvC, pvA);
-      if (r.tgt) { if (!agg) agg = { d: 0, h: false, pt: pvA.clone(), tgt: r.tgt }; agg.d += (r.head ? w.head : w.dmg) * mul; agg.h = agg.h || r.head; }
-      else impact(r.kind, pvA, w.pellets > 1 ? 2 : 5);
+      pvA.copy(f.cam.position).addScaledVector(pvD, Math.min(r.t, 60)).sub(pvC).normalize();
+      pvpLaunch(f, pvC, pvA.multiplyScalar(32).add(pvB.set(0, 2.5, 0)), w.dmg * mul, w.splash, true);
+    } else {
+      let agg = null;
+      for (let p = 0; p < w.pellets; p++) {
+        fSpread(f, pvD, spread, base);
+        const r = pvpCast(f.cam.position, pvD, minT, targets, assist);
+        pvA.copy(f.cam.position).addScaledVector(pvD, r.t);
+        tracer(pvC, pvA);
+        if (r.tgt) { if (!agg) agg = { d: 0, h: false, pt: pvA.clone(), tgt: r.tgt }; agg.d += (r.head ? w.head : w.dmg) * mul; agg.h = agg.h || r.head; }
+        else impact(r.kind, pvA, w.pellets > 1 ? 2 : 5);
+      }
+      if (agg) dealHit(f, agg.tgt, agg.d, agg.h, agg.pt);
     }
-    if (agg) dealHit(f, agg.tgt, agg.d, agg.h, agg.pt);
   }
+  if (sides.length > 1) f.flT2 = 0.05;
   f.flT = 0.05; f.fl.material.rotation = rand(0, TAU); f.fl.scale.setScalar(rand(0.6, 0.95) * (w.id === 'shotgun' ? 1.6 : w.id === 'launcher' ? 1.3 : 1));
   sfx.shoot(w.id); f.shake = Math.min(1.2, f.shake + w.shake);
   if (s.ammo === 0 && s.reserve > 0) fReload(f);
@@ -4488,12 +4723,18 @@ function remoteShotFx(f){
   const w = WEAPONS[f.cur]; if (w.projectile) return;
   const cp = Math.cos(f.pitch), sy = Math.sin(f.yaw), cy = Math.cos(f.yaw);
   f.aim.set(-sy * cp, Math.sin(f.pitch), -cy * cp); f.right.set(cy, 0, -sy); f.up.crossVectors(f.right, f.aim).normalize();
-  f.model.group.updateMatrixWorld(true); f.model.muzzles[f.cur].getWorldPosition(pvC);
-  for (let p = 0; p < Math.min(w.pellets, 6); p++) {
-    fSpread(f, pvD, w.spread + 0.01);
-    const r = pvpCast(pvC, pvD, 0, [], 1);
-    pvA.copy(pvC).addScaledVector(pvD, r.t); tracer(pvC, pvA); impact(r.kind, pvA, 2);
+  f.model.group.updateMatrixWorld(true);
+  const sides = dualGuns(f.ch) && f.model.off ? [1, -1] : [0];
+  for (const side of sides) {
+    (side < 0 ? f.model.off.muzzles[f.cur] : f.model.muzzles[f.cur]).getWorldPosition(pvC);
+    const base = sideAim(pvSide, f.aim, f.right, side);
+    for (let p = 0; p < Math.min(w.pellets, 6); p++) {
+      fSpread(f, pvD, w.spread + 0.01, base);
+      const r = pvpCast(pvC, pvD, 0, [], 1);
+      pvA.copy(pvC).addScaledVector(pvD, r.t); tracer(pvC, pvA); impact(r.kind, pvA, 2);
+    }
   }
+  if (sides.length > 1) f.flT2 = 0.05;
   f.flT = 0.05; f.fl.material.rotation = rand(0, TAU); f.gun.recoil = w.kick;
   sfx.shoot(w.id);
 }
@@ -4572,7 +4813,7 @@ function revive(f){
   const by = pvp.fighters.filter(o => o !== f && !o.dead).sort((a, b) => Math.hypot(a.pos.x - f.pos.x, a.pos.z - f.pos.z) - Math.hypot(b.pos.x - f.pos.x, b.pos.z - f.pos.z))[0];
   if (by && pvp.mode === 'couch') progUpdate(q => { q.revives++; });
   if (by && by.st) { by.st.revives++; if (f.st) f.st.savedBy++; if (pvp.mode === 'online' && by !== pvp.local) by.st.savedByYou = (by.st.savedByYou || 0) + 1; }
-  f.dead = false; f.hp = 50; f.inv = 1.5; f.revT = 0; f.respawnT = 0; f.hurtT = 0;
+  f.dead = false; f.hp = f.maxHp / 2; f.inv = 1.5; f.revT = 0; f.respawnT = 0; f.hurtT = 0;
   f.model.group.visible = true;
   pvA.copy(f.pos); pvA.y += 1; burst(pvA, 24, [0x8fe07a, 0xfff6e6], 4, 0.08, 0.7, -6, 0.4); sfx.pickup(true);
   if (pvp.mode === 'couch' || f === pvp.local) { pvpToast(f, 'Revived!'); showPvBanner(f.tag + ' is back up!', ''); }
@@ -4689,15 +4930,16 @@ function pvpTake(k, f){
 function fCollect(f, kind, power, wi, at){
   if (f.st) f.st.picks++;
   const p = (at || f.pos).clone();
-  if (kind === 'golden') { f.hp = Math.min(100, f.hp + 40); pvpToast(f, '+40 HP'); sfx.pickup(true); }
+  if (kind === 'golden') { f.hp = Math.min(f.maxHp, f.hp + 40); pvpToast(f, '+40 HP'); sfx.pickup(true); }
   else if (kind === 'acorn' && pvp.coop) { pvpToast(f, '+2 stash'); sfx.pickup(false); }
-  else if (kind === 'acorn') { f.hp = Math.min(100, f.hp + 10); pvpToast(f, '+10 HP'); sfx.pickup(false); }
+  else if (kind === 'acorn') { f.hp = Math.min(f.maxHp, f.hp + 10); pvpToast(f, '+10 HP'); sfx.pickup(false); }
   else if (kind === 'power' && POWERS[power]) { f.pw[power] = POWERS[power].dur; pvpToast(f, POWERS[power].name + '!'); sfx.power(); burst(p, 24, [POWERS[power].color, 0xffffff], 5, 0.07, 0.6, -2, 0.3); }
   else if (kind === 'crate') {
     if (!(wi >= 1 && wi < WEAPONS.length)) wi = pick(CRATE_GUNS);
     const w = WEAPONS[wi], s = f.w[wi];
-    if (!s.owned) { s.owned = true; s.ammo = w.mag; s.reserve = w.give; fSwitch(f, wi); pvpToast(f, 'New weapon: ' + w.name); }
-    else { s.reserve += w.give; pvpToast(f, '+' + w.give + ' ' + w.name + ' ammo'); }
+    const give = w.give * ammoMul(f.ch);
+    if (!s.owned) { s.owned = true; s.ammo = magOf(wi, f.ch); s.reserve = give; fSwitch(f, wi); pvpToast(f, 'New weapon: ' + w.name); }
+    else { s.reserve += give; pvpToast(f, '+' + give + ' ' + w.name + ' ammo'); }
     sfx.crate(); burst(p, 20, [0xa8743c, 0xff8a1e, 0xffd23f], 5, 0.09, 0.6, -14, 0.5);
   }
 }
@@ -4776,7 +5018,7 @@ function applyRemoteState(f, st){
   else if (f.dead) { f.dead = false; f.pos.set(num(st.x), num(st.y), num(st.z)); f.model.group.visible = true; }
   f.tpos.set(num(st.x), num(st.y), num(st.z)); f.tvel.set(num(st.vx), 0, num(st.vz)); f.tyaw = num(st.yw); f.pitch = clamp(num(st.pt), PMIN, PMAX);
   const wi = num(st.w) | 0; if (wi !== f.cur && WEAPONS[wi]) showGun(f, wi);
-  f.hp = clamp(num(st.hp), 0, 100); f.pw.shield = st.sh ? 1 : 0; f.inv = st.iv ? 0.3 : 0; f.onGround = !!st.g;
+  f.hp = clamp(num(st.hp), 0, f.maxHp); f.pw.shield = st.sh ? 1 : 0; f.inv = st.iv ? 0.3 : 0; f.onGround = !!st.g;
   const d = num(st.d) | 0;
   // who bonked them: the count that went up
   const kb = Array.isArray(st.kb) ? [0, 1, 2, 3].map(i => Math.max(0, num(st.kb[i]) | 0)) : null;
@@ -5004,7 +5246,7 @@ function tvSend(dt){
   const hud = pvp.fighters.map(f => {
     const s = f.w[f.cur];
     const k = pvp.coop ? f.kills | 0 : bonksOf(f), o = pvp.coop ? 0 : Math.max(0, ...foesOf(f).map(bonksOf));
-    const h = { hp: Math.ceil(f.hp), dead: f.dead ? 1 : 0, wn: WEAPONS[f.cur].name, am: s.ammo, rs: s.reserve === Infinity ? -1 : s.reserve, k, o, slot: f.idx + 1, ht: f.st ? f.st.hits | 0 : 0 };
+    const h = { hp: Math.ceil(f.hp), mx: f.maxHp, dead: f.dead ? 1 : 0, wn: WEAPONS[f.cur].name, am: s.ammo, rs: s.reserve === Infinity ? -1 : s.reserve, k, o, slot: f.idx + 1, ht: f.st ? f.st.hits | 0 : 0 };
     if (pvp.phase === 'over' && pvp.awards) h.aw = pvp.awards.filter(a => a.who === f).map(a => a.icon + ' ' + a.name);
     return h;
   });
@@ -5022,10 +5264,11 @@ function buildPv(el, f){
     '<div class="pv-pw"></div>' +
     '<div class="pv-ammo"><div class="wname"></div><div class="ammo"><b>12</b><span></span></div><div class="bar"><i style="transform:scaleX(0)"></i></div></div>' +
     '<div class="crosshair"><span></span><span></span><span></span><span></span><em></em></div>' +
+    '<div class="crosshair c2" hidden><span></span><span></span><span></span><span></span><em></em></div>' +
     '<div class="pv-msg"></div><div class="toast"></div>';
   const q = (s) => el.querySelector(s);
   f.ui = { el, dmg: q('.pv-dmg'), shield: q('.pv-shield'), fx: q('.pv-fx'), top: q('.pv-top'), name: q('.pv-name'), hp: q('.pv-top .bar i'), hpn: q('.pv-hpn'),
-    pw: q('.pv-pw'), wname: q('.wname'), ammo: q('.ammo b'), res: q('.ammo span'), bar: q('.pv-ammo .bar i'), cross: q('.crosshair'), msg: q('.pv-msg'), toast: q('.toast'), cache: {} };
+    pw: q('.pv-pw'), wname: q('.wname'), ammo: q('.ammo b'), res: q('.ammo span'), bar: q('.pv-ammo .bar i'), cross: q('.crosshair'), cross2: q('.crosshair.c2'), msg: q('.pv-msg'), toast: q('.toast'), cache: {} };
 }
 function uiSet(f, key, el, prop, val){ if (f.ui.cache[key] !== val) { f.ui.cache[key] = val; if (prop === 'text') el.textContent = val; else if (prop === 'tf') el.style.transform = val; else if (prop === 'op') el.style.opacity = val; else if (prop === 'html') el.innerHTML = val; } }
 function pvpHudUpdate(dt){
@@ -5034,7 +5277,7 @@ function pvpHudUpdate(dt){
     const u = f.ui, s = f.w[f.cur], w = WEAPONS[f.cur], g = f.gun;
     const label = pvp.mode === 'couch' ? f.tag : 'You · ' + f.name;
     uiSet(f, 'name', u.name, 'text', label);
-    uiSet(f, 'hp', u.hp, 'tf', 'scaleX(' + (f.hp / 100).toFixed(3) + ')');
+    uiSet(f, 'hp', u.hp, 'tf', 'scaleX(' + (f.hp / f.maxHp).toFixed(3) + ')');
     uiSet(f, 'hpn', u.hpn, 'text', f.dead ? 'KO' : String(Math.ceil(f.hp)));
     setClass(u.top, 'low', f.hp <= 30);
     uiSet(f, 'wn', u.wname, 'text', w.name);
@@ -5060,12 +5303,19 @@ function pvpHudUpdate(dt){
     uiSet(f, 'sh', u.shield, 'op', f.pw.shield > 0 ? '0.6' : '0');
     const moving = Math.hypot(f.vel.x, f.vel.z) > 1.2;
     const spread = w.spread + g.bloom + (w.pellets > 1 ? 0 : (moving ? 0.01 : 0) + (f.onGround ? 0 : 0.018));
-    u.cross.style.setProperty('--gap', (5 + spread * 260).toFixed(1) + 'px');
-    u.cross.style.setProperty('--c', f.pw.dmg > 0 ? '#ff7a6a' : 'var(--cream)');
-    const onT = f.dead ? null : pvp.coop ? coopCast(f.cam.position, f.aim, f.camDist - 0.4) : pvpCast(f.cam.position, f.aim, f.camDist - 0.4, foesOf(f).filter(o => !o.dead), 1);
-    setClass(u.cross, 'on', !!onT && (onT.kind === 'enemy' || !!onT.tgt));
+    const dual = dualGuns(f.ch), px = dual ? dualPx(f.cam, u.el.clientHeight).toFixed(1) + 'px' : '';
+    u.cross2.hidden = !dual;
     f.hitT = Math.max(0, f.hitT - dt); f.killT = Math.max(0, f.killT - dt);
-    setClass(u.cross, 'hit', f.hitT > 0); setClass(u.cross, 'kill', f.killT > 0);
+    // Jojo: a crosshair for each gun, right and left of the middle
+    (dual ? [[u.cross, 1], [u.cross2, -1]] : [[u.cross, 0]]).forEach(([c, side]) => {
+      c.style.setProperty('--gap', (5 + spread * 260).toFixed(1) + 'px');
+      c.style.setProperty('--c', f.pw.dmg > 0 ? '#ff7a6a' : 'var(--cream)');
+      c.style.left = side ? 'calc(50% ' + (side > 0 ? '+ ' : '- ') + px + ')' : '';
+      const dir = sideAim(pvSide, f.aim, f.right, side);
+      const onT = f.dead ? null : pvp.coop ? coopCast(f.cam.position, dir, f.camDist - 0.4) : pvpCast(f.cam.position, dir, f.camDist - 0.4, foesOf(f).filter(o => !o.dead), 1);
+      setClass(c, 'on', !!onT && (onT.kind === 'enemy' || !!onT.tgt));
+      setClass(c, 'hit', f.hitT > 0); setClass(c, 'kill', f.killT > 0);
+    });
   }
   let sc;
   if (pvp.coop) {
@@ -5118,9 +5368,9 @@ function coopCast(o, dir, minT){
   }
   return r;
 }
-function coopFire(f, w, spread, mul, minT){
+function coopFire(f, w, spread, mul, minT, base){
   if (w.projectile) {
-    fSpread(f, pvD, spread);
+    fSpread(f, pvD, spread, base);
     const r = coopCast(f.cam.position, pvD, minT);
     pvA.copy(f.cam.position).addScaledVector(pvD, Math.min(r.t, 60)).sub(pvC).normalize();
     pvpLaunch(f, pvC, pvA.multiplyScalar(32).add(pvB.set(0, 2.5, 0)), w.dmg * mul, w.splash, true);
@@ -5128,7 +5378,7 @@ function coopFire(f, w, spread, mul, minT){
   }
   const agg = new Map();
   for (let p = 0; p < w.pellets; p++) {
-    fSpread(f, pvD, spread);
+    fSpread(f, pvD, spread, base);
     const r = coopCast(f.cam.position, pvD, minT);
     pvA.copy(f.cam.position).addScaledVector(pvD, r.t);
     tracer(pvC, pvA);
@@ -5486,7 +5736,7 @@ function pvpRender(){
       f.cam.aspect = w / h; f.cam.updateProjectionMatrix();
       pvp.fighters.forEach(g => setTail(g, g === f ? CAMS[g.camMode].tail : 1));
       for (const e of enemies) billboardBar(e, f.cam);
-      sky.position.copy(f.cam.position);
+      sky.position.copy(f.cam.position); treeFade(f.treeOp || 1);
       renderer.setViewport(x, y, w, h); renderer.setScissor(x, y, w, h);
       renderer.render(scene, f.cam);
     });
@@ -5499,7 +5749,7 @@ function pvpRender(){
     f.cam.aspect = W / H; f.cam.updateProjectionMatrix();
     setTail(f, CAMS[f.camMode].tail); pvp.remotes.forEach(o => setTail(o, 1));
     for (const e of enemies) billboardBar(e, f.cam);
-    sky.position.copy(f.cam.position);
+    sky.position.copy(f.cam.position); treeFade(f.treeOp || 1);
     renderer.render(scene, f.cam);
   }
 }
@@ -6021,7 +6271,7 @@ function netPadTick(dt){
   } else if (state === 'pvp' && pvp && pvp.local) {
     const f = pvp.local, w = f.w[f.cur];
     const k = pvp.coop ? f.kills | 0 : bonksOf(f), o = pvp.coop ? 0 : Math.max(0, ...foesOf(f).map(bonksOf));
-    const hud = { slot: 1, hp: Math.ceil(f.hp), dead: f.dead ? 1 : 0, wn: WEAPONS[f.cur].name, am: w.ammo, rs: w.reserve === Infinity ? -1 : w.reserve, k, o, ht: f.st ? f.st.hits | 0 : 0 };
+    const hud = { slot: 1, hp: Math.ceil(f.hp), mx: f.maxHp, dead: f.dead ? 1 : 0, wn: WEAPONS[f.cur].name, am: w.ammo, rs: w.reserve === Infinity ? -1 : w.reserve, k, o, ht: f.st ? f.st.hits | 0 : 0 };
     if (pvp.phase === 'over' && pvp.awards) hud.aw = pvp.awards.filter(a => a.who === f).map(a => a.icon + ' ' + a.name);
     msg = { role: 'tv', code: P.code, phase: pvp.phase, m: pvp.m, hud: [hud], coop: pvp.coop ? 1 : 0, menu: tvMenu() };
     if (pvp.coop) msg.co = { w: wave, sd: Math.ceil(stash) };
@@ -6495,6 +6745,7 @@ function attract(dt){
   setFps(false);
   animateSquirrel(dt);
 }
+let soloTreeOp = 1;
 function update(dt){
   for (const k in pw) {
     if (pw[k] > 0) { pw[k] = Math.max(0, pw[k] - dt); if (pw[k] === 0) toast(POWERS[k].name + ' wore off'); }
@@ -6503,6 +6754,8 @@ function update(dt){
   gun.cd -= dt; gun.recoil = damp(gun.recoil, 0, 12, dt); gun.bloom = damp(gun.bloom, 0, 5, dt);
   gun.switchT = Math.max(0, gun.switchT - dt);
   if (gun.reload > 0) { gun.reload -= dt; if (gun.reload <= 0) { gun.reload = 0; finishReload(); } }
+  gun.idle += dt;
+  if (!firing && gun.idle > AUTO_RELOAD && Math.hypot(player.vel.x, player.vel.z) > 1.5) startReload();
   if (WEAPONS[cur].spin) {
     const want = firing && gun.reload <= 0 && gun.switchT <= 0 ? 1 : 0;
     if (want && gun.spin === 0) sfx.spin();
@@ -6518,6 +6771,7 @@ function update(dt){
     }
   }
   updateCamera(dt, sprint);
+  soloTreeOp = damp(soloTreeOp, soloChar === CH.BOGO && upTree(player) ? TREE_SEE : 1, 6, dt);
   shake = Math.max(0, shake - dt * 2.5);
   if (firing && gun.cd <= 0) tryShoot();
   for (let i = enemies.length - 1; i >= 0; i--) {
@@ -6557,7 +6811,7 @@ function frame(){
   gpPoll(dt);
   soloPadTick(dt);
   netPadTick(dt);
-  if (state === 'paused') { renderer.render(scene, camera); return; }
+  if (state === 'paused') { treeFade(soloTreeOp); renderer.render(scene, camera); return; }
   time += dt;
   if (state === 'pvp' && pvp) {
     pvpUpdate(dt);
@@ -6571,11 +6825,12 @@ function frame(){
   else if (state === 'menu' || state === 'lobby') { attract(dt); if (state === 'lobby') lobbyTick(dt); }
   // the Solo setup's shifted picture is only for that screen
   if (state !== 'menu' && state !== 'select' && camera.view && camera.view.enabled) camera.clearViewOffset();
-  else if (state === 'perk') { updateFloats(dt); renderer.render(scene, camera); return; }
+  else if (state === 'perk') { updateFloats(dt); treeFade(soloTreeOp); renderer.render(scene, camera); return; }
   else { updatePickups(dt); updateProps(dt); }
   updateParticles(dt);
   updateFloats(dt);
   updateAmbient(dt);
+  treeFade(state === 'playing' || state === 'paused' || state === 'perk' || state === 'over' ? soloTreeOp : 1);
   renderer.render(scene, camera);
 }
 
