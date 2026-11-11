@@ -2,7 +2,7 @@
 
 A third-person 3D shooter built with three.js, in a single `index.html`.
 
-Play as Bogo the squirrel, the Panda, Jojo the German Shepherd, Soto the Jack Russell, Bearito the bear or Mormo the orange cat across eight maps:
+Play as Bogo the squirrel, the Panda, Jojo the German Shepherd, Soto the Jack Russell, Bearito the bear, Mormo the orange cat or DJ Duck across eight maps:
 Sunny Meadow, Frosty Pines, Canyon Dunes, Spooky Hollow, Blossom Garden, Coconut Cove, Ember Peaks and Mushroom Grove.
 
 ## Fighters
@@ -11,12 +11,13 @@ Each fighter has a special ability (shown under the fighters on Solo setup), in 
 
 | Fighter | Ability |
 |---|---|
-| Bogo | Climbs the stash tree: walk into the trunk and he goes up it and stands on top of the tree. Crows can't swoop at him up there and gnomes can't reach him, and the tree turns see-through in his view so he can see what's below. Walk off the edge to come down. |
+| Bogo | Climbs trees: walk into any tree's trunk (the stash tree or any solid tree in the arena) and he goes up it and stands on top, anywhere on its leaves. He stops at the top until you let go of the direction you climbed with. Crows can't swoop at him up there and gnomes can't reach him, he can aim much further down, and the tree turns see-through in his view so he can see what's below. Walk off the edge to come down. |
 | Panda | Double health (200). |
 | Jojo | Two guns at once, one in each paw, each with its own crosshair. Every pull fires both, and he carries double ammo. |
 | Soto | Double speed. |
 | Bearito | No special ability. |
 | Mormo | Scares the crows: they never swoop at him, or at anything near him (the stash included); they keep circling overhead. |
+| DJ Duck | Flies: every jump in the air is a flap, as many as you like, up to a height limit. Stop flapping and he glides down slowly. |
 
 ## Modes
 

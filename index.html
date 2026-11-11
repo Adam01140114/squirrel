@@ -334,7 +334,7 @@ body.touch .desk-only{display:none}
 @media (max-width:899px) and (min-width:600px){#soloScr .placard{max-width:640px;margin:0 auto;width:100%}}
 
 .pick-h{margin:0;font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--cream-dim)}
-.pick-row{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;--pc:var(--acorn)}
+.pick-row{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;--pc:var(--acorn)}
 .map-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
 .map-card{display:grid;grid-template-columns:44px 1fr;gap:4px 10px;align-items:center;text-align:left;padding:8px;border-radius:12px;background:rgba(0,0,0,.25);border:2px solid transparent;color:var(--cream);font-family:var(--body);cursor:pointer;min-width:0}
 .map-card i{grid-row:span 2;width:44px;height:44px;border-radius:10px;background:var(--sw);box-shadow:inset 0 0 0 2px rgba(0,0,0,.2)}
@@ -359,7 +359,7 @@ body.touch .desk-only{display:none}
 #selScr.quad .sel-panels{grid-template-columns:repeat(4,minmax(0,1fr));justify-content:stretch}
 #selScr.quad .sel-panel{padding:10px;align-content:start;gap:8px}
 #selScr.quad .sel-panels{align-items:end}
-#selScr.quad .sel-list{grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}
+#selScr.quad .sel-list{grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
 #selScr.quad .sel-ch{padding:5px 1px;font-size:10px}
 #selScr.quad .sel-ch i{width:24px;height:24px}
 #selScr.quad .sel-name{font-size:22px}
@@ -375,7 +375,7 @@ body.touch .desk-only{display:none}
 .sel-head b{font-size:22px;font-weight:400}
 .sel-head span{font-size:14px;color:var(--cream-dim);font-family:var(--body)}
 .sel-name{font-family:var(--display);font-size:30px;line-height:1}
-.sel-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.sel-list{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
 .sel-ch{display:grid;justify-items:center;align-content:start;gap:5px;padding:8px 3px;border-radius:10px;background:rgba(0,0,0,.25);border:2px solid transparent;color:var(--cream);font-family:var(--body);font-size:11px;line-height:1.15;cursor:pointer;text-align:center;min-width:0}
 .sel-ch i{width:30px;height:30px;border-radius:50%;background:var(--sw);box-shadow:inset 0 0 0 2px rgba(0,0,0,.25)}
 .sel-ch.on{border-color:var(--pc);background:rgba(255,243,220,.1)}
@@ -412,7 +412,7 @@ body.touch .desk-only{display:none}
   #selScr.net .sel-maps .map-card{flex:0 0 auto;min-height:40px}
   #selScr.net .sel-panels{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;align-items:stretch}
   #selScr.net .sel-panel.mine{grid-column:1 / -1;order:-1;padding:12px;gap:10px}
-  #selScr.net .sel-panel.mine .sel-list{grid-template-columns:repeat(6,minmax(0,1fr));gap:4px}
+  #selScr.net .sel-panel.mine .sel-list{grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
   #selScr.net .sel-panel.mine .sel-ch{padding:6px 1px;font-size:10px;min-height:52px}
   #selScr.net .sel-panel.mine .sel-ch i{width:26px;height:26px}
   #selScr.net .sel-panel.mine .sel-foot .btn{flex:1;min-height:48px;font-size:18px}
@@ -853,15 +853,16 @@ const PALS = [
   { name: 'Green', fur: 0x6f9a4a, light: 0xa6cf7e, dark: 0x3f5f2a, cream: 0xeaf3d8, band: 0x2f9e44, css: '#8fd14f' }
 ];
 const CHARS = [
-  { id: 'squirrel', name: 'Bogo', kind: 'Squirrel', sw: 'linear-gradient(135deg,#c8692a 55%,#f6e2bf 55%)', power: 'Climbs the stash tree: walk into the trunk and shoot from the top, where crows can\'t get him' },
+  { id: 'squirrel', name: 'Bogo', kind: 'Squirrel', sw: 'linear-gradient(135deg,#c8692a 55%,#f6e2bf 55%)', power: 'Climbs trees: walk into any trunk and shoot from the top, where crows can\'t get him' },
   { id: 'panda', name: 'Panda', kind: '', the: true, sw: 'linear-gradient(135deg,#f4f4f0 55%,#222326 55%)', power: 'Double health' },
   { id: 'shepherd', name: 'Jojo', kind: 'German Shepherd', sw: 'linear-gradient(135deg,#c48a48 55%,#2a2420 55%)', power: 'Two guns at once, two crosshairs and double ammo' },
   { id: 'jack', name: 'Soto', kind: 'Jack Russell', sw: 'linear-gradient(135deg,#f6f3ee 55%,#c8803c 55%)', power: 'Double speed' },
   { id: 'bear', name: 'Bearito', kind: 'Bear', sw: 'linear-gradient(135deg,#7a4a2a 55%,#c8955e 55%)' },
-  { id: 'cat', name: 'Mormo', kind: 'Orange Cat', sw: 'linear-gradient(135deg,#e8862e 55%,#fbe6c8 55%)', power: 'Scares the crows: they never swoop down near him' }
+  { id: 'cat', name: 'Mormo', kind: 'Orange Cat', sw: 'linear-gradient(135deg,#e8862e 55%,#fbe6c8 55%)', power: 'Scares the crows: they never swoop down near him' },
+  { id: 'duck', name: 'DJ Duck', kind: 'Duck', sw: 'linear-gradient(135deg,#ffd23f 55%,#ff8a1e 55%)', power: 'Flies: keep pressing jump in the air to flap higher, and he glides down slowly' }
 ];
 // special abilities, by fighter (CHARS index)
-const CH = { BOGO: 0, PANDA: 1, JOJO: 2, SOTO: 3, MORMO: 5 };
+const CH = { BOGO: 0, PANDA: 1, JOJO: 2, SOTO: 3, MORMO: 5, DUCK: 6 };
 const baseHp = (ch) => ch === CH.PANDA ? 200 : 100;
 const speedMul = (ch) => ch === CH.SOTO ? 2 : 1;
 const dualGuns = (ch) => ch === CH.JOJO;
@@ -1130,6 +1131,7 @@ function runController(code, slot){
     ps.querySelector('h3').textContent = (slot ? 'P' + slot : 'You') + ': pick your fighter';
     ps.querySelector('.pad-map button').hidden = slot !== 1;
   };
+  let aimLo = -0.55; // how far down this fighter can aim right now (further for Bogo up the tree; the TV says)
   const I = { x: 0, y: 0, yaw: 0, pitch: -0.05, f: 0, s: 0, j: 0, r: 0, w: 0, c: 0, ch: 0, gn: 0, rdy: 0, mp: 0, ps: 0, mn: null };
   I.gn = 3; try { I.gn = Math.max(0, Math.min(6, parseInt(localStorage.getItem('squirrel-commando-gun') ?? '3', 10) || 0)); } catch (e) {}
   let room = null, lastHp = 100, lastPhase = '', lastDead = false, lastK = 0, lastHt = 0;
@@ -1180,7 +1182,7 @@ function runController(code, slot){
       I.x = dx / R; I.y = -dy / R; I.s = m > R * 1.15 ? 1 : 0;
       knob.style.transform = 'translate(' + dx + 'px,' + dy + 'px)'; send();
     } else if (e.pointerId === look.id) {
-      I.yaw -= (e.clientX - look.x) * 0.0085; I.pitch = cl(I.pitch - (e.clientY - look.y) * 0.0065, -0.55, 0.8);
+      I.yaw -= (e.clientX - look.x) * 0.0085; I.pitch = cl(I.pitch - (e.clientY - look.y) * 0.0065, aimLo, 0.8);
       look.x = e.clientX; look.y = e.clientY; send();
     }
   });
@@ -1194,7 +1196,7 @@ function runController(code, slot){
   fire.addEventListener('pointerdown', (e) => { e.preventDefault(); I.f = 1; fire.classList.add('on'); fireAim.id = e.pointerId; fireAim.x = e.clientX; fireAim.y = e.clientY; try { fire.setPointerCapture(e.pointerId); } catch (_) {} send(); });
   fire.addEventListener('pointermove', (e) => {
     if (e.pointerId !== fireAim.id) return;
-    I.yaw -= (e.clientX - fireAim.x) * 0.0085; I.pitch = cl(I.pitch - (e.clientY - fireAim.y) * 0.0065, -0.55, 0.8);
+    I.yaw -= (e.clientX - fireAim.x) * 0.0085; I.pitch = cl(I.pitch - (e.clientY - fireAim.y) * 0.0065, aimLo, 0.8);
     fireAim.x = e.clientX; fireAim.y = e.clientY; send();
   });
   ['pointerup', 'pointercancel'].forEach(t => fire.addEventListener(t, () => { I.f = 0; fireAim.id = null; fire.classList.remove('on'); send(); }));
@@ -1281,7 +1283,8 @@ function runController(code, slot){
     else stat('Playing. Watch the TV.');
     if (hud && typeof hud === 'object') {
       $('padHud').hidden = false;
-      const hp = cl(+hud.hp || 0, 0, 100);
+      const hp = cl(+hud.hp || 0, 0, hud.mx || 100);
+      aimLo = typeof hud.pm === 'number' ? hud.pm : -0.55;
       $('padHp').style.transform = 'scaleX(' + (hp / (hud.mx || 100)) + ')'; $('padHpN').textContent = hud.dead ? 'KO' : String(Math.ceil(hp));
       $('padAmmo').textContent = String(hud.wn || '') + ' ' + (hud.am === undefined ? '' : hud.am + '/' + (hud.rs === -1 ? '∞' : hud.rs));
       const co = tv.presence.co;
@@ -1486,13 +1489,66 @@ function freeSpot(minR, maxR, clearance){
 }
 function group(x, z, s, rot){ const g = new THREE.Group(); g.position.set(x, groundH(x, z) - 0.1, z); g.rotation.y = rot === undefined ? rng() * TAU : rot; g.scale.setScalar(s || 1); return inWorld(g); }
 
+// ---- trees Bogo can climb: every solid tree in the arena, and the stash tree. Each one keeps its
+// trunk (it stops pushing a climber out above trunkH), its top as spheres he can stand anywhere on,
+// and its own copies of its materials, so it alone fades while he's up it.
+const climbables = [];
+const TREE_SEE = 0.3; // how solid a tree looks to whoever is up it
+function climbable(g, col, trunkH, spheres){
+  g.updateMatrixWorld(true);
+  const sc = g.scale.x, top = spheres.map(q => { const p = g.localToWorld(new V3(q.x, q.y, q.z)); return { x: p.x, y: p.y, z: p.z, r: q.r * sc }; });
+  const mats = [], copies = new Map();
+  g.traverse(o => {
+    if (!o.material) return;
+    if (!copies.has(o.material)) { const m = o.material.clone(); copies.set(o.material, m); mats.push(m); }
+    o.material = copies.get(o.material);
+  });
+  col.trunk = g.position.y + trunkH * sc;
+  const c = { x: col.x, z: col.z, r: col.r, top, mats, op: 1, reach: Math.max(...top.map(q => Math.hypot(q.x - col.x, q.z - col.z) + q.r)), peak: Math.max(...top.map(q => q.y + q.r)) };
+  climbables.push(c);
+  return c;
+}
+// the highest tree top at this spot: { h, c } (h is 0 where there's no tree overhead)
+const TU = { h: 0, c: null };
+function treeUnder(x, z){
+  TU.h = 0; TU.c = null;
+  for (const c of climbables) {
+    if (Math.abs(x - c.x) > c.reach || Math.abs(z - c.z) > c.reach) continue;
+    for (const q of c.top) {
+      const d2 = (x - q.x) * (x - q.x) + (z - q.z) * (z - q.z);
+      if (d2 < q.r * q.r) { const y = q.y + Math.sqrt(q.r * q.r - d2); if (y > TU.h) { TU.h = y; TU.c = c; } }
+    }
+  }
+  return TU;
+}
+const canopyAt = (x, z) => treeUnder(x, z).h;
+// the tree someone is up: the one under their feet, or the trunk they're climbing
+function treeOf(b){
+  const c = treeUnder(b.pos.x, b.pos.z).c; if (c) return c;
+  for (const t of climbables) if (Math.hypot(b.pos.x - t.x, b.pos.z - t.z) < t.r + 1.2) return t;
+  return null;
+}
+// how solid each tree looks in the view about to be drawn: the viewer's tree at op, every other one solid
+function setTreeOp(c, op){
+  op = op > 0.99 ? 1 : op;
+  if (c.op === op) return;
+  c.op = op;
+  const see = op < 1;
+  for (const m of c.mats) { if (m.transparent !== see) { m.transparent = see; m.needsUpdate = true; } m.opacity = op; m.depthWrite = !see; }
+}
+function treeFade(tree, op){ for (const c of climbables) setTreeOp(c, c === tree ? op : 1); }
+
 // ---- props (all parented to the current world)
 function oakTree(x, z, s, collide, leaf, trunk){
   const g = group(x, z, s);
   mk(GEO.trunk, M(trunk || 0x6b4423), 0, 1.6, 0, g);
   const lm = M(leaf);
   for (let k = 0; k < 4; k++) mk(rpick(GEO.blob), lm, rr(-1, 1), 3.7 + rr(0, 1.5), rr(-1, 1), g).rotation.set(rng() * 3, rng() * 3, 0);
-  if (collide) colliders.push({ x, z, r: 0.6 * s, h: 7 * s, kind: 'wood' });
+  if (collide) {
+    const col = { x, z, r: 0.6 * s, h: 7 * s, kind: 'wood' }; colliders.push(col);
+    // the leaf blobs' faces sit a little inside their points
+    climbable(g, col, 3.2, g.children.slice(1).map(m => ({ x: m.position.x, y: m.position.y, z: m.position.z, r: m.geometry.parameters.radius * 0.8 })));
+  }
   return g;
 }
 function pineTree(x, z, s, collide, col, snowy){
@@ -1501,7 +1557,7 @@ function pineTree(x, z, s, collide, col, snowy){
   const pm = M(col);
   mk(GEO.pine[0], pm, 0, 2.6, 0, g); mk(GEO.pine[1], pm, 0, 3.8, 0, g); mk(GEO.pine[2], pm, 0, 4.9, 0, g);
   if (snowy) { const sm = M(0xf6f9fc); mk(GEO.cap[0], sm, 0, 3.15, 0, g); mk(GEO.cap[1], sm, 0, 4.3, 0, g); mk(GEO.cap[2], sm, 0, 5.4, 0, g); }
-  if (collide) colliders.push({ x, z, r: 0.55 * s, h: 7 * s, kind: 'wood' });
+  if (collide) { const col = { x, z, r: 0.55 * s, h: 7 * s, kind: 'wood' }; colliders.push(col); climbable(g, col, 2, [{ x: 0, y: 2.6, z: 0, r: 1.4 }, { x: 0, y: 3.8, z: 0, r: 1.05 }, { x: 0, y: 4.9, z: 0, r: 0.75 }]); }
   return g;
 }
 function deadTree(x, z, s, collide, col){
@@ -1511,7 +1567,7 @@ function deadTree(x, z, s, collide, col){
     const b = mk(GEO.branch, bm, 0, 2.6 + k * 0.55, 0, g);
     const a = k * 1.7 + rng(); b.rotation.set(Math.cos(a) * 0.9, a, Math.sin(a) * 0.9); b.position.x = Math.cos(a) * 0.5; b.position.z = Math.sin(a) * 0.5;
   }
-  if (collide) colliders.push({ x, z, r: 0.55 * s, h: 6 * s, kind: 'wood' });
+  if (collide) { const col = { x, z, r: 0.55 * s, h: 6 * s, kind: 'wood' }; colliders.push(col); climbable(g, col, 3, [{ x: 0, y: 3.6, z: 0, r: 1.1 }]); }
   return g;
 }
 function rock(x, z, s, cols){
@@ -1586,7 +1642,7 @@ function palmTree(x, z, s, collide){
   const fm = [M(0x3f9a3a), M(0x4fae44)];
   for (let i = 0; i < 7; i++) { const a = i / 7 * TAU; const fr = mk(GEO.box, fm[i % 2], px + Math.cos(a) * 1.2, y - 0.25, Math.sin(a) * 1.2, g); fr.scale.set(2.6, 0.08, 0.55); fr.rotation.set(0, -a, -0.45); }
   for (let i = 0; i < 3; i++) mk(GEO.ball, M(0x6e4a26), px + rr(-0.25, 0.25), y - 0.3, rr(-0.25, 0.25), g).scale.setScalar(0.17);
-  if (collide) colliders.push({ x, z, r: 0.4 * s, h: 6 * s, kind: 'wood' });
+  if (collide) { const col = { x, z, r: 0.4 * s, h: 6 * s, kind: 'wood' }; colliders.push(col); climbable(g, col, 4, [{ x: px, y: y - 3, z: 0, r: 3.1 }]); }
 }
 function umbrella(x, z){
   const g = group(x, z, rr(0.9, 1.1)), col = rpick([0xe8452e, 0x2f8fe0, 0xf2c230, 0x3fb86a]);
@@ -1621,7 +1677,7 @@ function toadstool(x, z, s, collide, cap){
   const stem = mk(GEO.cyl6, M(0xe8dcc8), 0, 1.4, 0, g); stem.scale.set(0.38, 2.8, 0.38);
   const c = mk(new THREE.SphereGeometry(1.5, 14, 8, 0, TAU, 0, Math.PI / 2), M(cap), 0, 2.7, 0, g); c.scale.y = 0.75;
   for (let i = 0; i < 6; i++) { const a = i / 6 * TAU + rng(); mk(GEO.ball, dots, Math.cos(a) * 0.95, 3.35, Math.sin(a) * 0.95, g, false).scale.set(0.2, 0.08, 0.2); }
-  if (collide) colliders.push({ x, z, r: 0.5 * s, h: 3.8 * s, kind: 'wood' });
+  if (collide) { const col = { x, z, r: 0.5 * s, h: 3.8 * s, kind: 'wood' }; colliders.push(col); climbable(g, col, 2.2, [{ x: 0, y: 2.225, z: 0, r: 1.6 }]); }
 }
 function glowShroom(x, z){
   const g = group(x, z, rr(0.6, 1.2)), col = rpick([0x9af0ff, 0xc89aff, 0x7affc8]);
@@ -1652,37 +1708,10 @@ function makeAcorn(golden){
   mk(AG.stem, golden ? acornMats.gcap : acornMats.cap, 0, 0.25, 0, g);
   return g;
 }
-// Bogo stands on top of the stash tree: he climbs the trunk (treeClimb), stands on the leaves
-// up there out of the crows' reach, and drops off the edge to come down. While he's up there his
-// view fades the tree (treeFade) so he can see what's below it.
-const PERCH = { y: 0, r: 0 };
 const TRUNK_R = 2.25;
-const treeMats = []; // the stash tree's own materials (copies of the shared ones), so it can fade alone
-function treeTop(oak, y, r){
-  PERCH.y = y; PERCH.r = r;
-  treeMats.length = 0;
-  const copies = new Map();
-  oak.traverse(o => {
-    if (!o.material) return;
-    if (!copies.has(o.material)) { const m = o.material.clone(); copies.set(o.material, m); treeMats.push(m); }
-    o.material = copies.get(o.material);
-  });
-  treeFade(1);
-}
-// how solid the stash tree looks in the view about to be drawn: 1 solid, down to TREE_SEE when you're up it
-const TREE_SEE = 0.3;
-let treeOpNow = 1;
-function treeFade(op){
-  if (Math.abs(op - treeOpNow) < 0.005 && treeMats.length && treeMats[0].opacity === op) return;
-  treeOpNow = op;
-  const see = op < 0.99;
-  for (const m of treeMats) {
-    if (m.transparent !== see) { m.transparent = see; m.needsUpdate = true; }
-    m.opacity = op; m.depthWrite = !see;
-  }
-}
 function stashTree(D){
   const oak = inWorld(new THREE.Group());
+  const col = { x: 0, z: 0, r: TRUNK_R, h: 14, kind: 'wood' }; colliders.push(col);
   const bark = M(D.bark[0]), barkDark = M(D.bark[1]);
   if (D.palm) {
     // an oasis palm on a rocky mound
@@ -1692,7 +1721,7 @@ function stashTree(D){
     const frond = M(0x4f9a3a), frond2 = M(0x3f8a3a);
     for (let i = 0; i < 9; i++) { const a = i / 9 * TAU; const f = mk(GEO.box, i % 2 ? frond : frond2, x + Math.cos(a) * 2.2, y - 0.5, Math.sin(a) * 2.2, oak); f.scale.set(4.6, 0.12, 0.9); f.rotation.set(0, -a, -0.45); }
     for (let i = 0; i < 4; i++) mk(GEO.ball, M(0x6e4a26), x + rr(-0.4, 0.4), y - 0.4, rr(-0.4, 0.4), oak).scale.setScalar(0.28);
-    treeTop(oak, y - 0.1, 3);
+    climbable(oak, col, y - 1.5, [{ x, y: y - 6.1, z: 0, r: 6 }]); // the crown and its drooping fronds
   } else {
     mk(new THREE.CylinderGeometry(1.25, 1.9, 7.5, 11), bark, 0, 3.6, 0, oak);
     for (let i = 0; i < 7; i++) {
@@ -1702,17 +1731,15 @@ function stashTree(D){
     const hollow = mk(new THREE.CircleGeometry(0.55, 16), M(0x22150b), 0, 2.4, 1.62, oak, false); hollow.scale.y = 1.4; hollow.rotation.x = -0.07;
     for (let i = 0; i < 3; i++) { const br = mk(new THREE.CylinderGeometry(0.25, 0.45, 4, 7), bark, 0, 7.2, 0, oak); br.rotation.z = (i - 1) * 0.7; br.rotation.y = i * 2.1; br.position.x = (i - 1) * 1.2; }
     const lm = D.canopy.map(c => M(c));
-    let top = 0;
+    const top = [];
     for (let i = 0; i < 9; i++) {
       const a = i / 9 * TAU, r = i === 0 ? 0 : rr(2.2, 3.6), size = rr(2.6, 3.6), y = 9 + rr(-0.6, 1.8);
       mk(new THREE.IcosahedronGeometry(size, 1), lm[i % 4], Math.cos(a) * r, y, Math.sin(a) * r, oak).rotation.set(rng(), rng(), rng());
-      if (i === 0) top = y + size; // the middle of the canopy: Bogo stands on top of it
+      top.push({ x: Math.cos(a) * r, y, z: Math.sin(a) * r, r: size * 0.93 }); // its faces sit a little inside the points
     }
-    treeTop(oak, top - 0.3, 3.2);
+    climbable(oak, col, 7.5, top);
     if (D.id === 'night') { const glow = new THREE.MeshStandardMaterial({ color: lin(0xffd36a), emissive: lin(0xff9a1a), emissiveIntensity: 1.6 }); for (const s of [-1, 1]) mk(GEO.ball, glow, 0.35 * s, 2.6, 1.66, oak, false).scale.set(0.12, 0.16, 0.05); }
   }
-  // up on top of the tree you're above the trunk, so it no longer pushes you out
-  colliders.push({ x: 0, z: 0, r: TRUNK_R, h: PERCH.y - 0.4, kind: 'wood' });
   stashAcorns.length = 0;
   for (let i = 0; i < 54; i++) {
     const a = i * 2.39996 + 0.5, r = 2.0 + (i % 5) * 0.16 + rng() * 0.15;
@@ -1854,7 +1881,7 @@ function buildMap(i){
   disposeWorld();
   const D = MAPS[i]; mapIdx = i; curMap = D;
   world = new THREE.Group(); scene.add(world);
-  colliders.length = 0;
+  colliders.length = 0; climbables.length = 0;
   rng = seeded(4242 + i * 977);
   // sky, fog and light
   skyMat.uniforms.top.value.setHex(D.sky[0]); skyMat.uniforms.mid.value.setHex(D.sky[1]); skyMat.uniforms.bot.value.setHex(D.sky[2]);
@@ -2125,7 +2152,7 @@ function buildCritter(kind, pal){
   const tailMats = [], segs = [];
   const tailMat = (hex) => { const m = MU(hex, { transparent: true }); tailMats.push(m); return m; };
   const addSeg = (r, mat, x, y, z, t) => { const m = mk(new THREE.IcosahedronGeometry(r, 1), mat, x, y, z, tail); m.userData.base = m.position.clone(); m.userData.t = t; segs.push(m); };
-  let feet, rig, off = null, colors, wag = 0.6, scale = 1;
+  let feet, rig, off = null, wings = null, colors, wag = 0.6, scale = 1;
 
   if (kind === 'panda') {
     const wh = M(0xf4f4f0), bk = M(0x222326);
@@ -2218,9 +2245,46 @@ function buildCritter(kind, pal){
     const to = tailMat(0xe8862e), ts = tailMat(0xb4561a);
     for (let i = 0; i < 9; i++) { const t = i / 8; addSeg(0.07 - t * 0.012, i % 2 ? ts : to, 0, t * 0.75 + Math.max(0, t - 0.6) * 0.4, 0.1 + Math.sin(t * Math.PI * 0.6) * 0.45 - Math.max(0, t - 0.75) * 0.5, t); }
     colors = [0xe8862e, 0xb4561a, 0xfbe6c8, pal.band]; wag = 1.2; scale = 0.92;
+  } else if (kind === 'duck') {
+    // DJ Duck: a yellow duck in big headphones and shades, with a gold chain and wings that flap as he flies
+    const yel = M(0xffd23f), cream = M(0xfff0b8), bill = M(0xff8a1e), shade = M(0x15151a, { roughness: 0.2, metalness: 0.4 });
+    const pads = M(0x2a2a33), red = M(0xe8452e), gold = M(0xffc23a, { roughness: 0.3, metalness: 0.7 });
+    blob(0.44, yel, 0, 0.62, 0, 0.95, 1, 1.05);
+    blob(0.3, cream, 0, 0.6, -0.22, 0.85, 0.95, 0.5);
+    for (const s of [-1, 1]) blob(0.2, yel, 0.2 * s, 0.36, 0.08, 0.7, 0.85, 1);
+    mk(S(0.3), yel, 0, 0, 0, head);
+    blob(0.13, bill, 0, -0.07, -0.3, 1.3, 0.42, 1.35, head);
+    blob(0.11, bill, 0, -0.12, -0.28, 1.15, 0.3, 1.2, head);
+    eyes(0.11, 0.07, -0.22, 0.05);
+    // shades over the eyes
+    for (const s of [-1, 1]) { const l = mk(GEO.box, shade, 0.11 * s, 0.08, -0.29, head); l.scale.set(0.15, 0.08, 0.03); }
+    const bridge = mk(GEO.box, shade, 0, 0.09, -0.3, head); bridge.scale.set(0.08, 0.02, 0.02);
+    // headphones: a band over the head and a cup on each side
+    mk(new THREE.TorusGeometry(0.31, 0.03, 6, 20, Math.PI), pads, 0, 0.02, 0, head);
+    for (const s of [-1, 1]) {
+      const cup = mk(new THREE.CylinderGeometry(0.11, 0.11, 0.08, 14), pads, 0.31 * s, 0.02, 0, head); cup.rotation.z = Math.PI / 2;
+      const dot = mk(new THREE.CylinderGeometry(0.07, 0.07, 0.02, 12), red, 0.355 * s, 0.02, 0, head, false); dot.rotation.z = Math.PI / 2;
+    }
+    const chain = mk(new THREE.TorusGeometry(0.2, 0.022, 6, 20), gold, 0, 0.92, -0.08, body); chain.rotation.x = Math.PI / 2 + 0.35;
+    mk(S(0.05, 10, 8), gold, 0, 0.76, -0.3, body);
+    // wings on pivots at the shoulders, so they can flap
+    wings = [-1, 1].map(s => {
+      const pv = new THREE.Group(); pv.position.set(0.36 * s, 0.84, 0.06); body.add(pv);
+      blob(0.22, yel, 0.06 * s, -0.16, 0, 0.35, 0.95, 1, pv);
+      return pv;
+    });
+    feet = feetOf(bill); rig = buildGunRig(body, yel, yel);
+    addSeg(0.1, tailMat(0xffd23f), 0, 0.12, 0.05, 1);
+    colors = [0xffd23f, 0xfff0b8, 0xff8a1e, pal.band]; wag = 0.8; scale = 0.95;
   }
   g.scale.setScalar(scale);
-  return { group: g, body, head, feet, gunRig: rig.gunRig, tail, segs, tailMats, guns: rig.guns, muzzles: rig.muzzles, off, wag, colors };
+  return { group: g, body, head, feet, gunRig: rig.gunRig, tail, segs, tailMats, guns: rig.guns, muzzles: rig.muzzles, off, wings, wag, colors };
+}
+// DJ Duck's wings: flapping in the air, folded on the ground
+function flapWings(m, air){
+  if (!m.wings) return;
+  const a = air ? 0.25 + Math.sin(time * 22) * 0.75 : 0.1;
+  m.wings[0].rotation.z = -a; m.wings[1].rotation.z = a;
 }
 // the gun a model holds (both paws for Jojo)
 function holdGun(m, i){
@@ -3614,7 +3678,7 @@ function tryShoot(){
   for (let i = 0; i < 3 * sides.length; i++) { tv.copy(aim).multiplyScalar(rand(3, 6)).add(new V3(rand(-1, 1), rand(0, 1.5), rand(-1, 1))); emit(muzzlePos, tv, pick([0xffd27a, 0xffb347, 0xfff1c1]), 0.035, 0.18, -6); }
   sfx.shoot(w.id); addShake(w.shake);
   const climb = { shotgun: 0.035, launcher: 0.02, sniper: 0.03, cannon: 0.05 }[w.id];
-  if (climb) pitch = clamp(pitch + climb, PMIN, PMAX);
+  if (climb) pitch = clamp(pitch + climb, pminFor(player, soloChar), PMAX);
   if (s.ammo === 0 && s.reserve > 0) startReload();
 }
 // shooter: the co-op fighter who fired (their view gets the numbers and hit marker)
@@ -3705,27 +3769,60 @@ function slam(e, r, dmg){
 }
 
 // ---------------------------------------------------------------- collisions
-function collide(p, r){
+// climber: Bogo, whom a tree only pushes out below the top of its trunk (above it he's in the leaves)
+function collide(p, r, climber){
   for (const c of colliders) {
-    if (p.y >= c.h) continue;
+    if (p.y >= (climber && c.trunk !== undefined ? c.trunk : c.h)) continue;
     const dx = p.x - c.x, dz = p.z - c.z, d = Math.hypot(dx, dz), m = c.r + r;
     if (d < m && d > 1e-5) { p.x = c.x + dx / d * m; p.z = c.z + dz / d * m; }
   }
   const d = Math.hypot(p.x, p.z), lim = ARENA - 0.6;
   if (d > lim) { p.x *= lim / d; p.z *= lim / d; }
 }
-// Bogo's climb: walking into the stash tree's trunk takes him up it, to the top
+// DJ Duck flies: every jump in the air is a flap (as many as you like), he glides down slowly when
+// you stop, and he can't go higher than FLY_MAX
+const FLY_MAX = 20, GLIDE = 3.5;
+const flapAt = new V3();
+function flap(b){
+  b.vel.y = b.pos.y < FLY_MAX ? 7.5 : 0; b.jumps++; sfx.jump();
+  flapAt.copy(b.pos); flapAt.y += 0.6; burst(flapAt, 6, [0xfff6e6, 0xffd23f], 2.5, 0.07, 0.4, -4, 0.3);
+}
+function glide(b){
+  if (b.vel.y < -GLIDE) b.vel.y = -GLIDE;
+  if (b.pos.y > FLY_MAX && b.vel.y > 0) b.vel.y = 0;
+}
+// Bogo's climb: walking into any tree's trunk takes him up it. Once he's started he keeps going up
+// through the leaves while you hold a direction, until he's on top.
 function treeClimb(b, ch, wx, wz){
-  if (ch !== CH.BOGO || !PERCH.y || b.pos.y >= PERCH.y) return false;
-  const d = Math.hypot(b.pos.x, b.pos.z);
-  if (d > TRUNK_R + 0.75 || d < 1e-3 || -(b.pos.x * wx + b.pos.z * wz) / d < 2) return false;
+  if (ch !== CH.BOGO || Math.hypot(wx, wz) < 2) return false;
+  let go = b.climbing && b.pos.y < canopyAt(b.pos.x, b.pos.z);
+  if (!go) for (const c of climbables) {
+    const dx = b.pos.x - c.x, dz = b.pos.z - c.z, d = Math.hypot(dx, dz);
+    if (d <= c.r + 0.75 && d > 1e-3 && -(dx * wx + dz * wz) / d >= 2 && b.pos.y < c.peak - 0.5) { go = true; break; }
+  }
+  if (!go) return false;
   b.vel.y = 7.5; b.onGround = false; b.jumps = 0;
   return true;
 }
-// what's under you: the top of the stash tree for Bogo once he's up there, the ground for everyone else
-const floorAt = (b, ch, prevY) => ch === CH.BOGO && PERCH.y && prevY >= PERCH.y - 0.5 && Math.hypot(b.pos.x, b.pos.z) < PERCH.r ? PERCH.y : 0;
-// up the stash tree (climbing it or on top): out of reach of crows and gnomes
-const upTree = (t) => !!t && !t.stash && t.pos.y > 3.5 && Math.hypot(t.pos.x, t.pos.z) < PERCH.r + 1;
+// the climb is over: on top of the leaves he stops there (no flying on up, no running off the far
+// side), and stays put until you let go of the direction you climbed with
+function reachTop(b){
+  const h = canopyAt(b.pos.x, b.pos.z);
+  if (!h || b.pos.y < h - 0.6) return;
+  b.vel.set(0, Math.min(b.vel.y, 0), 0); b.topLock = true;
+}
+// what's under you: for Bogo up a tree, the top of its leaves wherever he is (stepping up and down
+// the bumps as he walks); the ground for everyone else, and past the edge of the tree
+function floorAt(b, ch, prevY){
+  if (ch !== CH.BOGO || prevY < 1.2) return 0;
+  const h = canopyAt(b.pos.x, b.pos.z);
+  return h && prevY >= h - (b.onTree ? 3 : 0.6) ? h : 0;
+}
+// up a tree (climbing it or on top): out of reach of crows and gnomes
+const upTree = (t) => !!t && !t.stash && (!!t.climbing || !!t.onTree || (t.pos.y > 2.5 && canopyAt(t.pos.x, t.pos.z) > 0));
+// how far down you can aim: further for Bogo up the tree, so he can shoot what's below him
+const PMIN_TREE = -1.35;
+const pminFor = (b, ch) => ch === CH.BOGO && upTree(b) ? PMIN_TREE : PMIN;
 
 // ---------------------------------------------------------------- update: player
 function updatePlayer(dt){
@@ -3740,24 +3837,31 @@ function updatePlayer(dt){
   const sprint = ((keys.ShiftLeft || keys.ShiftRight) || GP.solo.sprint || (joy.active && il > 0.95)) && iz > 0.3;
   const sy = Math.sin(yaw), cy = Math.cos(yaw);
   const spd = (sprint ? 10.5 : 7) * speedMul(soloChar) * (pw.speed > 0 ? 1.45 : 1) * (1 + 0.12 * perkLv('paws')) * (WEAPONS[cur].spin && firing ? 0.7 : 1);
-  const wx = (-sy * iz + cy * ix) * spd, wz = (-cy * iz - sy * ix) * spd;
+  // just up a tree: Bogo stays put until you let go of the direction you climbed with
+  if (player.topLock && il < 0.2) player.topLock = false;
+  const hold = player.topLock ? 0 : 1;
+  const wx = (-sy * iz + cy * ix) * spd * hold, wz = (-cy * iz - sy * ix) * spd * hold;
   const acc = player.onGround ? 14 : 5;
   player.vel.x = damp(player.vel.x, wx, acc, dt); player.vel.z = damp(player.vel.z, wz, acc, dt);
   player.vel.y -= 26 * (mod('low') ? 0.45 : 1) * dt;
+  if (soloChar === CH.DUCK && !player.onGround) glide(player);
   if (jumpQueued) {
     jumpQueued = false;
     if (player.onGround) { player.vel.y = 9.2; player.onGround = false; player.jumps = 1; sfx.jump(); burst(player.pos, 6, [0x9b7148, 0xc8b08a], 2, 0.07, 0.4, -6, 0.2); }
+    else if (soloChar === CH.DUCK) flap(player);
     else if (player.jumps < (pw.speed > 0 ? 3 : 2)) { player.vel.y = 8.4; player.jumps++; sfx.jump(); tv.copy(player.pos); tv.y += 0.3; burst(tv, 8, 0xfff6e6, 2.5, 0.08, 0.35, 0, 0); }
   }
+  const wasClimbing = player.climbing;
   player.climbing = treeClimb(player, soloChar, wx, wz);
+  if (wasClimbing && !player.climbing) reachTop(player);
   const prevY = player.pos.y;
   player.pos.addScaledVector(player.vel, dt);
   const floor = floorAt(player, soloChar, prevY);
   if (player.pos.y <= floor) {
     if (!player.onGround && player.vel.y < -8) burst(player.pos, 6, [0x9b7148, 0xc8b08a], 2.2, 0.07, 0.4, -6, 0.2);
-    player.pos.y = floor; player.vel.y = 0; player.onGround = true; player.jumps = 0;
-  } else player.onGround = false;
-  collide(player.pos, 0.45);
+    player.pos.y = floor; player.vel.y = 0; player.onGround = true; player.jumps = 0; player.onTree = floor > 0;
+  } else { player.onGround = false; player.onTree = player.onTree && player.pos.y > 1.5; }
+  collide(player.pos, 0.45, soloChar === CH.BOGO);
   player.inv = Math.max(0, player.inv - dt);
   if (sprint && player.onGround && Math.random() < dt * 14) emit(player.pos, new V3(rand(-0.5, 0.5), rand(0.5, 1.2), rand(-0.5, 0.5)), pw.speed > 0 ? 0x8fd14f : 0xc8b08a, 0.08, 0.4, -2, 2);
   return sprint;
@@ -3796,7 +3900,7 @@ function animateSquirrel(dt){
     sq.gunRig.position.z = -0.32 + rec * 0.12;
   }
   const mg = sq.guns[3].userData.spin; if (mg) mg.rotation.z += dt * gun.spin * 30;
-  syncOff(sq);
+  syncOff(sq); flapWings(sq, air);
   const to = state === 'playing' ? CAMS[camMode].tail : 1;
   tailOpacity = damp(tailOpacity, to, 8, dt);
   sq.tailMats.forEach(m => { m.opacity = tailOpacity; m.depthWrite = tailOpacity > 0.97; });
@@ -4113,7 +4217,7 @@ function clearWorld(){
 }
 function resetGame(){
   clearWorld();
-  player.pos.set(0, 0, 9); player.vel.set(0, 0, 0); player.hp = baseHp(soloChar); soloTreeOp = 1; player.inv = 0; player.onGround = true; player.jumps = 0;
+  player.pos.set(0, 0, 9); player.vel.set(0, 0, 0); player.hp = baseHp(soloChar); soloTree.c = null; soloTree.op = 1; player.inv = 0; player.onGround = true; player.jumps = 0;
   yaw = Math.PI; pitch = -0.06; sq.group.rotation.y = yaw;
   WEAPONS.forEach((w, i) => { inv[i].owned = i === 0; inv[i].ammo = magOf(i, soloChar); inv[i].reserve = i === 0 ? Infinity : 0; });
   const g0 = DAILY && mod('blaster') ? 0 : startGun;
@@ -4260,13 +4364,13 @@ canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 document.addEventListener('mousemove', (e) => {
   if (state === 'pvp' && pvp && pvp.local && !isTouch && pvp.phase !== 'over' && $('pvpPauseScr').hidden) {
     const f = pvp.local; if (f.dead) return;
-    f.yaw -= (e.movementX || 0) * 0.0022; f.pitch = clamp(f.pitch - (e.movementY || 0) * 0.0022, PMIN, PMAX);
+    f.yaw -= (e.movementX || 0) * 0.0022; f.pitch = clamp(f.pitch - (e.movementY || 0) * 0.0022, pminFor(f, f.ch), PMAX);
     return;
   }
   if (state !== 'playing' || isTouch) return;
   const s = 0.0022;
   yaw -= (e.movementX || 0) * s;
-  pitch = clamp(pitch - (e.movementY || 0) * s, PMIN, PMAX);
+  pitch = clamp(pitch - (e.movementY || 0) * s, pminFor(player, soloChar), PMAX);
 });
 
 // touch
@@ -4274,8 +4378,8 @@ const joy = { id: null, ox: 0, oy: 0, x: 0, y: 0, active: false }, look = { id: 
 const tl = $('touchLayer'), joyBase = $('joyBase'), joyKnob = $('joyKnob');
 // turn the camera from a touch drag: your own fighter online, otherwise the solo hero
 function touchLook(dx, dy){
-  if (state === 'pvp' && pvp && pvp.local) { const f = pvp.local; if (f.dead || pvp.phase === 'over') return; f.yaw -= dx * 0.0065; f.pitch = clamp(f.pitch - dy * 0.005, PMIN, PMAX); return; }
-  yaw -= dx * 0.0065; pitch = clamp(pitch - dy * 0.005, PMIN, PMAX);
+  if (state === 'pvp' && pvp && pvp.local) { const f = pvp.local; if (f.dead || pvp.phase === 'over') return; f.yaw -= dx * 0.0065; f.pitch = clamp(f.pitch - dy * 0.005, pminFor(f, f.ch), PMAX); return; }
+  yaw -= dx * 0.0065; pitch = clamp(pitch - dy * 0.005, pminFor(player, soloChar), PMAX);
 }
 tl.addEventListener('pointerdown', (e) => {
   if (state !== 'playing' && !(state === 'pvp' && pvp && pvp.local)) return;
@@ -4558,19 +4662,29 @@ function fMove(f, dt){
   const sprint = I.sprint && iz > 0.3; f.sprinting = sprint;
   const sy = Math.sin(f.yaw), cy = Math.cos(f.yaw);
   const spd = (sprint ? 10.5 : 7) * speedMul(f.ch) * (f.pw.speed > 0 ? 1.45 : 1) * (WEAPONS[f.cur].spin && I.fire ? 0.7 : 1);
-  const wx = (-sy * iz + cy * ix) * spd, wz = (-cy * iz - sy * ix) * spd, acc = f.onGround ? 14 : 5;
+  // just up a tree: Bogo stays put until you let go of the direction you climbed with
+  if (f.topLock && il < 0.2) f.topLock = false;
+  const hold = f.topLock ? 0 : 1;
+  const wx = (-sy * iz + cy * ix) * spd * hold, wz = (-cy * iz - sy * ix) * spd * hold, acc = f.onGround ? 14 : 5;
   f.vel.x = damp(f.vel.x, wx, acc, dt); f.vel.z = damp(f.vel.z, wz, acc, dt); f.vel.y -= 26 * dt;
+  if (f.ch === CH.DUCK && !f.onGround) glide(f);
   if (I.jumpQ) {
     I.jumpQ = false;
     if (f.onGround) { f.vel.y = 9.2; f.onGround = false; f.jumps = 1; sfx.jump(); burst(f.pos, 6, [0x9b7148, 0xc8b08a], 2, 0.07, 0.4, -6, 0.2); }
+    else if (f.ch === CH.DUCK) flap(f);
     else if (f.jumps < (f.pw.speed > 0 ? 3 : 2)) { f.vel.y = 8.4; f.jumps++; sfx.jump(); pvA.copy(f.pos); pvA.y += 0.3; burst(pvA, 8, 0xfff6e6, 2.5, 0.08, 0.35, 0, 0); }
   }
+  const wasClimbing = f.climbing;
   f.climbing = treeClimb(f, f.ch, wx, wz);
+  if (wasClimbing && !f.climbing) reachTop(f);
   const prevY = f.pos.y;
   f.pos.addScaledVector(f.vel, dt);
   const floor = floorAt(f, f.ch, prevY);
-  if (f.pos.y <= floor) { f.pos.y = floor; f.vel.y = 0; f.onGround = true; f.jumps = 0; } else f.onGround = false;
-  collide(f.pos, 0.45);
+  if (f.pos.y <= floor) {
+    f.pos.y = floor; f.vel.y = 0; f.onGround = true; f.jumps = 0; f.onTree = floor > 0;
+  }
+  else { f.onGround = false; f.onTree = f.onTree && f.pos.y > 1.5; }
+  collide(f.pos, 0.45, f.ch === CH.BOGO);
   for (const o of pvp.fighters) {
     if (o === f || o.dead) continue;
     const dx = f.pos.x - o.pos.x, dz = f.pos.z - o.pos.z, d = Math.hypot(dx, dz);
@@ -4628,7 +4742,7 @@ function fAnimate(f, dt){
   m.gunRig.rotation.x = clamp(f.pitch, -0.5, 0.7) * 0.8 + rec * 0.3 - rk * 0.9 - sw * 0.9;
   m.gunRig.rotation.z = rk * 0.6; m.gunRig.position.z = -0.32 + rec * 0.12;
   const mg = m.guns[3].userData.spin; if (mg) mg.rotation.z += dt * g.spin * 30;
-  syncOff(m);
+  syncOff(m); flapWings(m, air);
   f.flT -= dt; f.fl.visible = f.flT > 0; f.fl2.visible = f.flT2 > 0; f.flT2 -= dt;
   f.sb.visible = f.pw.shield > 0 && !f.dead;
   if (f.sb.visible) f.sb.scale.setScalar(1 + Math.sin(time * 6) * 0.04);
@@ -4653,7 +4767,10 @@ function fCamera(f, dt){
   f.cam.lookAt(pvB);
   f.cam.fov = damp(f.cam.fov, cm.fov + (f.sprinting ? 7 : 0) + (f.pw.speed > 0 ? 4 : 0), 6, dt);
   f.shake = Math.max(0, f.shake - dt * 2.5);
-  f.treeOp = damp(f.treeOp || 1, f.ch === CH.BOGO && !f.dead && upTree(f) ? TREE_SEE : 1, 6, dt);
+  const up = f.ch === CH.BOGO && !f.dead && upTree(f);
+  if (up) f.tree = treeOf(f) || f.tree;
+  f.treeOp = damp(f.treeOp || 1, up ? TREE_SEE : 1, 6, dt);
+  if (f.pitch < pminFor(f, f.ch)) f.pitch = damp(f.pitch, PMIN, 8, dt);
 }
 
 // ---------- shooting
@@ -5016,7 +5133,7 @@ function applyRemoteState(f, st){
   const num = (v) => (typeof v === 'number' && isFinite(v)) ? v : 0;
   if (st.dd) { if (!f.dead) { f.dead = true; deathFx(f); } }
   else if (f.dead) { f.dead = false; f.pos.set(num(st.x), num(st.y), num(st.z)); f.model.group.visible = true; }
-  f.tpos.set(num(st.x), num(st.y), num(st.z)); f.tvel.set(num(st.vx), 0, num(st.vz)); f.tyaw = num(st.yw); f.pitch = clamp(num(st.pt), PMIN, PMAX);
+  f.tpos.set(num(st.x), num(st.y), num(st.z)); f.tvel.set(num(st.vx), 0, num(st.vz)); f.tyaw = num(st.yw); f.pitch = clamp(num(st.pt), pminFor(f, f.ch), PMAX);
   const wi = num(st.w) | 0; if (wi !== f.cur && WEAPONS[wi]) showGun(f, wi);
   f.hp = clamp(num(st.hp), 0, f.maxHp); f.pw.shield = st.sh ? 1 : 0; f.inv = st.iv ? 0.3 : 0; f.onGround = !!st.g;
   const d = num(st.d) | 0;
@@ -5185,7 +5302,7 @@ function botThink(f, dt){
   if (B.t <= 0) { B.t = L.react; B.aimErr.set(rand(-1, 1), rand(-0.5, 0.5), 0).multiplyScalar(L.err); if (Math.random() < 0.25) B.strafe *= -1; }
   if (aim) {
     const o = f.cam.position, dx = aim.x - o.x, dz = aim.z - o.z, dy = aim.y + aimY - o.y, hd = Math.hypot(dx, dz) || 1;
-    const wantYaw = Math.atan2(-dx, -dz) + B.aimErr.x, wantPitch = clamp(Math.atan2(dy, hd) + B.aimErr.y, PMIN, PMAX);
+    const wantYaw = Math.atan2(-dx, -dz) + B.aimErr.x, wantPitch = clamp(Math.atan2(dy, hd) + B.aimErr.y, pminFor(f, f.ch), PMAX);
     let dyaw = wantYaw - f.yaw; while (dyaw > Math.PI) dyaw -= TAU; while (dyaw < -Math.PI) dyaw += TAU;
     const step = L.turn * dt; f.yaw += clamp(dyaw, -step, step); f.pitch += clamp(wantPitch - f.pitch, -step, step);
     const dist = Math.hypot(aim.x - f.pos.x, aim.z - f.pos.z);
@@ -5231,9 +5348,9 @@ function padRead(){
     if (mnN !== f.last.mn) { f.last.mn = mnN; tvMenuPress(i.mn); if (!pvp) return; }
     if (n(i.ps) !== f.last.ps) { f.last.ps = n(i.ps); if ($('pvpPauseScr').hidden) showPvpPause(); }
     if (!f.dead && pvp.phase !== 'over') {
-      f.yaw = f.yawOff + n(i.yaw); f.pitch = clamp(n(i.pitch) + (f.pitchOff || 0), PMIN, PMAX);
+      f.yaw = f.yawOff + n(i.yaw); f.pitch = clamp(n(i.pitch) + (f.pitchOff || 0), pminFor(f, f.ch), PMAX);
       const a = pvp.phase === 'play' ? aimAssist(f.cam.position, f.yaw, f.pitch, aimPoints(f), GP.dt || 1 / 60, f.in.fire) : null;
-      if (a) { f.yawOff += a.dy; f.yaw += a.dy; f.pitchOff = clamp((f.pitchOff || 0) + a.dp, -1, 1); f.pitch = clamp(f.pitch + a.dp, PMIN, PMAX); }
+      if (a) { f.yawOff += a.dy; f.yaw += a.dy; f.pitchOff = clamp((f.pitchOff || 0) + a.dp, -1, 1); f.pitch = clamp(f.pitch + a.dp, pminFor(f, f.ch), PMAX); }
     }
     if (n(i.j) !== f.last.j) { f.last.j = n(i.j); if (!f.dead) f.in.jumpQ = true; }
     if (n(i.r) !== f.last.r) { f.last.r = n(i.r); if (!f.dead) fReload(f); }
@@ -5246,7 +5363,7 @@ function tvSend(dt){
   const hud = pvp.fighters.map(f => {
     const s = f.w[f.cur];
     const k = pvp.coop ? f.kills | 0 : bonksOf(f), o = pvp.coop ? 0 : Math.max(0, ...foesOf(f).map(bonksOf));
-    const h = { hp: Math.ceil(f.hp), mx: f.maxHp, dead: f.dead ? 1 : 0, wn: WEAPONS[f.cur].name, am: s.ammo, rs: s.reserve === Infinity ? -1 : s.reserve, k, o, slot: f.idx + 1, ht: f.st ? f.st.hits | 0 : 0 };
+    const h = { hp: Math.ceil(f.hp), mx: f.maxHp, pm: r2(pminFor(f, f.ch)), dead: f.dead ? 1 : 0, wn: WEAPONS[f.cur].name, am: s.ammo, rs: s.reserve === Infinity ? -1 : s.reserve, k, o, slot: f.idx + 1, ht: f.st ? f.st.hits | 0 : 0 };
     if (pvp.phase === 'over' && pvp.awards) h.aw = pvp.awards.filter(a => a.who === f).map(a => a.icon + ' ' + a.name);
     return h;
   });
@@ -5682,7 +5799,7 @@ function pvpUpdate(dt){
     I.x = clamp(ix, -1, 1); I.y = clamp(iz, -1, 1); I.sprint = !!(keys.ShiftLeft || keys.ShiftRight || GP.solo.sprint || (joy.active && Math.hypot(joy.x, joy.y) > 0.95)); I.fire = firing;
     if (isTouch && !f.dead && pvp.phase === 'play') {
       const a = aimAssist(f.cam.position, f.yaw, f.pitch, aimPoints(f), dt, firing);
-      if (a) { f.yaw += a.dy; f.pitch = clamp(f.pitch + a.dp, PMIN, PMAX); }
+      if (a) { f.yaw += a.dy; f.pitch = clamp(f.pitch + a.dp, pminFor(f, f.ch), PMAX); }
     }
     if (jumpQueued) { jumpQueued = false; I.jumpQ = true; }
     if (NETPAD) netPadInput(f, dt);
@@ -5736,7 +5853,7 @@ function pvpRender(){
       f.cam.aspect = w / h; f.cam.updateProjectionMatrix();
       pvp.fighters.forEach(g => setTail(g, g === f ? CAMS[g.camMode].tail : 1));
       for (const e of enemies) billboardBar(e, f.cam);
-      sky.position.copy(f.cam.position); treeFade(f.treeOp || 1);
+      sky.position.copy(f.cam.position); treeFade(f.tree, f.treeOp || 1);
       renderer.setViewport(x, y, w, h); renderer.setScissor(x, y, w, h);
       renderer.render(scene, f.cam);
     });
@@ -5749,7 +5866,7 @@ function pvpRender(){
     f.cam.aspect = W / H; f.cam.updateProjectionMatrix();
     setTail(f, CAMS[f.camMode].tail); pvp.remotes.forEach(o => setTail(o, 1));
     for (const e of enemies) billboardBar(e, f.cam);
-    sky.position.copy(f.cam.position); treeFade(f.treeOp || 1);
+    sky.position.copy(f.cam.position); treeFade(f.tree, f.treeOp || 1);
     renderer.render(scene, f.cam);
   }
 }
@@ -6244,9 +6361,9 @@ function netPadInput(f, dt){
   if (edge('ps') && $('pvpPauseScr').hidden) showPvpPause();
   f.in.x = clamp(n(i.x), -1, 1); f.in.y = clamp(n(i.y), -1, 1); f.in.fire = !!i.f; f.in.sprint = !!i.s;
   if (!f.dead && pvp.phase !== 'over') {
-    f.yaw = NETPAD.yawOff + n(i.yaw); f.pitch = clamp(n(i.pitch) + NETPAD.pitchOff, PMIN, PMAX);
+    f.yaw = NETPAD.yawOff + n(i.yaw); f.pitch = clamp(n(i.pitch) + NETPAD.pitchOff, pminFor(f, f.ch), PMAX);
     const a = pvp.phase === 'play' ? aimAssist(f.cam.position, f.yaw, f.pitch, aimPoints(f), dt, f.in.fire) : null;
-    if (a) { NETPAD.yawOff += a.dy; f.yaw += a.dy; NETPAD.pitchOff = clamp(NETPAD.pitchOff + a.dp, -1, 1); f.pitch = clamp(f.pitch + a.dp, PMIN, PMAX); }
+    if (a) { NETPAD.yawOff += a.dy; f.yaw += a.dy; NETPAD.pitchOff = clamp(NETPAD.pitchOff + a.dp, -1, 1); f.pitch = clamp(f.pitch + a.dp, pminFor(f, f.ch), PMAX); }
   } else NETPAD.yawOff = f.yaw - n(i.yaw);
   if (edge('j') && !f.dead) f.in.jumpQ = true;
   if (edge('r') && !f.dead) fReload(f);
@@ -6271,7 +6388,7 @@ function netPadTick(dt){
   } else if (state === 'pvp' && pvp && pvp.local) {
     const f = pvp.local, w = f.w[f.cur];
     const k = pvp.coop ? f.kills | 0 : bonksOf(f), o = pvp.coop ? 0 : Math.max(0, ...foesOf(f).map(bonksOf));
-    const hud = { slot: 1, hp: Math.ceil(f.hp), mx: f.maxHp, dead: f.dead ? 1 : 0, wn: WEAPONS[f.cur].name, am: w.ammo, rs: w.reserve === Infinity ? -1 : w.reserve, k, o, ht: f.st ? f.st.hits | 0 : 0 };
+    const hud = { slot: 1, hp: Math.ceil(f.hp), mx: f.maxHp, pm: r2(pminFor(f, f.ch)), dead: f.dead ? 1 : 0, wn: WEAPONS[f.cur].name, am: w.ammo, rs: w.reserve === Infinity ? -1 : w.reserve, k, o, ht: f.st ? f.st.hits | 0 : 0 };
     if (pvp.phase === 'over' && pvp.awards) hud.aw = pvp.awards.filter(a => a.who === f).map(a => a.icon + ' ' + a.name);
     msg = { role: 'tv', code: P.code, phase: pvp.phase, m: pvp.m, hud: [hud], coop: pvp.coop ? 1 : 0, menu: tvMenu() };
     if (pvp.coop) msg.co = { w: wave, sd: Math.ceil(stash) };
@@ -6436,7 +6553,7 @@ function soloPadTick(dt){
     if (state === 'playing') {
       if (fresh) S.yawOff = yaw - n(i.yaw);
       GP.solo.x += clamp(n(i.x), -1, 1); GP.solo.y += clamp(n(i.y), -1, 1); GP.solo.sprint = GP.solo.sprint || !!i.s;
-      yaw = S.yawOff + n(i.yaw); pitch = clamp(n(i.pitch) + (S.pitchOff || 0), PMIN, PMAX);
+      yaw = S.yawOff + n(i.yaw); pitch = clamp(n(i.pitch) + (S.pitchOff || 0), pminFor(player, soloChar), PMAX);
       if (j) jumpQueued = true;
       if (r) startReload();
       if (w) cycleWeapon(1);
@@ -6457,7 +6574,7 @@ function soloPadTick(dt){
   S.sendT -= dt; if (S.sendT > 0) return; S.sendT = 0.12;
   const sl = inv[cur];
   S.r.presence({ role: 'tv', code: S.code, phase: state === 'over' ? 'over' : state === 'paused' ? 'paused' : state === 'perk' ? 'perk' : 'play', m: 1, solo: 1, coop: 1,
-    hud: [{ slot: 1, hp: Math.ceil(player.hp / maxHp() * 100), dead: state === 'over' ? 1 : 0, wn: WEAPONS[cur].name, am: sl.ammo, rs: sl.reserve === Infinity ? -1 : sl.reserve, k: kills, o: 0 }],
+    hud: [{ slot: 1, hp: Math.ceil(player.hp / maxHp() * 100), pm: r2(pminFor(player, soloChar)), dead: state === 'over' ? 1 : 0, wn: WEAPONS[cur].name, am: sl.ammo, rs: sl.reserve === Infinity ? -1 : sl.reserve, k: kills, o: 0 }],
     co: { w: wave, sd: Math.ceil(stash) }, menu: tvMenu() }).catch(() => {});
 }
 
@@ -6651,7 +6768,7 @@ function gpClaim(idx, r, code){
 function gpLocal(P, dt, f){
   const S = GP.solo; S.x += P.a[0]; S.y -= P.a[1]; S.sprint = S.sprint || P.b[GB.B] || P.b[GB.L3];
   if (f) {
-    if (!f.dead && pvp.phase !== 'over') { f.yaw -= P.a[2] * 2.7 * dt; f.pitch = clamp(f.pitch - P.a[3] * 1.8 * dt, PMIN, PMAX); }
+    if (!f.dead && pvp.phase !== 'over') { f.yaw -= P.a[2] * 2.7 * dt; f.pitch = clamp(f.pitch - P.a[3] * 1.8 * dt, pminFor(f, f.ch), PMAX); }
     if (P.hit(GB.A)) jumpQueued = true;
     if (P.hit(GB.X)) fReload(f);
     if (P.hit(GB.RB)) fCycle(f, 1); if (P.hit(GB.LB)) fCycle(f, -1);
@@ -6659,7 +6776,7 @@ function gpLocal(P, dt, f){
     if (P.hit(GB.START)) { firing = false; showPvpPause(); return false; }
     if (P.b[GB.RT]) document.body.classList.add('playing');
   } else {
-    yaw -= P.a[2] * 2.7 * dt; pitch = clamp(pitch - P.a[3] * 1.8 * dt, PMIN, PMAX);
+    yaw -= P.a[2] * 2.7 * dt; pitch = clamp(pitch - P.a[3] * 1.8 * dt, pminFor(player, soloChar), PMAX);
     if (P.hit(GB.A)) jumpQueued = true;
     if (P.hit(GB.X)) startReload();
     if (P.hit(GB.RB)) cycleWeapon(1); if (P.hit(GB.LB)) cycleWeapon(-1);
@@ -6674,7 +6791,7 @@ function gpFighter(f, P){
   f.in.x = P.a[0]; f.in.y = -P.a[1]; f.in.fire = P.b[GB.RT]; f.in.sprint = P.b[GB.B] || P.b[GB.L3];
   f.last = null;
   if (f.dead || pvp.phase === 'over') return;
-  f.yaw -= P.a[2] * 2.6 * dt; f.pitch = clamp(f.pitch - P.a[3] * 1.8 * dt, PMIN, PMAX);
+  f.yaw -= P.a[2] * 2.6 * dt; f.pitch = clamp(f.pitch - P.a[3] * 1.8 * dt, pminFor(f, f.ch), PMAX);
   if (P.hit(GB.A)) f.in.jumpQ = true;
   if (P.hit(GB.X)) fReload(f);
   if (P.hit(GB.RB)) fCycle(f, 1); if (P.hit(GB.LB)) fCycle(f, -1);
@@ -6745,7 +6862,7 @@ function attract(dt){
   setFps(false);
   animateSquirrel(dt);
 }
-let soloTreeOp = 1;
+const soloTree = { c: null, op: 1 }; // the tree Bogo is up in solo, and how solid it looks
 function update(dt){
   for (const k in pw) {
     if (pw[k] > 0) { pw[k] = Math.max(0, pw[k] - dt); if (pw[k] === 0) toast(POWERS[k].name + ' wore off'); }
@@ -6765,13 +6882,16 @@ function update(dt){
   if (isTouch || SOLOPAD) {
     const a = aimAssist(camera.position, yaw, pitch, aimPoints(null), dt, firing);
     if (a) {
-      yaw += a.dy; pitch = clamp(pitch + a.dp, PMIN, PMAX);
+      yaw += a.dy; pitch = clamp(pitch + a.dp, pminFor(player, soloChar), PMAX);
       // the phone controller sets the aim from its own totals each frame: keep the nudge in its offsets
       if (SOLOPAD) { SOLOPAD.yawOff += a.dy; SOLOPAD.pitchOff = clamp((SOLOPAD.pitchOff || 0) + a.dp, -1, 1); }
     }
   }
   updateCamera(dt, sprint);
-  soloTreeOp = damp(soloTreeOp, soloChar === CH.BOGO && upTree(player) ? TREE_SEE : 1, 6, dt);
+  const up = soloChar === CH.BOGO && upTree(player);
+  if (up) soloTree.c = treeOf(player) || soloTree.c;
+  soloTree.op = damp(soloTree.op, up ? TREE_SEE : 1, 6, dt);
+  if (pitch < pminFor(player, soloChar)) pitch = damp(pitch, PMIN, 8, dt);
   shake = Math.max(0, shake - dt * 2.5);
   if (firing && gun.cd <= 0) tryShoot();
   for (let i = enemies.length - 1; i >= 0; i--) {
@@ -6811,7 +6931,7 @@ function frame(){
   gpPoll(dt);
   soloPadTick(dt);
   netPadTick(dt);
-  if (state === 'paused') { treeFade(soloTreeOp); renderer.render(scene, camera); return; }
+  if (state === 'paused') { treeFade(soloTree.c, soloTree.op); renderer.render(scene, camera); return; }
   time += dt;
   if (state === 'pvp' && pvp) {
     pvpUpdate(dt);
@@ -6825,12 +6945,12 @@ function frame(){
   else if (state === 'menu' || state === 'lobby') { attract(dt); if (state === 'lobby') lobbyTick(dt); }
   // the Solo setup's shifted picture is only for that screen
   if (state !== 'menu' && state !== 'select' && camera.view && camera.view.enabled) camera.clearViewOffset();
-  else if (state === 'perk') { updateFloats(dt); treeFade(soloTreeOp); renderer.render(scene, camera); return; }
+  else if (state === 'perk') { updateFloats(dt); treeFade(soloTree.c, soloTree.op); renderer.render(scene, camera); return; }
   else { updatePickups(dt); updateProps(dt); }
   updateParticles(dt);
   updateFloats(dt);
   updateAmbient(dt);
-  treeFade(state === 'playing' || state === 'paused' || state === 'perk' || state === 'over' ? soloTreeOp : 1);
+  if (state === 'playing' || state === 'paused' || state === 'perk' || state === 'over') treeFade(soloTree.c, soloTree.op); else treeFade(null, 1);
   renderer.render(scene, camera);
 }
 
@@ -6838,7 +6958,7 @@ function frame(){
 window.__sq = {
   get pvp(){ return pvp; }, get enemies(){ return enemies; }, get wave(){ return wave; }, get stash(){ return stash; },
   get score(){ return score; }, get state(){ return state; }, get sel(){ return sel; },
-  get player(){ return player; }, get perk(){ return perk; }, get prog(){ return prog; }, progUpdate(fn){ progUpdate(fn); }, get hat(){ return hatId; }, get daily(){ return DAILY; }, dailyFor(k){ return dailyFor(k); }, get waveState(){ return waveState; }, shootAt(e){ const b = enemyBody(e), t = new V3(e.pos.x, b.y, e.pos.z), o = t.clone().add(new V3(e.pos.x, 0, e.pos.z).normalize().multiplyScalar(6)); o.y = b.y + 0.6; camera.position.copy(o); const d = t.clone().sub(o).normalize(); const r = castRay(d); if (r.e) hurtEnemy(r.e, 20, r.head, t, d, 1); return r.kind; }, spawn(k){ spawnEnemy(k); return enemies[enemies.length - 1]; }, setWave(n){ wave = n; }, face(e){ yaw = Math.atan2(-(e.pos.x - player.pos.x), -(e.pos.z - player.pos.z)); pitch = 0.05; }, get eshots(){ return eshots; }, killAll(){ while (enemies.length) removeEnemy(enemies[0]); queue.length = 0; }, get yaw(){ return yaw; }, get ammo(){ return inv[cur].ammo; }, get gp(){ return GP; },
+  get player(){ return player; }, get perk(){ return perk; }, get prog(){ return prog; }, progUpdate(fn){ progUpdate(fn); }, get hat(){ return hatId; }, get daily(){ return DAILY; }, dailyFor(k){ return dailyFor(k); }, get waveState(){ return waveState; }, shootAt(e){ const b = enemyBody(e), t = new V3(e.pos.x, b.y, e.pos.z), o = t.clone().add(new V3(e.pos.x, 0, e.pos.z).normalize().multiplyScalar(6)); o.y = b.y + 0.6; camera.position.copy(o); const d = t.clone().sub(o).normalize(); const r = castRay(d); if (r.e) hurtEnemy(r.e, 20, r.head, t, d, 1); return r.kind; }, spawn(k){ spawnEnemy(k); return enemies[enemies.length - 1]; }, setWave(n){ wave = n; }, face(e){ yaw = Math.atan2(-(e.pos.x - player.pos.x), -(e.pos.z - player.pos.z)); pitch = 0.05; }, get eshots(){ return eshots; }, killAll(){ while (enemies.length) removeEnemy(enemies[0]); queue.length = 0; }, get yaw(){ return yaw; }, get pitch(){ return pitch; }, get trees(){ return climbables.map(c => ({ x: c.x, z: c.z, r: c.r, peak: c.peak })); }, get ammo(){ return inv[cur].ammo; }, get gp(){ return GP; },
   hit(e, dmg, shooter){ coopHitEnemy(shooter, e, dmg, false, e.pos.clone(), new V3(0, 0, 1), 1); },
   hurt(f, d){ coopHurt(f, d, new V3(0, 0, 0)); }, dmg(v, d, by){ applyDamage(v, d, by); }, bonks(f){ return bonksOf(f); },
   setStash(v){ stash = v; updateStashPile(); }, damageStash(d){ damageStash(d, new V3(0, 0, 3)); }
