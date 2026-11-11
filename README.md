@@ -2,7 +2,7 @@
 
 A third-person 3D shooter built with three.js, in a single `index.html`.
 
-Play as Bogo the squirrel, the Panda, Jojo the German Shepherd, Soto the Jack Russell, Bearito the bear, Mormo the orange cat or DJ Duck across eight maps:
+Play as Bogo the squirrel, the Panda, Jojo the German Shepherd, Soto the Jack Russell, Bearito the bear, Mormo the orange cat or DJ Duck the mallard across eight maps:
 Sunny Meadow, Frosty Pines, Canyon Dunes, Spooky Hollow, Blossom Garden, Coconut Cove, Ember Peaks and Mushroom Grove.
 
 ## Fighters

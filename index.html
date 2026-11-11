@@ -859,7 +859,7 @@ const CHARS = [
   { id: 'jack', name: 'Soto', kind: 'Jack Russell', sw: 'linear-gradient(135deg,#f6f3ee 55%,#c8803c 55%)', power: 'Double speed' },
   { id: 'bear', name: 'Bearito', kind: 'Bear', sw: 'linear-gradient(135deg,#7a4a2a 55%,#c8955e 55%)', power: 'Scary: gnomes run away from him instead of attacking (bosses aren\'t scared)' },
   { id: 'cat', name: 'Mormo', kind: 'Orange Cat', sw: 'linear-gradient(135deg,#e8862e 55%,#fbe6c8 55%)', power: 'Scares the crows: they never swoop down near him' },
-  { id: 'duck', name: 'DJ Duck', kind: 'Duck', sw: 'linear-gradient(135deg,#ffd23f 55%,#ff8a1e 55%)', power: 'Flies: keep pressing jump in the air to flap higher, glides down slowly, and can land on trees' }
+  { id: 'duck', name: 'DJ Duck', kind: 'Mallard', sw: 'linear-gradient(135deg,#1d6b3c 46%,#f4f4ee 46% 53%,#7a3b26 53% 74%,#b9b5ad 74%)', power: 'Flies: keep pressing jump in the air to flap higher, glides down slowly, and can land on trees' }
 ];
 // special abilities, by fighter (CHARS index)
 const CH = { BOGO: 0, PANDA: 1, JOJO: 2, SOTO: 3, BEARITO: 4, MORMO: 5, DUCK: 6 };
@@ -2251,16 +2251,27 @@ function buildCritter(kind, pal){
     for (let i = 0; i < 9; i++) { const t = i / 8; addSeg(0.07 - t * 0.012, i % 2 ? ts : to, 0, t * 0.75 + Math.max(0, t - 0.6) * 0.4, 0.1 + Math.sin(t * Math.PI * 0.6) * 0.45 - Math.max(0, t - 0.75) * 0.5, t); }
     colors = [0xe8862e, 0xb4561a, 0xfbe6c8, pal.band]; wag = 1.2; scale = 0.92;
   } else if (kind === 'duck') {
-    // DJ Duck: a yellow duck in big headphones and shades, with a gold chain and wings that flap as he flies
-    const yel = M(0xffd23f), cream = M(0xfff0b8), bill = M(0xff8a1e), shade = M(0x15151a, { roughness: 0.2, metalness: 0.4 });
+    // DJ Duck: a mallard drake (glossy green head, white neck ring, chestnut chest, grey sides,
+    // brown back, grey-brown wings with the blue patch, yellow bill, orange feet and the curled
+    // black tail feathers) in big headphones and shades, with a gold chain and wings that flap as he flies
+    const green = M(0x1d6b3c, { roughness: 0.22, metalness: 0.35 }), ring = M(0xf4f4ee), chest = M(0x7a3b26);
+    const grey = M(0xb9b5ad), back = M(0x7c6b58), wing = M(0x958a7c), blue = M(0x2f55d4, { roughness: 0.25, metalness: 0.35 });
+    const bill = M(0xe8c63a), nail = M(0x2a2a22), feetM = M(0xff8a1e);
+    const shade = M(0x15151a, { roughness: 0.2, metalness: 0.4 });
     const pads = M(0x2a2a33), red = M(0xe8452e), gold = M(0xffc23a, { roughness: 0.3, metalness: 0.7 });
-    blob(0.44, yel, 0, 0.62, 0, 0.95, 1, 1.05);
-    blob(0.3, cream, 0, 0.6, -0.22, 0.85, 0.95, 0.5);
-    for (const s of [-1, 1]) blob(0.2, yel, 0.2 * s, 0.36, 0.08, 0.7, 0.85, 1);
-    mk(S(0.3), yel, 0, 0, 0, head);
+    // body: grey sides and belly, a brown back, the chestnut chest in front
+    blob(0.44, grey, 0, 0.62, 0, 0.95, 1, 1.05);
+    blob(0.44, back, 0, 0.7, 0.05, 0.97, 0.9, 1.04);
+    blob(0.33, chest, 0, 0.68, -0.28, 0.9, 0.8, 0.66);
+    for (const s of [-1, 1]) blob(0.2, grey, 0.2 * s, 0.36, 0.08, 0.7, 0.85, 1);
+    // the green neck, and the white ring where it meets the chest
+    const collar = mk(new THREE.TorusGeometry(0.265, 0.045, 8, 28), ring, 0, 0.97, -0.06, body); collar.rotation.x = Math.PI / 2;
+    // the glossy green head, the yellow bill with its dark tip
+    mk(S(0.3), green, 0, 0, 0, head);
     blob(0.13, bill, 0, -0.07, -0.3, 1.3, 0.42, 1.35, head);
     blob(0.11, bill, 0, -0.12, -0.28, 1.15, 0.3, 1.2, head);
-    eyes(0.11, 0.07, -0.22, 0.05);
+    blob(0.045, nail, 0, -0.07, -0.46, 1.3, 0.45, 0.6, head);
+    eyes(0.11, 0.07, -0.22, 0.05, M(0x3a2410));
     // shades over the eyes
     for (const s of [-1, 1]) { const l = mk(GEO.box, shade, 0.11 * s, 0.08, -0.29, head); l.scale.set(0.15, 0.08, 0.03); }
     const bridge = mk(GEO.box, shade, 0, 0.09, -0.3, head); bridge.scale.set(0.08, 0.02, 0.02);
@@ -2272,15 +2283,24 @@ function buildCritter(kind, pal){
     }
     const chain = mk(new THREE.TorusGeometry(0.2, 0.022, 6, 20), gold, 0, 0.92, -0.08, body); chain.rotation.x = Math.PI / 2 + 0.35;
     mk(S(0.05, 10, 8), gold, 0, 0.76, -0.3, body);
-    // wings on pivots at the shoulders, so they can flap
+    // wings on pivots at the shoulders, so they can flap: grey-brown, with the blue patch
+    // (edged in white) towards the back
     wings = [-1, 1].map(s => {
       const pv = new THREE.Group(); pv.position.set(0.36 * s, 0.84, 0.06); body.add(pv);
-      blob(0.22, yel, 0.06 * s, -0.16, 0, 0.35, 0.95, 1, pv);
+      blob(0.22, wing, 0.06 * s, -0.16, 0, 0.35, 0.95, 1, pv);
+      blob(0.1, ring, 0.105 * s, -0.2, 0.09, 0.3, 0.8, 1.1, pv);
+      blob(0.1, blue, 0.115 * s, -0.2, 0.09, 0.3, 0.5, 1, pv);
       return pv;
     });
-    feet = feetOf(bill); rig = buildGunRig(body, yel, yel);
-    addSeg(0.1, tailMat(0xffd23f), 0, 0.12, 0.05, 1);
-    colors = [0xffd23f, 0xfff0b8, 0xff8a1e, pal.band]; wag = 0.8; scale = 0.95;
+    feet = feetOf(feetM); rig = buildGunRig(body, wing, wing);
+    // the tail: pale grey feathers, black above them, and the drake's black curl on top
+    const tPale = tailMat(0xd9d6cf), tBlack = tailMat(0x1b1b1e);
+    addSeg(0.11, tPale, 0, 0.05, 0.17, 1);
+    addSeg(0.09, tBlack, 0, 0.17, 0.12, 1);
+    addSeg(0.06, tBlack, 0, 0.29, 0.13, 1);
+    addSeg(0.05, tBlack, 0, 0.36, 0.07, 1);
+    addSeg(0.04, tBlack, 0, 0.37, 0.01, 1);
+    colors = [0x1d6b3c, 0xb9b5ad, 0x7a3b26, pal.band]; wag = 0.8; scale = 0.95;
   }
   g.scale.setScalar(scale);
   return { group: g, body, head, feet, gunRig: rig.gunRig, tail, segs, tailMats, guns: rig.guns, muzzles: rig.muzzles, off, wings, wag, colors };
