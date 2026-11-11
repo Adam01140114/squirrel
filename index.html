@@ -857,12 +857,12 @@ const CHARS = [
   { id: 'panda', name: 'Panda', kind: '', the: true, sw: 'linear-gradient(135deg,#f4f4f0 55%,#222326 55%)', power: '2.5 times the health' },
   { id: 'shepherd', name: 'Jojo', kind: 'German Shepherd', sw: 'linear-gradient(135deg,#c48a48 55%,#2a2420 55%)', power: 'Two guns at once, two crosshairs and double ammo' },
   { id: 'jack', name: 'Soto', kind: 'Jack Russell', sw: 'linear-gradient(135deg,#f6f3ee 55%,#c8803c 55%)', power: 'Double speed' },
-  { id: 'bear', name: 'Bearito', kind: 'Bear', sw: 'linear-gradient(135deg,#7a4a2a 55%,#c8955e 55%)' },
+  { id: 'bear', name: 'Bearito', kind: 'Bear', sw: 'linear-gradient(135deg,#7a4a2a 55%,#c8955e 55%)', power: 'Scary: gnomes run away from him instead of attacking (bosses aren\'t scared)' },
   { id: 'cat', name: 'Mormo', kind: 'Orange Cat', sw: 'linear-gradient(135deg,#e8862e 55%,#fbe6c8 55%)', power: 'Scares the crows: they never swoop down near him' },
   { id: 'duck', name: 'DJ Duck', kind: 'Duck', sw: 'linear-gradient(135deg,#ffd23f 55%,#ff8a1e 55%)', power: 'Flies: keep pressing jump in the air to flap higher, glides down slowly, and can land on trees' }
 ];
 // special abilities, by fighter (CHARS index)
-const CH = { BOGO: 0, PANDA: 1, JOJO: 2, SOTO: 3, MORMO: 5, DUCK: 6 };
+const CH = { BOGO: 0, PANDA: 1, JOJO: 2, SOTO: 3, BEARITO: 4, MORMO: 5, DUCK: 6 };
 const baseHp = (ch) => ch === CH.PANDA ? 250 : 100;
 const speedMul = (ch) => ch === CH.SOTO ? 2.6 : 1;
 // who can stand on top of trees: Bogo (who climbs up) and DJ Duck (who flies up)
@@ -873,6 +873,7 @@ const dualGuns = (ch) => ch === CH.JOJO;
 const ammoMul = (ch) => dualGuns(ch) ? 2 : 1; // Jojo carries double ammo: a full magazine for each gun
 const magOf = (i, ch) => WEAPONS[i].mag * ammoMul(ch);
 const MORMO_R = 10; // crows won't swoop at anything this close to Mormo
+const BEAR_R = 9;   // gnomes run from Bearito when he's this close
 // A short buzz. Android browsers vibrate; iPhones have no vibrate API, but toggling a hidden
 // switch control gives a haptic tap (iOS 18 and later) when it follows a touch.
 const haptic = (() => {
@@ -3162,6 +3163,11 @@ function mormoNear(p){
   for (const t of foeTargets()) if (chOf(t) === CH.MORMO && Math.hypot(t.pos.x - p.x, t.pos.z - p.z) < MORMO_R) return true;
   return false;
 }
+// Bearito scares the gnomes: the one this close to them, if any
+function bearNear(p){
+  for (const t of foeTargets()) if (chOf(t) === CH.BEARITO && Math.hypot(t.pos.x - p.x, t.pos.z - p.z) < BEAR_R) return t;
+  return null;
+}
 // a crow can swoop at this: not Bogo up the tree, and nowhere near Mormo
 const swoopable = (t) => !!t && !(chOf(t) === CH.BOGO && upTree(t)) && !mormoNear(t.pos);
 const crowFoe = (p) => nearestFoe(p, swoopable) || STASH_FOE;
@@ -3967,14 +3973,20 @@ function updateGnome(e, dt){
     return;
   }
   if (e.boss && e.def && e.def.charge && bossCharge(e, dt)) return;
-  const T = nearestFoe(e.pos, t => !upTree(t));
+  const T = nearestFoe(e.pos, t => !upTree(t) && (e.boss || chOf(t) !== CH.BEARITO));
   const toP = T ? Math.hypot(T.pos.x - e.pos.x, T.pos.z - e.pos.z) : Infinity;
   let tx, tz, reach, onPlayer;
   if (T && (e.boss || toP < 7.5)) { tx = T.pos.x; tz = T.pos.z; reach = 0.95 + 0.42 * e.s; onPlayer = true; }
   else { tx = 0; tz = 0; reach = 2.25 + 0.42 * e.s + 0.35; onPlayer = false; }
+  // Bearito is too scary: an ordinary gnome near him turns and runs, and attacks nothing
+  const bear = e.boss ? null : bearNear(e.pos);
+  if (bear) {
+    const ax = e.pos.x - bear.pos.x, az = e.pos.z - bear.pos.z, ad = Math.hypot(ax, az) || 1;
+    tx = e.pos.x + ax / ad * 6; tz = e.pos.z + az / ad * 6; reach = -1; onPlayer = false; e.hitPending = 0;
+  }
   const dx = tx - e.pos.x, dz = tz - e.pos.z, d = Math.hypot(dx, dz) || 1;
   let mx = 0, mz = 0;
-  if (d > reach && e.slamWind <= 0) { mx = dx / d * e.speed; mz = dz / d * e.speed; }
+  if (d > reach && e.slamWind <= 0) { const run = bear ? 1.4 : 1; mx = dx / d * e.speed * run; mz = dz / d * e.speed * run; }
   for (const o of enemies) {
     if (o === e || o.type !== 'gnome') continue;
     const ox = e.pos.x - o.pos.x, oz = e.pos.z - o.pos.z, od = Math.hypot(ox, oz), mn = 0.5 * (e.s + o.s);

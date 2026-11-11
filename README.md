@@ -15,7 +15,7 @@ Each fighter has a special ability (shown under the fighters on Solo setup), in 
 | Panda | 2.5 times the health (250). |
 | Jojo | Two guns at once, one in each paw, each with its own crosshair. Every pull fires both, and he carries double ammo. |
 | Soto | 2.6 times the speed. |
-| Bearito | No special ability. |
+| Bearito | Scary: ordinary gnomes run away from him instead of attacking, and don't go after him or the stash while he's close (bosses aren't scared). |
 | Mormo | Scares the crows: they never swoop at him, or at anything near him (the stash included); they keep circling overhead. |
 | DJ Duck | Flies: every jump in the air is a flap, as many as you like, up to a height limit. Stop flapping and he glides down slowly. He can land and stand on top of trees (but not climb them), and he can aim far down while flying. |
 
