@@ -11,13 +11,13 @@ Each fighter has a special ability (shown under the fighters on Solo setup), in 
 
 | Fighter | Ability |
 |---|---|
-| Bogo | Climbs trees: walk into any tree's trunk (the stash tree or any solid tree in the arena) and he goes up it and stands on top, anywhere on its leaves. He stops at the top until you let go of the direction you climbed with. Crows can't swoop at him up there and gnomes can't reach him, he can aim much further down, and the tree turns see-through in his view so he can see what's below. Walk off the edge to come down. |
-| Panda | Double health (200). |
+| Bogo | Climbs trees: walk into any tree's trunk (the stash tree or any solid tree in the arena) and he goes up it and stands on top, anywhere on its leaves. He stops at the top until you let go of the direction you climbed with. Crows can't swoop at him up there and gnomes can't reach him, he can aim much further down, and the tree turns see-through in his view so he can see what's below. Walk off the edge to come down. Every acorn he picks up counts as two. |
+| Panda | 2.5 times the health (250). |
 | Jojo | Two guns at once, one in each paw, each with its own crosshair. Every pull fires both, and he carries double ammo. |
-| Soto | Double speed. |
+| Soto | 2.6 times the speed. |
 | Bearito | No special ability. |
 | Mormo | Scares the crows: they never swoop at him, or at anything near him (the stash included); they keep circling overhead. |
-| DJ Duck | Flies: every jump in the air is a flap, as many as you like, up to a height limit. Stop flapping and he glides down slowly. |
+| DJ Duck | Flies: every jump in the air is a flap, as many as you like, up to a height limit. Stop flapping and he glides down slowly. He can land and stand on top of trees (but not climb them), and he can aim far down while flying. |
 
 ## Modes
 
@@ -81,7 +81,7 @@ often), and from wave 55 they also call gnome bodyguards.
 
 Acorn Blaster, Nutshot (shotgun), Pinecone Launcher, Seed Spitter (minigun), Pine Needle Rifle (sniper), Berry Burst (fast and light) and Walnut Cannon (one giant blast) come from supply crates; you can also pick any of them to start with.
 Power-ups: Rapid Fire, Double Damage, Shield and Turbo Paws.
-Every gun reloads by itself once you're on the move and have stopped shooting for a moment.
+It's a fast game: every gun fires quickly and reloads quickly. Every gun also reloads by itself once you're on the move and have stopped shooting for a moment.
 
 ## Controls
 
@@ -92,8 +92,8 @@ Every gun reloads by itself once you're on the move and have stopped shooting fo
 | Jump (double jump) | Space |
 | Sprint | Shift |
 | Reload | R |
-| Switch weapon | 1–4, Q or scroll wheel |
-| Change camera | Right click or V |
+| Switch weapon | Right click, 1–7, Q or scroll wheel |
+| Change camera | V |
 | Pause | Esc |
 
 Game controllers (Xbox, PlayStation, Switch Pro and others the browser supports) work too:

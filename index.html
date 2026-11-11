@@ -578,7 +578,7 @@ body.pad-mode{background:#1b120b}
       <div class="ammo" id="ammoBox"><b id="ammoNum">12</b><span id="ammoRes">/ ∞</span></div>
       <div class="bar"><i id="reloadFill" style="transform:scaleX(0)"></i></div>
       <div class="slots" id="slots"></div>
-      <div class="hint" id="ammoHint"><span class="desk-only">R reload · Right click camera</span><span class="touch-only">R reload · CAM camera</span></div>
+      <div class="hint" id="ammoHint"><span class="desk-only">R reload · Right click swap gun · V camera</span><span class="touch-only">R reload · CAM camera</span></div>
     </div>
     <div class="toast" id="toast"></div>
     <div class="crosshair" id="cross"><span></span><span></span><span></span><span></span><em></em></div>
@@ -781,8 +781,8 @@ body.pad-mode{background:#1b120b}
           <dt>Space</dt><dd>Jump, again in the air to double jump</dd>
           <dt>Shift</dt><dd>Sprint</dd>
           <dt>R</dt><dd>Reload</dd>
-          <dt>1–4, Q, wheel</dt><dd>Switch weapon</dd>
-          <dt>Right click, V</dt><dd>Change camera</dd>
+          <dt>Right click, 1–7, Q, wheel</dt><dd>Switch weapon</dd>
+          <dt>V</dt><dd>Change camera</dd>
           <dt>M</dt><dd>Sound on or off</dd>
           <dt>Esc</dt><dd>Pause</dd>
         </dl></section>
@@ -853,18 +853,22 @@ const PALS = [
   { name: 'Green', fur: 0x6f9a4a, light: 0xa6cf7e, dark: 0x3f5f2a, cream: 0xeaf3d8, band: 0x2f9e44, css: '#8fd14f' }
 ];
 const CHARS = [
-  { id: 'squirrel', name: 'Bogo', kind: 'Squirrel', sw: 'linear-gradient(135deg,#c8692a 55%,#f6e2bf 55%)', power: 'Climbs trees: walk into any trunk and shoot from the top, where crows can\'t get him' },
-  { id: 'panda', name: 'Panda', kind: '', the: true, sw: 'linear-gradient(135deg,#f4f4f0 55%,#222326 55%)', power: 'Double health' },
+  { id: 'squirrel', name: 'Bogo', kind: 'Squirrel', sw: 'linear-gradient(135deg,#c8692a 55%,#f6e2bf 55%)', power: 'Climbs trees: walk into any trunk and shoot from the top, where crows can\'t get him. Every acorn counts twice' },
+  { id: 'panda', name: 'Panda', kind: '', the: true, sw: 'linear-gradient(135deg,#f4f4f0 55%,#222326 55%)', power: '2.5 times the health' },
   { id: 'shepherd', name: 'Jojo', kind: 'German Shepherd', sw: 'linear-gradient(135deg,#c48a48 55%,#2a2420 55%)', power: 'Two guns at once, two crosshairs and double ammo' },
   { id: 'jack', name: 'Soto', kind: 'Jack Russell', sw: 'linear-gradient(135deg,#f6f3ee 55%,#c8803c 55%)', power: 'Double speed' },
   { id: 'bear', name: 'Bearito', kind: 'Bear', sw: 'linear-gradient(135deg,#7a4a2a 55%,#c8955e 55%)' },
   { id: 'cat', name: 'Mormo', kind: 'Orange Cat', sw: 'linear-gradient(135deg,#e8862e 55%,#fbe6c8 55%)', power: 'Scares the crows: they never swoop down near him' },
-  { id: 'duck', name: 'DJ Duck', kind: 'Duck', sw: 'linear-gradient(135deg,#ffd23f 55%,#ff8a1e 55%)', power: 'Flies: keep pressing jump in the air to flap higher, and he glides down slowly' }
+  { id: 'duck', name: 'DJ Duck', kind: 'Duck', sw: 'linear-gradient(135deg,#ffd23f 55%,#ff8a1e 55%)', power: 'Flies: keep pressing jump in the air to flap higher, glides down slowly, and can land on trees' }
 ];
 // special abilities, by fighter (CHARS index)
 const CH = { BOGO: 0, PANDA: 1, JOJO: 2, SOTO: 3, MORMO: 5, DUCK: 6 };
-const baseHp = (ch) => ch === CH.PANDA ? 200 : 100;
-const speedMul = (ch) => ch === CH.SOTO ? 2 : 1;
+const baseHp = (ch) => ch === CH.PANDA ? 250 : 100;
+const speedMul = (ch) => ch === CH.SOTO ? 2.6 : 1;
+// who can stand on top of trees: Bogo (who climbs up) and DJ Duck (who flies up)
+const treeStander = (ch) => ch === CH.BOGO || ch === CH.DUCK;
+// Bogo picks up acorns two at a time
+const acornMul = (ch) => ch === CH.BOGO ? 2 : 1;
 const dualGuns = (ch) => ch === CH.JOJO;
 const ammoMul = (ch) => dualGuns(ch) ? 2 : 1; // Jojo carries double ammo: a full magazine for each gun
 const magOf = (i, ch) => WEAPONS[i].mag * ammoMul(ch);
@@ -2349,14 +2353,15 @@ for (let i = 0; i < 4; i++) {
 let shockNext = 0;
 
 // weapons, power-ups, cameras
+// A fast game: every gun fires quickly and reloads quickly; the big hitters carry more shots to match
 const WEAPONS = [
-  { id: 'blaster', name: 'Acorn Blaster', mag: 12, rate: 0.13, reload: 1.05, dmg: 10, head: 25, pellets: 1, spread: 0.005, bloom: 0.01, maxBloom: 0.045, kick: 1, shake: 0.05, give: 0 },
-  { id: 'shotgun', name: 'Nutshot', mag: 6, rate: 0.8, reload: 1.5, dmg: 7, head: 14, pellets: 8, spread: 0.07, bloom: 0, maxBloom: 0, kick: 2.2, shake: 0.28, give: 18 },
-  { id: 'launcher', name: 'Pinecone Launcher', mag: 3, rate: 0.9, reload: 1.8, dmg: 75, splash: 4.2, projectile: true, pellets: 1, spread: 0.002, bloom: 0, maxBloom: 0, kick: 2, shake: 0.22, give: 6 },
-  { id: 'minigun', name: 'Seed Spitter', mag: 80, rate: 0.055, reload: 2.2, dmg: 7, head: 16, pellets: 1, spread: 0.012, bloom: 0.004, maxBloom: 0.05, kick: 0.5, shake: 0.03, spin: true, give: 160 },
-  { id: 'sniper', name: 'Pine Needle Rifle', mag: 5, rate: 0.95, reload: 2, dmg: 55, head: 140, pellets: 1, spread: 0.0008, bloom: 0, maxBloom: 0, kick: 2.6, shake: 0.16, give: 10 },
-  { id: 'smg', name: 'Berry Burst', mag: 30, rate: 0.075, reload: 1.3, dmg: 8, head: 18, pellets: 1, spread: 0.02, bloom: 0.006, maxBloom: 0.06, kick: 0.6, shake: 0.04, give: 60 },
-  { id: 'cannon', name: 'Walnut Cannon', mag: 1, rate: 1.2, reload: 2.4, dmg: 140, splash: 6.5, projectile: true, pellets: 1, spread: 0.002, bloom: 0, maxBloom: 0, kick: 3.2, shake: 0.42, give: 4 },
+  { id: 'blaster', name: 'Acorn Blaster', mag: 12, rate: 0.09, reload: 0.53, dmg: 10, head: 25, pellets: 1, spread: 0.005, bloom: 0.01, maxBloom: 0.045, kick: 1, shake: 0.05, give: 0 },
+  { id: 'shotgun', name: 'Nutshot', mag: 10, rate: 0.28, reload: 0.75, dmg: 7, head: 14, pellets: 8, spread: 0.07, bloom: 0, maxBloom: 0, kick: 2.2, shake: 0.22, give: 40 },
+  { id: 'launcher', name: 'Pinecone Launcher', mag: 8, rate: 0.3, reload: 0.9, dmg: 75, splash: 4.2, projectile: true, pellets: 1, spread: 0.002, bloom: 0, maxBloom: 0, kick: 2, shake: 0.18, give: 16 },
+  { id: 'minigun', name: 'Seed Spitter', mag: 80, rate: 0.045, reload: 1.1, dmg: 7, head: 16, pellets: 1, spread: 0.012, bloom: 0.004, maxBloom: 0.05, kick: 0.5, shake: 0.03, spin: true, give: 160 },
+  { id: 'sniper', name: 'Pine Needle Rifle', mag: 15, rate: 0.18, reload: 1, dmg: 55, head: 140, pellets: 1, spread: 0.0008, bloom: 0, maxBloom: 0, kick: 1.6, shake: 0.1, give: 45 },
+  { id: 'smg', name: 'Berry Burst', mag: 30, rate: 0.06, reload: 0.65, dmg: 8, head: 18, pellets: 1, spread: 0.02, bloom: 0.006, maxBloom: 0.06, kick: 0.6, shake: 0.04, give: 60 },
+  { id: 'cannon', name: 'Walnut Cannon', mag: 4, rate: 0.4, reload: 1.2, dmg: 140, splash: 6.5, projectile: true, pellets: 1, spread: 0.002, bloom: 0, maxBloom: 0, kick: 2.4, shake: 0.3, give: 12 },
 ];
 const CRATE_GUNS = WEAPONS.map((w, i) => i).slice(1); // a crate holds any gun but the Blaster
 const inv = WEAPONS.map((w, i) => ({ owned: i === 0, ammo: w.mag, reserve: i === 0 ? Infinity : 0 }));
@@ -3677,7 +3682,7 @@ function tryShoot(){
   flash.scale.setScalar(rand(0.6, 0.95) * (w.id === 'shotgun' || w.id === 'cannon' ? 1.6 : w.id === 'launcher' || w.id === 'sniper' ? 1.3 : 1)); flashLight.intensity = w.id === 'minigun' ? 1.6 : 2.4; flash2.scale.copy(flash.scale);
   for (let i = 0; i < 3 * sides.length; i++) { tv.copy(aim).multiplyScalar(rand(3, 6)).add(new V3(rand(-1, 1), rand(0, 1.5), rand(-1, 1))); emit(muzzlePos, tv, pick([0xffd27a, 0xffb347, 0xfff1c1]), 0.035, 0.18, -6); }
   sfx.shoot(w.id); addShake(w.shake);
-  const climb = { shotgun: 0.035, launcher: 0.02, sniper: 0.03, cannon: 0.05 }[w.id];
+  const climb = { shotgun: 0.015, launcher: 0.01, sniper: 0.008, cannon: 0.02 }[w.id];
   if (climb) pitch = clamp(pitch + climb, pminFor(player, soloChar), PMAX);
   if (s.ammo === 0 && s.reserve > 0) startReload();
 }
@@ -3814,7 +3819,7 @@ function reachTop(b){
 // what's under you: for Bogo up a tree, the top of its leaves wherever he is (stepping up and down
 // the bumps as he walks); the ground for everyone else, and past the edge of the tree
 function floorAt(b, ch, prevY){
-  if (ch !== CH.BOGO || prevY < 1.2) return 0;
+  if (!treeStander(ch) || prevY < 1.2) return 0;
   const h = canopyAt(b.pos.x, b.pos.z);
   return h && prevY >= h - (b.onTree ? 3 : 0.6) ? h : 0;
 }
@@ -3822,7 +3827,9 @@ function floorAt(b, ch, prevY){
 const upTree = (t) => !!t && !t.stash && (!!t.climbing || !!t.onTree || (t.pos.y > 2.5 && canopyAt(t.pos.x, t.pos.z) > 0));
 // how far down you can aim: further for Bogo up the tree, so he can shoot what's below him
 const PMIN_TREE = -1.35;
-const pminFor = (b, ch) => ch === CH.BOGO && upTree(b) ? PMIN_TREE : PMIN;
+const pminFor = (b, ch) => (ch === CH.BOGO && upTree(b)) || (ch === CH.DUCK && (!b.onGround || b.onTree)) ? PMIN_TREE : PMIN;
+// up a tree in your own view: it turns see-through (Bogo climbing or on top, DJ Duck standing on it)
+const seesThrough = (b, ch) => ch === CH.BOGO ? upTree(b) : ch === CH.DUCK && !!b.onTree;
 
 // ---------------------------------------------------------------- update: player
 function updatePlayer(dt){
@@ -3861,7 +3868,7 @@ function updatePlayer(dt){
     if (!player.onGround && player.vel.y < -8) burst(player.pos, 6, [0x9b7148, 0xc8b08a], 2.2, 0.07, 0.4, -6, 0.2);
     player.pos.y = floor; player.vel.y = 0; player.onGround = true; player.jumps = 0; player.onTree = floor > 0;
   } else { player.onGround = false; player.onTree = player.onTree && player.pos.y > 1.5; }
-  collide(player.pos, 0.45, soloChar === CH.BOGO);
+  collide(player.pos, 0.45, treeStander(soloChar));
   player.inv = Math.max(0, player.inv - dt);
   if (sprint && player.onGround && Math.random() < dt * 14) emit(player.pos, new V3(rand(-0.5, 0.5), rand(0.5, 1.2), rand(-0.5, 0.5)), pw.speed > 0 ? 0x8fd14f : 0xc8b08a, 0.08, 0.4, -2, 2);
   return sprint;
@@ -4090,8 +4097,9 @@ function updatePickups(dt){
 }
 function collect(k){
   const p = k.obj.position.clone();
-  if (k.kind === 'golden') { player.hp = Math.min(maxHp(), player.hp + 25); floatText(p, '+25 HP', 'heal'); sfx.pickup(true); }
-  else if (k.kind === 'acorn') { stash = Math.min(100, stash + 2); score += 25; updateStashPile(); floatText(p, '+2 stash', 'pts'); sfx.pickup(false); }
+  const n = acornMul(soloChar);
+  if (k.kind === 'golden') { player.hp = Math.min(maxHp(), player.hp + 25 * n); floatText(p, '+' + 25 * n + ' HP', 'heal'); sfx.pickup(true); }
+  else if (k.kind === 'acorn') { stash = Math.min(100, stash + 2 * n); score += 25 * n; updateStashPile(); floatText(p, '+' + 2 * n + ' stash', 'pts'); sfx.pickup(false); }
   else if (k.kind === 'power') {
     const P = POWERS[k.power]; pw[k.power] = P.dur * (1 + 0.5 * perkLv('lucky'));
     toast(P.name + '!'); floatText(p, P.name.toUpperCase(), 'tag'); sfx.power();
@@ -4340,13 +4348,13 @@ function cycleCam(){
 }
 canvas.addEventListener('mousedown', (e) => {
   if (state === 'pvp' && pvp && pvp.mode === 'online' && pvp.phase !== 'over') {
-    if (e.button === 2) { e.preventDefault(); const f = pvp.local; f.camMode = (f.camMode + 1) % 2; pvpToast(f, 'Camera: ' + CAMS[f.camMode].name); return; }
+    if (e.button === 2) { e.preventDefault(); fCycle(pvp.local, 1); return; }
     if (e.button !== 0) return;
     if (!locked) lockPointer();
     document.body.classList.add('playing'); firing = true; return;
   }
   if (state !== 'playing') return;
-  if (e.button === 2) { e.preventDefault(); cycleCam(); return; }
+  if (e.button === 2) { e.preventDefault(); cycleWeapon(1); return; }
   if (e.button !== 0) return;
   if (!locked) lockPointer();
   firing = true;
@@ -4684,7 +4692,7 @@ function fMove(f, dt){
     f.pos.y = floor; f.vel.y = 0; f.onGround = true; f.jumps = 0; f.onTree = floor > 0;
   }
   else { f.onGround = false; f.onTree = f.onTree && f.pos.y > 1.5; }
-  collide(f.pos, 0.45, f.ch === CH.BOGO);
+  collide(f.pos, 0.45, treeStander(f.ch));
   for (const o of pvp.fighters) {
     if (o === f || o.dead) continue;
     const dx = f.pos.x - o.pos.x, dz = f.pos.z - o.pos.z, d = Math.hypot(dx, dz);
@@ -4767,7 +4775,7 @@ function fCamera(f, dt){
   f.cam.lookAt(pvB);
   f.cam.fov = damp(f.cam.fov, cm.fov + (f.sprinting ? 7 : 0) + (f.pw.speed > 0 ? 4 : 0), 6, dt);
   f.shake = Math.max(0, f.shake - dt * 2.5);
-  const up = f.ch === CH.BOGO && !f.dead && upTree(f);
+  const up = !f.dead && seesThrough(f, f.ch);
   if (up) f.tree = treeOf(f) || f.tree;
   f.treeOp = damp(f.treeOp || 1, up ? TREE_SEE : 1, 6, dt);
   if (f.pitch < pminFor(f, f.ch)) f.pitch = damp(f.pitch, PMIN, 8, dt);
@@ -5037,7 +5045,7 @@ function pvpSpawnRandom(kind){
 function pvpRemovePickup(k){ scene.remove(k.obj); const i = pvp.pk.indexOf(k); if (i >= 0) pvp.pk.splice(i, 1); }
 function pvpTake(k, f){
   pvpRemovePickup(k);
-  if (pvp.coop && k.kind === 'acorn') { stash = Math.min(100, stash + 2); score += 25; updateStashPile(); }
+  if (pvp.coop && k.kind === 'acorn') { const n = acornMul(f.ch); stash = Math.min(100, stash + 2 * n); score += 25 * n; updateStashPile(); }
   let wi = -1;
   const here = pvp.mode === 'couch' || f === pvp.local || !!f.bot;
   if (k.kind === 'crate') { const un = CRATE_GUNS.filter(i => !f.w[i].owned); wi = un.length && here ? pick(un) : pick(CRATE_GUNS); }
@@ -5047,9 +5055,10 @@ function pvpTake(k, f){
 function fCollect(f, kind, power, wi, at){
   if (f.st) f.st.picks++;
   const p = (at || f.pos).clone();
-  if (kind === 'golden') { f.hp = Math.min(f.maxHp, f.hp + 40); pvpToast(f, '+40 HP'); sfx.pickup(true); }
-  else if (kind === 'acorn' && pvp.coop) { pvpToast(f, '+2 stash'); sfx.pickup(false); }
-  else if (kind === 'acorn') { f.hp = Math.min(f.maxHp, f.hp + 10); pvpToast(f, '+10 HP'); sfx.pickup(false); }
+  const n = acornMul(f.ch);
+  if (kind === 'golden') { f.hp = Math.min(f.maxHp, f.hp + 40 * n); pvpToast(f, '+' + 40 * n + ' HP'); sfx.pickup(true); }
+  else if (kind === 'acorn' && pvp.coop) { pvpToast(f, '+' + 2 * n + ' stash'); sfx.pickup(false); }
+  else if (kind === 'acorn') { f.hp = Math.min(f.maxHp, f.hp + 10 * n); pvpToast(f, '+' + 10 * n + ' HP'); sfx.pickup(false); }
   else if (kind === 'power' && POWERS[power]) { f.pw[power] = POWERS[power].dur; pvpToast(f, POWERS[power].name + '!'); sfx.power(); burst(p, 24, [POWERS[power].color, 0xffffff], 5, 0.07, 0.6, -2, 0.3); }
   else if (kind === 'crate') {
     if (!(wi >= 1 && wi < WEAPONS.length)) wi = pick(CRATE_GUNS);
@@ -6888,7 +6897,7 @@ function update(dt){
     }
   }
   updateCamera(dt, sprint);
-  const up = soloChar === CH.BOGO && upTree(player);
+  const up = seesThrough(player, soloChar);
   if (up) soloTree.c = treeOf(player) || soloTree.c;
   soloTree.op = damp(soloTree.op, up ? TREE_SEE : 1, 6, dt);
   if (pitch < pminFor(player, soloChar)) pitch = damp(pitch, PMIN, 8, dt);
